@@ -470,3 +470,24 @@ appsettings.Development.local.json
 *.swp
 .DS_Store
 Thumbs.db
+
+# ================================
+# Project secrets
+# ================================
+
+secrets/
+*.secret
+*.key
+*.pem
+*.pfx
+
+# Local configuration
+appsettings.Local.json
+appsettings.*.local.json
+
+# ================================
+# Test results / coverage
+# ================================
+
+TestResults/
+coverage/

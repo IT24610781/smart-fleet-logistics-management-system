@@ -427,3 +427,46 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# ================================
+# React / Node.js
+# ================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+
+# ================================
+# Local development configuration
+# ================================
+
+appsettings.Local.json
+appsettings.Development.local.json
+
+# ================================
+# Database / local data
+# ================================
+
+*.dump
+*.bak
+
+# ================================
+# IDE / OS
+# ================================
+
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

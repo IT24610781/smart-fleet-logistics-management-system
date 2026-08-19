@@ -1,15 +1,18 @@
-# Frontend
+# Smart Fleet & Logistics Management System — Frontend
 
-This directory contains the React-based web application for the Smart Fleet & Logistics Management System.
+This directory contains the React.js frontend for the Smart Fleet & Logistics Management System.
 
-The frontend communicates with the backend microservices through their exposed APIs.
+## Technology
 
-## Planned Responsibilities
+- React.js
+- Vite
+- JavaScript
+- HTML5
+- CSS3
 
-- User authentication interface
-- Fleet and vehicle management
-- Driver management
-- Dispatch and trip management
-- Vehicle tracking interface
-- Operational dashboards
-- Reports and data visualization
+## Development
+
+Install dependencies:
+
+```bash
+npm install

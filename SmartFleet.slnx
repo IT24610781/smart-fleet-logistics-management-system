@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/services/">
+    <Project Path="services/AuthUserService/AuthUserService.csproj" />
+  </Folder>
+</Solution>

@@ -130,7 +130,7 @@ public class UserRepository
     {
         return new User
         {
-            Id = Guid.Parse(reader.GetString("id")),
+            Id = reader.GetGuid("id"),
             Username = reader.GetString("username"),
             Email = reader.GetString("email"),
             PasswordHash = reader.GetString("password_hash"),

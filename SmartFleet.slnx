@@ -1,5 +1,14 @@
 <Solution>
   <Folder Name="/services/">
     <Project Path="services/AuthUserService/AuthUserService.csproj" />
+    <Project Path="services/FleetVehicleService/FleetVehicleService.csproj" />
+    <Project Path="services/TrackingTelemetryService/TrackingTelemetryService.csproj" />
+    <Project Path="services/TripDispatchService/TripDispatchService.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AuthUserService.Tests/AuthUserService.Tests.csproj" />
+    <Project Path="tests/FleetVehicleService.Tests/FleetVehicleService.Tests.csproj" />
+    <Project Path="tests/TrackingTelemetryService.Tests/TrackingTelemetryService.Tests.csproj" />
+    <Project Path="tests/TripDispatchService.Tests/TripDispatchService.Tests.csproj" />
   </Folder>
 </Solution>

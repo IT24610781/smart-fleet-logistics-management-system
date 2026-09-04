@@ -13,37 +13,51 @@ public class UserService
         _userRepository = userRepository;
     }
 
-    public async Task<UserResponse> CreateUserAsync(CreateUserRequest request)
+
+    // ============================================================
+    // US-01: Admin creates Driver account
+    // ============================================================
+
+    public async Task<UserResponse> CreateUserAsync(
+        CreateUserRequest request)
     {
-        // 1. Validate required fields
+        // Validate required fields
         if (string.IsNullOrWhiteSpace(request.Username))
-            throw new ArgumentException("Username is required.");
+            throw new ArgumentException(
+                "Username is required.");
 
         if (string.IsNullOrWhiteSpace(request.Email))
-            throw new ArgumentException("Email is required.");
+            throw new ArgumentException(
+                "Email is required.");
 
         if (string.IsNullOrWhiteSpace(request.Password))
-            throw new ArgumentException("Password is required.");
+            throw new ArgumentException(
+                "Password is required.");
 
         if (string.IsNullOrWhiteSpace(request.FirstName))
-            throw new ArgumentException("First name is required.");
+            throw new ArgumentException(
+                "First name is required.");
 
         if (string.IsNullOrWhiteSpace(request.LastName))
-            throw new ArgumentException("Last name is required.");
+            throw new ArgumentException(
+                "Last name is required.");
 
         if (string.IsNullOrWhiteSpace(request.ContactNumber))
-            throw new ArgumentException("Contact number is required.");
+            throw new ArgumentException(
+                "Contact number is required.");
 
-        // 2. Validate password length
+        // Validate password
         if (request.Password.Length < 8)
             throw new ArgumentException(
                 "Password must be at least 8 characters.");
 
-        // 3. Normalize values
+        // Normalize values
         var username = request.Username.Trim();
-        var email = request.Email.Trim().ToLowerInvariant();
 
-        // 4. Check whether username already exists
+        var email =
+            request.Email.Trim().ToLowerInvariant();
+
+        // Check username
         var existingUsername =
             await _userRepository.GetByUsernameAsync(username);
 
@@ -51,7 +65,7 @@ public class UserService
             throw new InvalidOperationException(
                 "Username already exists.");
 
-        // 5. Check whether email already exists
+        // Check email
         var existingEmail =
             await _userRepository.GetByEmailAsync(email);
 
@@ -59,7 +73,7 @@ public class UserService
             throw new InvalidOperationException(
                 "An account with this email already exists.");
 
-        // 6. Create Driver user
+        // Create Driver
         var user = new User
         {
             Id = Guid.CreateVersion7(),
@@ -69,15 +83,18 @@ public class UserService
             Email = email,
 
             PasswordHash =
-                BCrypt.Net.BCrypt.HashPassword(request.Password),
+                BCrypt.Net.BCrypt.HashPassword(
+                    request.Password),
 
-            FirstName = request.FirstName.Trim(),
+            FirstName =
+                request.FirstName.Trim(),
 
-            LastName = request.LastName.Trim(),
+            LastName =
+                request.LastName.Trim(),
 
-            ContactNumber = request.ContactNumber.Trim(),
+            ContactNumber =
+                request.ContactNumber.Trim(),
 
-            // US-01 creates Drivers only
             Role = "Driver",
 
             IsActive = true,
@@ -87,10 +104,103 @@ public class UserService
             UpdatedAt = DateTime.UtcNow
         };
 
-        // 7. Save user to database
+        // Save
         await _userRepository.CreateUserAsync(user);
 
-        // 8. Return safe API response
+        return ToUserResponse(user);
+    }
+
+
+    // ============================================================
+    // US-04: View own profile
+    // ============================================================
+
+    public async Task<UserResponse> GetProfileAsync(Guid userId)
+    {
+        var user =
+            await _userRepository.GetByIdAsync(userId);
+
+        if (user == null)
+            throw new KeyNotFoundException(
+                "User profile not found.");
+
+        return ToUserResponse(user);
+    }
+
+
+    // ============================================================
+    // US-04: Edit own profile
+    // ============================================================
+
+    public async Task<UserResponse> UpdateProfileAsync(
+        Guid userId,
+        UpdateProfileRequest request)
+    {
+        // Validate first name
+        if (string.IsNullOrWhiteSpace(request.FirstName))
+            throw new ArgumentException(
+                "First name is required.");
+
+        // Validate last name
+        if (string.IsNullOrWhiteSpace(request.LastName))
+            throw new ArgumentException(
+                "Last name is required.");
+
+        // Validate contact number
+        if (string.IsNullOrWhiteSpace(request.ContactNumber))
+            throw new ArgumentException(
+                "Contact number is required.");
+
+        // Validate password only when supplied
+        if (!string.IsNullOrWhiteSpace(request.Password) &&
+            request.Password.Length < 8)
+        {
+            throw new ArgumentException(
+                "Password must be at least 8 characters.");
+        }
+
+        // Find current user
+        var user =
+            await _userRepository.GetByIdAsync(userId);
+
+        if (user == null)
+            throw new KeyNotFoundException(
+                "User profile not found.");
+
+        // Update editable fields
+        user.FirstName =
+            request.FirstName.Trim();
+
+        user.LastName =
+            request.LastName.Trim();
+
+        user.ContactNumber =
+            request.ContactNumber.Trim();
+
+        // Update password only if provided
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            user.PasswordHash =
+                BCrypt.Net.BCrypt.HashPassword(
+                    request.Password);
+        }
+
+        // Update timestamp
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Save
+        await _userRepository.UpdateProfileAsync(user);
+
+        return ToUserResponse(user);
+    }
+
+
+    // ============================================================
+    // Convert User model -> safe response DTO
+    // ============================================================
+
+    private static UserResponse ToUserResponse(User user)
+    {
         return new UserResponse
         {
             Id = user.Id,

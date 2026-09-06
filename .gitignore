@@ -451,8 +451,10 @@ build/
 # Local development configuration
 # ================================
 
+appsettings.Development.json
 appsettings.Local.json
 appsettings.Development.local.json
+appsettings.*.local.json
 
 # ================================
 # Database / local data
@@ -480,10 +482,6 @@ secrets/
 *.key
 *.pem
 *.pfx
-
-# Local configuration
-appsettings.Local.json
-appsettings.*.local.json
 
 # ================================
 # Test results / coverage

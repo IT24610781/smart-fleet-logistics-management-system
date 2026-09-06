@@ -1,4 +1,4 @@
-name: Build and Test
+name: Smart Fleet CI Pipeline
 
 on:
   push:
@@ -10,23 +10,28 @@ on:
       - dev
 
 jobs:
-  build:
+  build-test:
+    name: Build & Test (.NET)
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-
       - name: Restore
         run: dotnet restore SmartFleet.slnx
-
       - name: Build
         run: dotnet build SmartFleet.slnx --no-restore
-
       - name: Test
         run: dotnet test SmartFleet.slnx --no-build
+
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Build Auth Service Docker Image
+        run: docker build -t auth-service:ci ./services/AuthUserService

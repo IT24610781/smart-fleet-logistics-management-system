@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  auth-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: fleet_identity_db
+    ports:
+      - "3307:3306"

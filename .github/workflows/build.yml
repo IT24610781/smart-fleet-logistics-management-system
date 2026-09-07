@@ -12,6 +12,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout Code
@@ -28,5 +40,20 @@ jobs:
       - name: Build
         run: dotnet build SmartFleet.slnx --no-restore
 
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install --yes mysql-client
+
+      - name: Initialize AuthUserService test database
+        run: |
+          sed 's/fleet_identity_db/fleet_identity_db_test/g' database/auth-user/schema.sql \
+            | mysql --host 127.0.0.1 --port 3306 --user root
+
       - name: Test
-        run: dotnet test SmartFleet.slnx --no-build
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: "3306"
+          DB_NAME: fleet_identity_db_test
+          DB_USER: root
+        run: |
+          export ConnectionStrings__DefaultConnection="Server=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Uid=${DB_USER};"
+          dotnet test SmartFleet.slnx --no-build

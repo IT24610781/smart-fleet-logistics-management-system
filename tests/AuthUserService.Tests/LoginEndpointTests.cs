@@ -277,7 +277,7 @@ public class LoginEndpointTests : IClassFixture<CustomWebApplicationFactory>
 
         // Deactivate the account directly in the DB — there's no API
         // path to do this yet.
-        await using (var connection = new MySqlConnection(CustomWebApplicationFactory.TestConnectionString))
+        await using (var connection = new MySqlConnection(CustomWebApplicationFactory.EffectiveConnectionString))
         {
             await connection.OpenAsync();
             await using var command = new MySqlCommand(

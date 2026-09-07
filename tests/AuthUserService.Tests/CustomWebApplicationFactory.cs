@@ -37,6 +37,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public const string TestConnectionString =
         "Server=localhost;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=NICE@123dayHere;";
 
+    public static string EffectiveConnectionString =>
+        Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+        ?? TestConnectionString;
+
     public CustomWebApplicationFactory()
     {
         Environment.SetEnvironmentVariable("Jwt__Key", JwtTestKey);
@@ -45,7 +49,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Jwt__ExpirationMinutes", "60");
         Environment.SetEnvironmentVariable(
             "ConnectionStrings__DefaultConnection",
-            TestConnectionString);
+            EffectiveConnectionString);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

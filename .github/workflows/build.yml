@@ -12,7 +12,7 @@ on:
       - main
 
 jobs:
-    build-test:
+  build-test:
     name: Build & Test (.NET)
     runs-on: ubuntu-latest
     services:
@@ -47,7 +47,7 @@ jobs:
           ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=test_root_password;"
         run: dotnet test SmartFleet.slnx --no-build
 
-docker-build:
+  docker-build:
     name: Docker Build Check
     runs-on: ubuntu-latest
     steps:
@@ -56,7 +56,7 @@ docker-build:
       - name: Build Auth Service Docker Image
         run: docker build -t auth-service:ci ./services/AuthUserService
 
-deploy:
+  deploy:
     name: Deploy to Azure (Auth Service)
     needs: [build-test, docker-build]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')

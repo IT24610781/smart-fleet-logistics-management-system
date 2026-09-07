@@ -12,22 +12,21 @@ on:
       - main
 
 jobs:
-  build-test:
+    build-test:
     name: Build & Test (.NET)
     runs-on: ubuntu-latest
     services:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_ROOT_PASSWORD: test_root_password
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot"
+          --health-cmd="mysqladmin ping -h localhost -ptest_root_password"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -35,29 +34,17 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Load test schema into MySQL
+        run: |
+          sed 's/fleet_identity_db/fleet_identity_db_test/g' database/auth-user/schema.sql > /tmp/schema.test.sql
+          mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/schema.test.sql
       - name: Restore
         run: dotnet restore SmartFleet.slnx
       - name: Build
         run: dotnet build SmartFleet.slnx --no-restore
-
-      - name: Install MySQL client
-        run: sudo apt-get update && sudo apt-get install --yes mysql-client
-
-      - name: Initialize AuthUserService test database
-        run: |
-          sed 's/fleet_identity_db/fleet_identity_db_test/g' database/auth-user/schema.sql \
-            | mysql --host 127.0.0.1 --port 3306 --user root
-
       - name: Test
         env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: "3306"
-          DB_NAME: fleet_identity_db_test
-          DB_USER: root
-        run: |
-          export ConnectionStrings__DefaultConnection="Server=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Uid=${DB_USER};"
-          dotnet test SmartFleet.slnx --no-build
-      - name: Test
+          ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=test_root_password;"
         run: dotnet test SmartFleet.slnx --no-build
 
   docker-build:

@@ -1,16 +1,19 @@
-name: Build and Test
+name: Smart Fleet CI Pipeline
 
 on:
   push:
     branches:
       - dev
+      - main
       - feature/*
   pull_request:
     branches:
       - dev
+      - main
 
 jobs:
-  build:
+  build-test:
+    name: Build & Test (.NET)
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -28,15 +31,12 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-
       - name: Restore
         run: dotnet restore SmartFleet.slnx
-
       - name: Build
         run: dotnet build SmartFleet.slnx --no-restore
 
@@ -57,3 +57,38 @@ jobs:
         run: |
           export ConnectionStrings__DefaultConnection="Server=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Uid=${DB_USER};"
           dotnet test SmartFleet.slnx --no-build
+      - name: Test
+        run: dotnet test SmartFleet.slnx --no-build
+
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Build Auth Service Docker Image
+        run: docker build -t auth-service:ci ./services/AuthUserService
+
+  deploy:
+    name: Deploy to Azure (Auth Service)
+    needs: [build-test, docker-build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish Auth Service
+        run: dotnet publish services/AuthUserService -c Release -o ./publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: smart-fleet-auth-service
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish

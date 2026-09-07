@@ -35,7 +35,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     // Update this connection string to match your local test database.
     public const string TestConnectionString =
-        "Server=localhost;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=NICE@123dayHere;";
+        "Server=127.0.0.1;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=test_root_password;";
 
     public static string EffectiveConnectionString =>
         Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")

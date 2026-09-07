@@ -442,6 +442,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+!frontend/.env.production
 
 # Build output
 dist/

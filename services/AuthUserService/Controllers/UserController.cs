@@ -54,6 +54,20 @@ public class UsersController : ControllerBase
 
 
     // ============================================================
+    // US-01: Admin lists Driver accounts
+    // GET /api/users/drivers
+    // ============================================================
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("drivers")]
+    public async Task<IActionResult> GetDrivers()
+    {
+        var drivers = await _userService.GetDriversAsync();
+        return Ok(drivers);
+    }
+
+
+    // ============================================================
     // US-04: View own profile
     // GET /api/users/me
     // ============================================================

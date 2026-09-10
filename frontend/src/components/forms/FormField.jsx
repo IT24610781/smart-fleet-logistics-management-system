@@ -1,5 +1,3 @@
-import './FormField.css'
-
 export default function FormField({
   label,
   name,
@@ -12,29 +10,45 @@ export default function FormField({
   readOnly = false,
   placeholder,
   autoComplete,
+  rightSlot,
 }) {
   return (
-    <div className="form-field">
-      <label className="form-label" htmlFor={name}>
-        {label}
-        {!required && !readOnly && <span className="optional">Optional</span>}
+    <div className="flex flex-col gap-1.5">
+      <label className="flex items-center justify-between font-title-md text-body-sm text-on-surface" htmlFor={name}>
+        <span>{label}</span>
+        {!required && !readOnly && (
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Optional</span>
+        )}
       </label>
-      <input
-        id={name}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        readOnly={readOnly}
-        required={required}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        className={`form-input${error ? ' invalid' : ''}${readOnly ? ' readonly' : ''}`}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
-      />
-      {error && <span id={`${name}-error`} className="form-error">{error}</span>}
-      {!error && hint && <span id={`${name}-hint`} className="form-hint">{hint}</span>}
+      <div className="relative">
+        <input
+          id={name}
+          name={name}
+          type={type}
+          value={value}
+          onChange={onChange}
+          readOnly={readOnly}
+          required={required}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
+          className={`w-full rounded-xl border px-3.5 py-2.5 font-body-md text-body-md text-on-surface bg-surface-container-lowest placeholder:text-on-surface-variant/60 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+            error ? 'border-error' : 'border-outline-variant'
+          } ${readOnly ? 'bg-surface-container-low text-on-surface-variant cursor-not-allowed' : ''}`}
+        />
+        {rightSlot && <div className="absolute inset-y-0 right-2 flex items-center">{rightSlot}</div>}
+      </div>
+      {error && (
+        <span id={`${name}-error`} className="font-body-sm text-body-sm text-error">
+          {error}
+        </span>
+      )}
+      {!error && hint && (
+        <span id={`${name}-hint`} className="font-body-sm text-body-sm text-on-surface-variant">
+          {hint}
+        </span>
+      )}
     </div>
   )
 }

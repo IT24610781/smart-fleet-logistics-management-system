@@ -1,83 +1,37 @@
 /* ==========================================================================
    Smart Fleet — Design Tokens
-   Identity: dispatch console for a logistics operator, not a generic SaaS.
-   Palette pulls from marine/fleet livery (deep steel blue) with a beacon
-   amber reserved for calls to action and live-status accents. Flat surfaces,
-   1px hairline borders instead of soft card shadows, 4px radius ceiling.
+   Re-skinned to the "Precision Fleet Architecture" system from the Stitch
+   export (see DESIGN.md). Colors/spacing/radius/typography live in
+   tailwind.config.js as Tailwind theme values (e.g. bg-primary,
+   text-on-surface, rounded-xl, font-headline-lg) — this file only holds
+   what Tailwind utility classes can't express: font loading, the global
+   focus ring, scrollbar styling, and a couple of small reusable classes
+   used across pages.
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+/* Compatibility layer for pages not covered by the Stitch redesign
+   (Vehicles, Reports, Trips, Tracking, MyTrips, Dispatcher pages) — see
+   styles/legacy.css for why this exists. Must stay above @tailwind per
+   CSS @import ordering rules. */
+@import './styles/legacy.css';
 
-:root {
-  /* Color */
-  --ink-900: #10181F;
-  --ink-700: #24313D;
-  --ink-500: #4B5C6B;
-  --ink-300: #8A97A3;
-  --ink-100: #D7DEE4;
-  --surface: #FFFFFF;
-  --surface-muted: #F2F5F7;
-  --surface-sunken: #E9EEF1;
-  --border: #DCE3E8;
-
-  --brand-900: #16374D;
-  --brand-700: #1E5178;
-  --brand-500: #2A6E9E;
-  --brand-100: #E4EEF5;
-
-  --beacon: #D98E2B;
-  --beacon-700: #B8741C;
-  --beacon-100: #FBEDD8;
-
-  --success: #2F8F5B;
-  --success-100: #E4F3EA;
-  --warning: #D98E2B;
-  --warning-100: #FBEDD8;
-  --error: #C6493E;
-  --error-100: #FBE7E5;
-  --info: #3B7EA6;
-  --info-100: #E7F1F7;
-  --offline: #8A97A3;
-  --offline-100: #EEF1F3;
-
-  /* Type */
-  --font-ui: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
-
-  /* Scale */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
-  --space-8: 64px;
-
-  --radius-sm: 3px;
-  --radius-md: 4px;
-
-  --sidebar-w: 232px;
-  --topbar-h: 60px;
-
-  color-scheme: light;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 * {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
 }
 
 body {
-  font-family: var(--font-ui);
-  background: var(--surface-muted);
-  color: var(--ink-900);
-  font-size: 14px;
-  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -85,50 +39,129 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3, h4 {
-  font-family: var(--font-ui);
-  font-weight: 600;
-  color: var(--ink-900);
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-h1 { font-size: 22px; }
-h2 { font-size: 18px; }
-h3 { font-size: 15px; }
-
-p { margin: 0; }
-
-a {
-  color: var(--brand-700);
-  text-decoration: none;
-}
-a:hover { text-decoration: underline; }
-
-button, input, select, textarea {
-  font-family: inherit;
-  font-size: inherit;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-code, .mono {
-  font-family: var(--font-mono);
-}
-
 /* Focus visibility — kept everywhere, never suppressed */
 :focus-visible {
-  outline: 2px solid var(--brand-500);
+  outline: 2px solid theme('colors.primary');
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--ink-100); border-radius: 6px; }
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: theme('colors.outline-variant');
+  border-radius: 6px;
+}
+
+/* Material Symbols — used as a font (like the Google Fonts already loaded
+   above), not a JS icon package. Functional icons still go through
+   components/common/Icon.jsx's dependency-free SVGs; this is only for the
+   decorative/marketing icon set the Stitch screens use. */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-size: 1.25rem;
+  line-height: 1;
+  user-select: none;
+}
+
+/* Simple spinner used by Button (loading state) and LoadingSpinner */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.toast-viewport {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  width: min(24rem, calc(100vw - 2rem));
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 0.75rem 0.875rem 1rem;
+  border: 1px solid;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.75rem 2rem rgba(0, 35, 111, 0.16);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  pointer-events: auto;
+  animation: toast-in 180ms ease-out;
+}
+
+.toast-success {
+  border-color: theme('colors.secondary');
+  background: theme('colors.secondary-container');
+  color: theme('colors.on-secondary-container');
+}
+
+.toast-error {
+  border-color: theme('colors.error');
+  background: theme('colors.error-container');
+  color: theme('colors.on-error-container');
+}
+
+.toast-info {
+  border-color: theme('colors.outline-variant');
+  background: theme('colors.surface-container-lowest');
+  color: theme('colors.on-surface');
+}
+
+.toast-icon {
+  flex: 0 0 auto;
+  margin-top: 0.05rem;
+}
+
+.toast-message {
+  flex: 1;
+}
+
+.toast-close {
+  flex: 0 0 auto;
+  padding: 0.125rem;
+  color: currentColor;
+  opacity: 0.7;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

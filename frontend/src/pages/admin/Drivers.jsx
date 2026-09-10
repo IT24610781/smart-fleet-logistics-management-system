@@ -1,27 +1,52 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
 import DataTable from '../../components/common/DataTable'
 import StatusBadge from '../../components/common/StatusBadge'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
-import { MOCK_DRIVERS } from '../../utils/mockData'
+import { ErrorMessage } from '../../components/common/ErrorMessage'
+import * as userService from '../../services/userService'
 
-// Driver *creation* (US-01) is fully wired to POST /api/users/drivers.
-// Driver *listing* has no backend endpoint yet, so this page reads from
-// mock data — swap useState(MOCK_DRIVERS) for userService.listDrivers()
-// once GET /api/users/drivers exists; the table markup won't need to change.
 export default function Drivers() {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
+  const [drivers, setDrivers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    async function loadDrivers() {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await userService.listDrivers()
+        setDrivers(data.map((driver) => ({
+          id: driver.id,
+          name: `${driver.firstName} ${driver.lastName}`.trim(),
+          username: driver.username,
+          email: driver.email,
+          contact: driver.contactNumber,
+          status: driver.isActive ? 'Active' : 'Inactive',
+          createdDate: new Date(driver.createdAt).toISOString().slice(0, 10),
+        })))
+      } catch (err) {
+        setError(err.message || 'Unable to load drivers.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDrivers()
+  }, [])
 
   const rows = useMemo(() => {
-    return MOCK_DRIVERS.filter((d) => {
+    return drivers.filter((d) => {
       const matchesQuery = !query || d.name.toLowerCase().includes(query.toLowerCase()) || d.username.toLowerCase().includes(query.toLowerCase())
       const matchesStatus = status === 'all' || d.status.toLowerCase() === status
       return matchesQuery && matchesStatus
     })
-  }, [query, status])
+  }, [drivers, query, status])
 
   const columns = [
     { key: 'name', header: 'Name', render: (r) => <span className="cell-primary">{r.name}</span> },
@@ -66,9 +91,12 @@ export default function Drivers() {
         </select>
       </div>
 
+      <ErrorMessage>{error}</ErrorMessage>
+
       <DataTable
         columns={columns}
         rows={rows}
+        loading={loading}
         emptyTitle="No drivers found"
         emptyDescription="Try a different search or create a new driver account."
       />

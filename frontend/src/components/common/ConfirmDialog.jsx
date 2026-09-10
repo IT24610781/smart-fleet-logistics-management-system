@@ -1,5 +1,4 @@
 import Button from './Button'
-import './common.css'
 
 export default function ConfirmDialog({
   open,
@@ -14,15 +13,24 @@ export default function ConfirmDialog({
 }) {
   if (!open) return null
   return (
-    <div className="dialog-backdrop" onClick={onCancel}>
-      <div className="dialog-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-on-surface/40 p-4" onClick={onCancel}>
+      <div
+        className="w-full max-w-sm rounded-xl bg-surface-container-lowest p-5 shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div>
-          <div className="dialog-title">{title}</div>
-          {body && <p className="dialog-body" style={{ marginTop: 6 }}>{body}</p>}
+          <div className="font-headline-sm text-headline-sm text-on-surface">{title}</div>
+          {body && <p className="mt-1.5 font-body-sm text-body-sm text-on-surface-variant">{body}</p>}
         </div>
-        <div className="dialog-actions">
-          <Button variant="secondary" onClick={onCancel}>{cancelLabel}</Button>
-          <Button variant={variant} onClick={onConfirm} loading={loading}>{confirmLabel}</Button>
+        <div className="mt-5 flex justify-end gap-2.5">
+          <Button variant="secondary" onClick={onCancel}>
+            {cancelLabel}
+          </Button>
+          <Button variant={variant} onClick={onConfirm} loading={loading}>
+            {confirmLabel}
+          </Button>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as authService from '../../services/authService'
+import { useToast } from '../../context/ToastContext'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
@@ -16,6 +17,7 @@ const EMPTY = {
 // yet (planned for a later sprint), so submission surfaces that plainly
 // instead of pretending the account was created.
 export default function DispatcherRegister() {
+  const { showToast } = useToast()
   const [form, setForm] = useState(EMPTY)
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -60,13 +62,16 @@ export default function DispatcherRegister() {
       })
       setSuccess(true)
       setForm(EMPTY)
+      showToast('Dispatcher account request submitted.', 'success')
     } catch (err) {
       // Backend registration endpoint does not exist yet — say so clearly
       // rather than showing a generic or misleading error.
       if (err.status === 404) {
         setFormError('Dispatcher registration is not available yet. This screen is ready for when the backend adds it.')
+        showToast('Dispatcher registration is not available yet.', 'error')
       } else {
         setFormError(err.fieldErrors ? null : err.message)
+        if (!err.fieldErrors) showToast(err.message || 'Unable to create the account.', 'error')
         if (err.fieldErrors) setFieldErrors((f) => ({ ...f, ...err.fieldErrors }))
       }
     } finally {

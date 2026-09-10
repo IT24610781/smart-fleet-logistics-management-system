@@ -489,3 +489,5 @@ secrets/
 
 TestResults/
 coverage/
+services/AuthUserService/Properties/ 
+tests/AuthUserService.Tests/coverage-report/ 

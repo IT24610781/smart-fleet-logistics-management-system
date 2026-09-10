@@ -1,122 +1,67 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './context/AuthContext'
+import ProtectedRoute from './routes/ProtectedRoute'
 
-function App() {
-  const [count, setCount] = useState(0)
+import Login from './pages/auth/Login'
+import DispatcherRegister from './pages/auth/DispatcherRegister'
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+import AdminDashboard from './pages/admin/AdminDashboard'
+import Drivers from './pages/admin/Drivers'
+import CreateDriver from './pages/admin/CreateDriver'
+import Vehicles from './pages/admin/Vehicles'
 
-      <div className="ticks"></div>
+import DispatcherDashboard from './pages/dispatcher/DispatcherDashboard'
+import Trips from './pages/dispatcher/Trips'
+import Tracking from './pages/dispatcher/Tracking'
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+import DriverDashboard from './pages/driver/DriverDashboard'
+import MyTrips from './pages/driver/MyTrips'
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+import Reports from './pages/shared/Reports'
+import Profile from './pages/shared/Profile'
+
+const HOME_BY_ROLE = {
+  Admin: '/admin/dashboard',
+  Dispatcher: '/dispatcher/dashboard',
+  Driver: '/driver/dashboard',
 }
 
-export default App
+function RootRedirect() {
+  const { isAuthenticated, role } = useAuth()
+  if (isAuthenticated) return <Navigate to={HOME_BY_ROLE[role] || '/login'} replace />
+  return <Navigate to="/login" replace />
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<RootRedirect />} />
+
+      {/* Public */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register/dispatcher" element={<DispatcherRegister />} />
+
+      {/* Admin */}
+      <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/drivers" element={<ProtectedRoute allowedRoles={['Admin']}><Drivers /></ProtectedRoute>} />
+      <Route path="/admin/drivers/create" element={<ProtectedRoute allowedRoles={['Admin']}><CreateDriver /></ProtectedRoute>} />
+      <Route path="/admin/vehicles" element={<ProtectedRoute allowedRoles={['Admin']}><Vehicles /></ProtectedRoute>} />
+      <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['Admin']}><Reports /></ProtectedRoute>} />
+
+      {/* Dispatcher */}
+      <Route path="/dispatcher/dashboard" element={<ProtectedRoute allowedRoles={['Dispatcher']}><DispatcherDashboard /></ProtectedRoute>} />
+      <Route path="/dispatcher/trips" element={<ProtectedRoute allowedRoles={['Dispatcher']}><Trips /></ProtectedRoute>} />
+      <Route path="/dispatcher/tracking" element={<ProtectedRoute allowedRoles={['Dispatcher']}><Tracking /></ProtectedRoute>} />
+      <Route path="/dispatcher/reports" element={<ProtectedRoute allowedRoles={['Dispatcher']}><Reports /></ProtectedRoute>} />
+
+      {/* Driver */}
+      <Route path="/driver/dashboard" element={<ProtectedRoute allowedRoles={['Driver']}><DriverDashboard /></ProtectedRoute>} />
+      <Route path="/driver/trips" element={<ProtectedRoute allowedRoles={['Driver']}><MyTrips /></ProtectedRoute>} />
+
+      {/* Shared across all authenticated roles */}
+      <Route path="/profile" element={<ProtectedRoute allowedRoles={['Admin', 'Dispatcher', 'Driver']}><Profile /></ProtectedRoute>} />
+
+      <Route path="*" element={<RootRedirect />} />
+    </Routes>
+  )
+}

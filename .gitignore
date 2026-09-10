@@ -442,6 +442,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+!frontend/.env.production
 
 # Build output
 dist/
@@ -451,8 +452,10 @@ build/
 # Local development configuration
 # ================================
 
+appsettings.Development.json
 appsettings.Local.json
 appsettings.Development.local.json
+appsettings.*.local.json
 
 # ================================
 # Database / local data
@@ -470,3 +473,20 @@ appsettings.Development.local.json
 *.swp
 .DS_Store
 Thumbs.db
+
+# ================================
+# Project secrets
+# ================================
+
+secrets/
+*.secret
+*.key
+*.pem
+*.pfx
+
+# ================================
+# Test results / coverage
+# ================================
+
+TestResults/
+coverage/

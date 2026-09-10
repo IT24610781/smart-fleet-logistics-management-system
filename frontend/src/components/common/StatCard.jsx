@@ -1,15 +1,19 @@
 import Icon from './Icon'
-import './common.css'
 
 export default function StatCard({ label, value, icon, delta }) {
+  const deltaColor = delta?.direction === 'down' ? 'text-error' : 'text-secondary'
   return (
-    <div className="stat-card">
-      <div className="stat-card-top">
-        <span className="stat-card-label">{label}</span>
-        {icon && <span className="stat-card-icon"><Icon name={icon} size={15} /></span>}
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
+      <div className="flex items-center justify-between">
+        <span className="font-label-md text-label-md uppercase tracking-wide text-on-surface-variant">{label}</span>
+        {icon && (
+          <span className="w-8 h-8 rounded-lg bg-primary-container/30 text-on-primary-container flex items-center justify-center">
+            <Icon name={icon} size={15} />
+          </span>
+        )}
       </div>
-      <span className="stat-card-value">{value}</span>
-      {delta && <span className={`stat-card-delta ${delta.direction}`}>{delta.text}</span>}
+      <span className="mt-2 block font-headline-lg text-headline-lg text-on-surface">{value}</span>
+      {delta && <span className={`mt-1 block font-body-sm text-body-sm ${deltaColor}`}>{delta.text}</span>}
     </div>
   )
 }

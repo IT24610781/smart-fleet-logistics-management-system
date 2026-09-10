@@ -110,6 +110,12 @@ public class UserService
         return ToUserResponse(user);
     }
 
+    public async Task<List<UserResponse>> GetDriversAsync()
+    {
+        var users = await _userRepository.GetDriversAsync();
+        return users.Select(ToUserResponse).ToList();
+    }
+
 
     // ============================================================
     // US-04: View own profile

@@ -68,6 +68,51 @@ public class UserRepository
 
 
     // ============================================================
+    // US-01: List driver users
+    // ============================================================
+
+    public async Task<List<User>> GetDriversAsync()
+    {
+        const string sql = """
+            SELECT
+                id,
+                username,
+                email,
+                password_hash,
+                first_name,
+                last_name,
+                contact_number,
+                role,
+                is_active,
+                created_at,
+                updated_at
+            FROM users
+            WHERE role = 'Driver'
+            ORDER BY created_at DESC;
+            """;
+
+        await using var connection =
+            _databaseConnection.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        var users = new List<User>();
+        while (await reader.ReadAsync())
+        {
+            users.Add(MapUser(reader));
+        }
+
+        return users;
+    }
+
+
+    // ============================================================
     // US-02: Find user by username
     // ============================================================
 

@@ -19,6 +19,7 @@ import MyTrips from './pages/driver/MyTrips'
 
 import Reports from './pages/shared/Reports'
 import Profile from './pages/shared/Profile'
+import Forbidden from './pages/shared/Forbidden'
 
 const HOME_BY_ROLE = {
   Admin: '/admin/dashboard',
@@ -40,6 +41,7 @@ export default function App() {
       {/* Public */}
       <Route path="/login" element={<Login />} />
       <Route path="/register/dispatcher" element={<DispatcherRegister />} />
+      <Route path="/403" element={<Forbidden />} />
 
       {/* Admin */}
       <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>} />

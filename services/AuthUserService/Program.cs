@@ -6,9 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ============================================================
 // Register application services
-// ============================================================
 
 builder.Services.AddControllers();
 
@@ -19,9 +17,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
 
 
-// ============================================================
 // JWT Authentication
-// ============================================================
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException(
@@ -60,16 +56,13 @@ builder.Services
     });
 
 
-// ============================================================
 // Authorization
-// ============================================================
+
 
 builder.Services.AddAuthorization();
 
 
-// ============================================================
 // CORS
-// ============================================================
 
 builder.Services.AddCors(options =>
 {
@@ -83,27 +76,23 @@ builder.Services.AddCors(options =>
 });
 
 
-// ============================================================
 // OpenAPI
-// ============================================================
 
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 
-// ============================================================
 // Build application
-// ============================================================
 
 var app = builder.Build();
 
 
-// ============================================================
 // HTTP request pipeline
-// ============================================================
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 // CORS
@@ -121,8 +110,6 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 
-// ============================================================
 // Start application
-// ============================================================
 
 app.Run();

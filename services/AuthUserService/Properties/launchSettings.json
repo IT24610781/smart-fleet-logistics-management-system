@@ -1,6 +1,7 @@
 {
   "profiles": {
     "AuthUserService": {
+    "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
@@ -10,4 +11,5 @@
       }
     }
   }
+}
 }

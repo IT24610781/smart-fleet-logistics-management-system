@@ -17,6 +17,7 @@ builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<AdminSeeder>();
 
 
 // ============================================================
@@ -95,6 +96,11 @@ builder.Services.AddOpenApi();
 // ============================================================
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var adminSeeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
+    await adminSeeder.SeedAsync();
+}
 
 
 // ============================================================

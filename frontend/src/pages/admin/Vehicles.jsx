@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
 import DataTable from '../../components/common/DataTable'
 import StatusBadge from '../../components/common/StatusBadge'
+import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
 import { MOCK_VEHICLES } from '../../utils/mockData'
 
@@ -36,7 +38,10 @@ export default function Vehicles() {
       <div className="page-header">
         <div>
           <div className="page-header-title">Vehicles</div>
-          <p className="page-header-desc">Fleet inventory and current status. Vehicle registration will connect here once the Fleet Service is live — this is demo data, not live database records.</p>
+          <p className="page-header-desc">Fleet inventory and current status. Vehicle creation is connected to the live Fleet Service — this list still shows demo data until GET /api/vehicles is implemented.</p>
+        </div>
+        <div className="page-header-actions">
+          <Link to="/admin/vehicles/create"><Button variant="accent">+ Add Vehicle</Button></Link>
         </div>
       </div>
 

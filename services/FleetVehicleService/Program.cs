@@ -55,12 +55,14 @@ builder.Services
 builder.Services.AddAuthorization();
 
 // CORS - allow the React/Vite frontend
+// Vite defaults to 5173 but auto-increments to 5174+ if that port is
+// already taken, so allow both rather than assuming one fixed port.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins("http://localhost:5173", "http://localhost:5174")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

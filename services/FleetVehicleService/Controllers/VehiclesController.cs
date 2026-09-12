@@ -50,6 +50,37 @@ public class VehiclesController : ControllerBase
         }
     }
 
+    // =======US-06: Admin updates a vehicle's details and status
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateVehicle(
+        Guid id, UpdateVehicleRequest request)
+    {
+        try
+        {
+            var vehicle =
+                await _vehicleService.UpdateVehicleAsync(id, request);
+
+            return Ok(vehicle);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new
+            {
+                message = "Validation failed.",
+                errors = ex.Errors
+            });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
 
     // =======US-05: Dispatcher/Admin views all registered vehicles
 

@@ -16,10 +16,7 @@ public class VehiclesController : ControllerBase
         _vehicleService = vehicleService;
     }
 
-    // ============================================================
-    // US-04: Admin registers a vehicle
-    // POST /api/vehicles
-    // ============================================================
+    // =======US-04: Admin registers a vehicle
 
     [Authorize(Roles = "Admin")]
     [HttpPost]
@@ -51,5 +48,17 @@ public class VehiclesController : ControllerBase
                 message = ex.Message
             });
         }
+    }
+
+
+    // =======US-05: Dispatcher/Admin views all registered vehicles
+
+    [Authorize(Roles = "Admin,Dispatcher")]
+    [HttpGet]
+    public async Task<IActionResult> GetVehicles()
+    {
+        var vehicles = await _vehicleService.GetAllVehiclesAsync();
+
+        return Ok(vehicles);
     }
 }

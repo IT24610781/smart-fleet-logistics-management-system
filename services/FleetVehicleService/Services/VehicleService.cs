@@ -88,4 +88,25 @@ public class VehicleService
             UpdatedAt = DateTime.UtcNow
         };
     }
+
+
+    // ============================================================
+    // US-05: Dispatcher/Admin views all registered vehicles
+    // ============================================================
+
+    public async Task<List<VehicleResponse>> GetAllVehiclesAsync()
+    {
+        var vehicles = await _vehicleRepository.GetAllAsync();
+
+        return vehicles.Select(vehicle => new VehicleResponse
+        {
+            Id = vehicle.Id,
+            RegistrationNo = vehicle.RegistrationNo,
+            Type = vehicle.Type,
+            Capacity = vehicle.Capacity,
+            Status = vehicle.Status,
+            CreatedAt = vehicle.CreatedAt,
+            UpdatedAt = vehicle.UpdatedAt
+        }).ToList();
+    }
 }

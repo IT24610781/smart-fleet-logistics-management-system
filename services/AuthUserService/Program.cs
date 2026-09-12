@@ -15,7 +15,7 @@ builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
-
+builder.Services.AddScoped<AdminSeeder>();
 
 // JWT Authentication
 
@@ -81,7 +81,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
 // Build application
 
 var app = builder.Build();
@@ -98,7 +97,6 @@ if (app.Environment.IsDevelopment())
 // CORS
 app.UseCors("Frontend");
 
-// Authentication must come before Authorization
 app.UseAuthentication();
 
 app.UseAuthorization();
@@ -111,5 +109,12 @@ app.MapControllers();
 
 
 // Start application
+
+// Seed the initial Admin account if one doesn't exist yet
+using (var scope = app.Services.CreateScope())
+{
+    var adminSeeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
+    await adminSeeder.SeedAsync();
+}
 
 app.Run();

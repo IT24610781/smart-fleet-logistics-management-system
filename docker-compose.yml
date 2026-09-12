@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   auth-db:
     image: mysql:8.0
@@ -9,4 +10,22 @@ services:
     ports:
       - "3307:3306"
     volumes:
+      - auth-db-data:/var/lib/mysql
       - ./database/auth-user/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  fleet-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: fleet_vehicle_db
+    ports:
+      - "3317:3306"
+    volumes:
+      - fleet-db-data:/var/lib/mysql
+      - ./database/fleet-vehicle/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+volumes:
+  auth-db-data:
+  fleet-db-data:
+

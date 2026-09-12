@@ -1,11 +1,9 @@
 import './common.css'
 
-// One place mapping a status string to a tone, reused by every table/badge
-// across Admin, Dispatcher and Driver pages.
 const TONE = {
   active: 'success', available: 'success', completed: 'success', approved: 'success',
-  pending: 'warning', 'in progress': 'warning', maintenance: 'warning',
-  assigned: 'info', 'in use': 'info',
+  pending: 'warning', 'in progress': 'warning', maintenance: 'warning', 'under maintenance': 'warning',
+  assigned: 'info', 'in use': 'info', 'on trip': 'info',
   rejected: 'error', error: 'error', inactive: 'error', deactivated: 'error',
   offline: 'offline', idle: 'offline',
 }

@@ -37,7 +37,7 @@
 .btn-sm { height: 30px; padding: 0 var(--space-3); font-size: 12.5px; }
 .btn-block { width: 100%; }
 
-/* --- Card (generic panel used across pages) --- */
+/* --- Card --- */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -219,7 +219,7 @@
 .dialog-body { font-size: 13.5px; color: var(--ink-500); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
 
-/* --- PageHeader (used across pages) --- */
+/* --- PageHeader --- */
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -230,6 +230,9 @@
 }
 .page-header-title { font-size: 20px; font-weight: 700; color: var(--ink-900); margin-bottom: 2px; }
 .page-header-desc { font-size: 13px; color: var(--ink-500); max-width: 60ch; }
+
+.page-status-text { font-size: 13.5px; color: var(--ink-500); padding: 32px 0; text-align: center; }
+.page-status-error { color: var(--error); }
 .page-header-actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
 
 .section-title { font-size: 14px; font-weight: 600; color: var(--ink-900); margin-bottom: var(--space-3); }

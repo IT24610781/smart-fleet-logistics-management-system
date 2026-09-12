@@ -98,6 +98,47 @@ public class VehicleRepository
 
 
     // ============================================================
+    // US-05: Get all vehicles
+    // ============================================================
+
+    public async Task<List<Vehicle>> GetAllAsync()
+    {
+        const string sql = """
+            SELECT
+                id,
+                registration_no,
+                type,
+                capacity,
+                status,
+                created_at,
+                updated_at
+            FROM vehicles
+            ORDER BY created_at DESC;
+            """;
+
+        await using var connection =
+            _databaseConnection.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        var vehicles = new List<Vehicle>();
+
+        while (await reader.ReadAsync())
+        {
+            vehicles.Add(MapVehicle(reader));
+        }
+
+        return vehicles;
+    }
+
+
+    // ============================================================
     // Map database row -> Vehicle model
     // ============================================================
 

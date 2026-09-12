@@ -1,3 +1,71 @@
+/* ==========================================================================
+   Legacy compatibility layer
+   ==========================================================================
+   The original flat "dispatch console" design system (tokens + component
+   classes), restored verbatim. Every page NOT covered by the Stitch
+   redesign (Vehicles, Reports, Trips, Tracking, MyTrips, DispatcherDashboard,
+   DispatcherRegister) still references these classnames/variables directly,
+   so this file keeps them rendering exactly as before. Sprint-1 pages
+   (Login, CreateDriver, Profile, Forbidden) and the shared AppShell/Sidebar/
+   Topbar/common components use Tailwind + Stitch tokens instead and don't
+   touch anything below.
+   ========================================================================== */
+
+:root {
+  /* Color */
+  --ink-900: #10181F;
+  --ink-700: #24313D;
+  --ink-500: #4B5C6B;
+  --ink-300: #8A97A3;
+  --ink-100: #D7DEE4;
+  --surface: #FFFFFF;
+  --surface-muted: #F2F5F7;
+  --surface-sunken: #E9EEF1;
+  --border: #DCE3E8;
+
+  --brand-900: #16374D;
+  --brand-700: #1E5178;
+  --brand-500: #2A6E9E;
+  --brand-100: #E4EEF5;
+
+  --beacon: #D98E2B;
+  --beacon-700: #B8741C;
+  --beacon-100: #FBEDD8;
+
+  --success: #2F8F5B;
+  --success-100: #E4F3EA;
+  --warning: #D98E2B;
+  --warning-100: #FBEDD8;
+  --error: #C6493E;
+  --error-100: #FBE7E5;
+  --info: #3B7EA6;
+  --info-100: #E7F1F7;
+  --offline: #8A97A3;
+  --offline-100: #EEF1F3;
+
+  /* Type */
+  --font-ui: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+
+  /* Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --radius-sm: 3px;
+  --radius-md: 4px;
+
+  --sidebar-w: 232px;
+  --topbar-h: 60px;
+
+  color-scheme: light;
+}
+
 /* Shared styles for common/ components: Button, StatCard, StatusBadge,
    DataTable, LoadingSpinner, EmptyState, ErrorMessage, ConfirmDialog. */
 
@@ -257,4 +325,87 @@
   background: var(--surface);
   font-size: 13px;
   color: var(--ink-700);
+
+  }
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink-900);
+  background-image:
+    linear-gradient(180deg, rgba(16,24,31,0.94), rgba(16,24,31,0.98)),
+    repeating-linear-gradient(115deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 42px);
+  padding: var(--space-5);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-7) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.auth-card.wide { max-width: 460px; }
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.auth-brand img { width: 40px; height: 40px; }
+.auth-brand h1 { font-size: 18px; }
+.auth-brand p { font-size: 12.5px; color: var(--ink-500); }
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.auth-foot {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink-500);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+
+h1, h2, h3, h4 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--ink-900);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+h1 { font-size: 22px; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+
+p { margin: 0; }
+
+a {
+  color: var(--brand-700);
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+code, .mono {
+  font-family: var(--font-mono);
 }

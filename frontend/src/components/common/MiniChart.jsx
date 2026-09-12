@@ -1,6 +1,6 @@
 // Lightweight dependency-free chart for report trend lines — avoids pulling
 // in a charting library for two small visualizations.
-export default function MiniChart({ values, color = 'var(--brand-500)', height = 64 }) {
+export default function MiniChart({ values, color = '#00236F', height = 64 }) {
   if (!values || values.length === 0) return null
   const max = Math.max(...values)
   const min = Math.min(...values)

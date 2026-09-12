@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Register application services
+
 builder.Services.AddControllers();
 
 builder.Services.AddSingleton<DatabaseConnection>();
@@ -15,43 +16,54 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<AuthService>();
 
+
 // JWT Authentication
+
 var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("JWT key is not configured.");
+    ?? throw new InvalidOperationException(
+        "JWT key is not configured.");
 
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]
-    ?? throw new InvalidOperationException("JWT issuer is not configured.");
+    ?? throw new InvalidOperationException(
+        "JWT issuer is not configured.");
 
 var jwtAudience = builder.Configuration["Jwt:Audience"]
-    ?? throw new InvalidOperationException("JWT audience is not configured.");
+    ?? throw new InvalidOperationException(
+        "JWT audience is not configured.");
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = jwtIssuer,
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = jwtIssuer,
 
-            ValidateAudience = true,
-            ValidAudience = jwtAudience,
+                ValidateAudience = true,
+                ValidAudience = jwtAudience,
 
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey)
-            ),
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)),
 
-            ValidateLifetime = true,
+                ValidateLifetime = true,
 
-            ClockSkew = TimeSpan.Zero
-        };
+                ClockSkew = TimeSpan.Zero
+            };
     });
 
+
 // Authorization
+
+
 builder.Services.AddAuthorization();
 
-// CORS - allow the React/Vite frontend
+
+// CORS
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -63,26 +75,41 @@ builder.Services.AddCors(options =>
     });
 });
 
+
 // OpenAPI
-builder.Services.AddOpenApi();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
+// Build application
 
 var app = builder.Build();
 
-// Configure HTTP request pipeline
+
+// HTTP request pipeline
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-// CORS must be before controllers/endpoints
+// CORS
 app.UseCors("Frontend");
 
 // Authentication must come before Authorization
 app.UseAuthentication();
+
 app.UseAuthorization();
 
+// HTTPS
 app.UseHttpsRedirection();
 
+// Controllers
 app.MapControllers();
+
+
+// Start application
 
 app.Run();

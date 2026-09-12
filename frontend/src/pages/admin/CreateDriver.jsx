@@ -5,12 +5,16 @@ import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import * as userService from '../../services/userService'
+import { useToast } from '../../context/ToastContext'
 import { isRequired, isValidEmail, isValidPassword, isValidUsername, isValidContactNumber } from '../../utils/validation'
 
 const EMPTY = { username: '', email: '', password: '', firstName: '', lastName: '', contactNumber: '' }
 
-// Priority 2 / US-01 — connects to POST /api/users/drivers.
+// US-01 — connects to POST /api/users/drivers. Form logic unchanged from
+// the original implementation; markup follows the Stitch
+// "admin_create_driver_us_01" screen.
 export default function CreateDriver() {
+  const { showToast } = useToast()
   const [form, setForm] = useState(EMPTY)
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -48,12 +52,14 @@ export default function CreateDriver() {
       setCreated(true)
       setForm(EMPTY)
       setFieldErrors({})
+      showToast('Driver account created successfully.', 'success')
     } catch (err) {
       if (err.fieldErrors) {
         setFieldErrors((f) => ({ ...f, ...err.fieldErrors }))
         setFormError('Please fix the highlighted fields.')
       } else {
         setFormError(err.message || 'Something went wrong. Please try again.')
+        showToast(err.message || 'Unable to create the driver account.', 'error')
       }
     } finally {
       setSubmitting(false)
@@ -62,19 +68,23 @@ export default function CreateDriver() {
 
   return (
     <AppShell title="Create Driver">
-      <div className="page-header">
-        <div>
-          <div className="page-header-title">Create Driver</div>
-          <p className="page-header-desc">Set up a new driver account. The driver will receive their login credentials separately.</p>
+      <div className="mb-6">
+        <div className="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant mb-1">
+          <span className="material-symbols-outlined text-base">person_add</span>
+          US-01 · Admin creates Driver account
         </div>
+        <h2 className="font-headline-lg text-headline-lg text-on-surface">Create Driver</h2>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+          Set up a new driver account. The driver will receive their login credentials separately.
+        </p>
       </div>
 
-      <div className="card card-pad" style={{ maxWidth: 560 }}>
-        <form className="stack" onSubmit={handleSubmit} noValidate style={{ gap: 'var(--space-4)' }}>
+      <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 max-w-2xl">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
           <ErrorMessage>{formError}</ErrorMessage>
           <SuccessMessage>{created ? 'Driver account created successfully.' : null}</SuccessMessage>
 
-          <div className="form-grid-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} required />
             <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} required />
           </div>
@@ -86,7 +96,7 @@ export default function CreateDriver() {
 
           <FormField label="Role" name="role" value="Driver" readOnly />
 
-          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+          <div className="flex flex-wrap gap-3 pt-2">
             <Button type="submit" loading={submitting}>{submitting ? 'Creating…' : 'Create driver'}</Button>
             {created && (
               <>

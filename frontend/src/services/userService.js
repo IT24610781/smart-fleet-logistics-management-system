@@ -6,7 +6,6 @@ export async function createDriver(payload) {
   return data
 }
 
-// NOT YET IMPLEMENTED BY THE BACKEND — endpoint name is a placeholder.
 export async function listDrivers() {
   const { data } = await api.get('/api/users/drivers')
   return data

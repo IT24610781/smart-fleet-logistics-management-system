@@ -7,10 +7,14 @@ namespace FleetVehicleService.Services;
 public class VehicleService
 {
     private readonly VehicleRepository _vehicleRepository;
+    private readonly IVehicleEventPublisher _eventPublisher;
 
-    public VehicleService(VehicleRepository vehicleRepository)
+    public VehicleService(
+        VehicleRepository vehicleRepository,
+        IVehicleEventPublisher eventPublisher)
     {
         _vehicleRepository = vehicleRepository;
+        _eventPublisher = eventPublisher;
     }
 
     // ============================================================
@@ -147,11 +151,22 @@ public class VehicleService
             throw new ValidationException(errors);
         }
 
-        vehicle.Type = type;
+                vehicle.Type = type;
         vehicle.Capacity = capacity;
+
+        // AC Scenario 2: publish only when the status actually changes,
+        // not on every edit (e.g. editing just the capacity shouldn't
+        // emit a status event).
+        var previousStatus = vehicle.Status;
         vehicle.Status = status;
 
         await _vehicleRepository.UpdateVehicleAsync(vehicle);
+
+        if (previousStatus != status)
+        {
+            await _eventPublisher.PublishStatusChangedAsync(
+                vehicle, previousStatus, status);
+        }
 
         return new VehicleResponse
         {

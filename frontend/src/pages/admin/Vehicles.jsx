@@ -5,9 +5,11 @@ import DataTable from '../../components/common/DataTable'
 import StatusBadge from '../../components/common/StatusBadge'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
-import { listVehicles } from '../../services/vehicleService'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
+import { listVehicles, deleteVehicle } from '../../services/vehicleService'
 
-// US-05: View Vehicle List 
+// US-05: View Vehicle List
+// US-07: Admin removes a vehicle from the registry
 
 export default function Vehicles() {
   const [query, setQuery] = useState('')
@@ -15,6 +17,10 @@ export default function Vehicles() {
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -45,6 +51,36 @@ export default function Vehicles() {
     })
   }, [query, status, vehicles])
 
+  function handleDeleteClick(vehicle) {
+    setDeleteError('')
+    setDeleteTarget(vehicle)
+  }
+
+  function handleCancelDelete() {
+    if (deleting) return
+    setDeleteTarget(null)
+    setDeleteError('')
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      await deleteVehicle(deleteTarget.id)
+      setVehicles((prev) => prev.filter((v) => v.id !== deleteTarget.id))
+      setDeleteTarget(null)
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Could not remove vehicle.'
+      setDeleteError(message)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const columns = [
     { key: 'registrationNo', header: 'Registration Number', render: (r) => <span className="cell-primary">{r.registrationNo}</span> },
     { key: 'type', header: 'Type' },
@@ -54,11 +90,21 @@ export default function Vehicles() {
       key: 'actions',
       header: '',
       render: (r) => (
-        <Link to={`/admin/vehicles/${r.id}/edit`} state={{ vehicle: r }} aria-label={`Edit ${r.registrationNo}`}>
-          <Button variant="ghost" type="button">
-            <Icon name="edit" size={15} className="icon" />
+        <div className="flex items-center gap-1">
+          <Link to={`/admin/vehicles/${r.id}/edit`} state={{ vehicle: r }} aria-label={`Edit ${r.registrationNo}`}>
+            <Button variant="ghost" type="button">
+              <Icon name="edit" size={15} className="icon" />
+            </Button>
+          </Link>
+          <Button
+            variant="ghost"
+            type="button"
+            aria-label={`Delete ${r.registrationNo}`}
+            onClick={() => handleDeleteClick(r)}
+          >
+            <Icon name="trash" size={15} className="icon" />
           </Button>
-        </Link>
+        </div>
       ),
     },
   ]
@@ -101,6 +147,24 @@ export default function Vehicles() {
       {!loading && !error && vehicles.length > 0 && (
         <DataTable columns={columns} rows={rows} emptyTitle="No vehicles found" emptyDescription="Try a different search or filter." />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Remove vehicle?"
+        body={
+          deleteError
+            ? deleteError
+            : deleteTarget
+              ? `This will permanently remove ${deleteTarget.registrationNo} from the registry.`
+              : ''
+        }
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </AppShell>
   )
 }

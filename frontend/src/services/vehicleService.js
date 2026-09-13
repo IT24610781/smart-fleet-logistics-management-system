@@ -28,3 +28,7 @@ export async function updateVehicle(id, form) {
   })
   return data
 }
+
+export async function deleteVehicle(id) {
+  await vehicleApi.delete(`/api/vehicles/${id}`)
+}

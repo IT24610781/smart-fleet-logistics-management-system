@@ -13,13 +13,8 @@ builder.Services.AddSingleton<DatabaseConnection>();
 builder.Services.AddScoped<VehicleRepository>();
 builder.Services.AddScoped<VehicleService>();
 builder.Services.AddSingleton<IVehicleEventPublisher, KafkaVehicleEventPublisher>();
+builder.Services.AddScoped<ITripEligibilityChecker, StubTripEligibilityChecker>();
 
-// JWT Authentication
-// NOTE: Key/Issuer/Audience must be IDENTICAL to AuthUserService's,
-// since tokens are minted by AuthUserService and only validated
-// (never issued) here. Copy the same Jwt section from
-// AuthUserService's appsettings.Development.json - do not generate
-// a new key for this service.
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT key is not configured.");
 
@@ -55,9 +50,6 @@ builder.Services
 // Authorization
 builder.Services.AddAuthorization();
 
-// CORS - allow the React/Vite frontend
-// Vite defaults to 5173 but auto-increments to 5174+ if that port is
-// already taken, so allow both rather than assuming one fixed port.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>

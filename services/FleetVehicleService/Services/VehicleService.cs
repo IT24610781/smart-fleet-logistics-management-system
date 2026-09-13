@@ -8,13 +8,16 @@ public class VehicleService
 {
     private readonly VehicleRepository _vehicleRepository;
     private readonly IVehicleEventPublisher _eventPublisher;
+    private readonly ITripEligibilityChecker _tripEligibilityChecker;
 
     public VehicleService(
         VehicleRepository vehicleRepository,
-        IVehicleEventPublisher eventPublisher)
+        IVehicleEventPublisher eventPublisher,
+        ITripEligibilityChecker tripEligibilityChecker)
     {
         _vehicleRepository = vehicleRepository;
         _eventPublisher = eventPublisher;
+        _tripEligibilityChecker = tripEligibilityChecker;
     }
 
     // ============================================================
@@ -151,12 +154,9 @@ public class VehicleService
             throw new ValidationException(errors);
         }
 
-                vehicle.Type = type;
+        vehicle.Type = type;
         vehicle.Capacity = capacity;
 
-        // AC Scenario 2: publish only when the status actually changes,
-        // not on every edit (e.g. editing just the capacity shouldn't
-        // emit a status event).
         var previousStatus = vehicle.Status;
         vehicle.Status = status;
 
@@ -199,5 +199,31 @@ public class VehicleService
             CreatedAt = vehicle.CreatedAt,
             UpdatedAt = vehicle.UpdatedAt
         }).ToList();
+    }
+
+
+    // ============================================================
+    // US-07: Admin removes a vehicle from the registry
+    // ============================================================
+
+    public async Task DeleteVehicleAsync(Guid id)
+    {
+        var vehicle = await _vehicleRepository.GetByIdAsync(id);
+
+        if (vehicle is null)
+        {
+            throw new NotFoundException(
+                $"No vehicle found with id '{id}'.");
+        }
+        var hasActiveOrUpcomingTrips =
+            await _tripEligibilityChecker.HasActiveOrUpcomingTripsAsync(id);
+
+        if (hasActiveOrUpcomingTrips)
+        {
+            throw new InvalidOperationException(
+                "Cannot remove a vehicle with active trips.");
+        }
+
+        await _vehicleRepository.DeleteVehicleAsync(id);
     }
 }

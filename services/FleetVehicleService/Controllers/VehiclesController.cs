@@ -92,4 +92,33 @@ public class VehiclesController : ControllerBase
 
         return Ok(vehicles);
     }
+
+
+    // =======US-07: Admin removes a vehicle from the registry
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteVehicle(Guid id)
+    {
+        try
+        {
+            await _vehicleService.DeleteVehicleAsync(id);
+
+            return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+    }
 }

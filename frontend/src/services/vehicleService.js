@@ -1,16 +1,10 @@
 // Fleet / Vehicle Service.
-// Own client pointed at FleetVehicleService's own port — separate from the
-// default api.js client (which points at AuthUserService), since there's
-// no API Gateway yet and each service runs on a different port in dev.
 import { createApiClient } from './api'
 
 const vehicleApi = createApiClient(
   import.meta.env.VITE_VEHICLE_API_URL || 'http://localhost:5041'
 )
 
-// createVehicle is wired to the real POST /api/vehicles endpoint.
-// listVehicles/updateVehicleStatus are kept as placeholders until
-// their backend endpoints exist — Vehicles.jsx still reads mock data.
 export async function createVehicle(form) {
   const { data } = await vehicleApi.post('/api/vehicles', {
     registrationNo: form.registrationNo,
@@ -25,7 +19,12 @@ export async function listVehicles() {
   return data
 }
 
-export async function updateVehicleStatus(vehicleId, status) {
-  const { data } = await vehicleApi.patch(`/api/vehicles/${vehicleId}/status`, { status })
+// US-06: full update of a vehicle's editable fields.
+export async function updateVehicle(id, form) {
+  const { data } = await vehicleApi.put(`/api/vehicles/${id}`, {
+    type: form.type,
+    capacity: form.capacity,
+    status: form.status,
+  })
   return data
 }

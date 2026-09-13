@@ -50,6 +50,17 @@ export default function Vehicles() {
     { key: 'type', header: 'Type' },
     { key: 'capacity', header: 'Capacity' },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
+    {
+      key: 'actions',
+      header: '',
+      render: (r) => (
+        <Link to={`/admin/vehicles/${r.id}/edit`} state={{ vehicle: r }} aria-label={`Edit ${r.registrationNo}`}>
+          <Button variant="ghost" type="button">
+            <Icon name="edit" size={15} className="icon" />
+          </Button>
+        </Link>
+      ),
+    },
   ]
 
   return (

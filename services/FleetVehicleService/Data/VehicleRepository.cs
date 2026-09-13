@@ -141,7 +141,6 @@ public class VehicleRepository
 
     // ============================================================
     // US-06: Update vehicle details/status
-    // Registration number is not updated
     // ============================================================
 
     public async Task UpdateVehicleAsync(Vehicle vehicle)
@@ -209,6 +208,31 @@ public class VehicleRepository
         }
 
         return vehicles;
+    }
+
+
+    // ============================================================
+    // US-07: Delete vehicle
+    // ============================================================
+
+    public async Task DeleteVehicleAsync(Guid id)
+    {
+        const string sql = """
+            DELETE FROM vehicles
+            WHERE id = @id;
+            """;
+
+        await using var connection =
+            _databaseConnection.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("@id", id.ToString());
+
+        await command.ExecuteNonQueryAsync();
     }
 
 

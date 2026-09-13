@@ -104,8 +104,17 @@ public class AdminSeeder
         insertCommand.Parameters.AddWithValue("@role", admin.Role);
         insertCommand.Parameters.AddWithValue("@is_active", admin.IsActive);
 
-        await insertCommand.ExecuteNonQueryAsync();
-
-        Console.WriteLine("Initial Admin account created successfully.");
+                try
+        {
+            await insertCommand.ExecuteNonQueryAsync();
+            Console.WriteLine("Initial Admin account created successfully.");
+        }
+        catch (MySqlException ex) when (ex.Number == 1062)
+        {
+           
+            Console.WriteLine(
+                "Initial Admin was created concurrently by another " +
+                "process. Skipping.");
+        }
     }
 }

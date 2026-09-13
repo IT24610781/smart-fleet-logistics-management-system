@@ -12,6 +12,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton<DatabaseConnection>();
 builder.Services.AddScoped<VehicleRepository>();
 builder.Services.AddScoped<VehicleService>();
+builder.Services.AddSingleton<IVehicleEventPublisher, KafkaVehicleEventPublisher>();
 
 // JWT Authentication
 // NOTE: Key/Issuer/Audience must be IDENTICAL to AuthUserService's,

@@ -56,7 +56,7 @@ public class LoginPageTests : SeleniumTestBase
         Driver.FindElement(By.Id("password")).SendKeys("TotallyWrongPassword");
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
 
-        var errorBanner = Wait.Until(d => d.FindElement(By.CssSelector(".error-banner")));
+        var errorBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='alert']")));
         Assert.Contains("Invalid username or password.", errorBanner.Text);
 
         Assert.Contains("/login", Driver.Url);
@@ -72,7 +72,7 @@ public class LoginPageTests : SeleniumTestBase
         Driver.FindElement(By.Id("password")).SendKeys("whatever123");
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
 
-        var errorBanner = Wait.Until(d => d.FindElement(By.CssSelector(".error-banner")));
+        var errorBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='alert']")));
         Assert.Contains("Invalid username or password.", errorBanner.Text);
     }
 

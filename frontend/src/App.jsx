@@ -9,6 +9,8 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import Drivers from './pages/admin/Drivers'
 import CreateDriver from './pages/admin/CreateDriver'
 import Vehicles from './pages/admin/Vehicles'
+import AddVehicle from './pages/admin/AddVehicle'
+import EditVehicle from './pages/admin/EditVehicle'
 
 import DispatcherDashboard from './pages/dispatcher/DispatcherDashboard'
 import Trips from './pages/dispatcher/Trips'
@@ -48,6 +50,8 @@ export default function App() {
       <Route path="/admin/drivers" element={<ProtectedRoute allowedRoles={['Admin']}><Drivers /></ProtectedRoute>} />
       <Route path="/admin/drivers/create" element={<ProtectedRoute allowedRoles={['Admin']}><CreateDriver /></ProtectedRoute>} />
       <Route path="/admin/vehicles" element={<ProtectedRoute allowedRoles={['Admin']}><Vehicles /></ProtectedRoute>} />
+      <Route path="/admin/vehicles/create" element={<ProtectedRoute allowedRoles={['Admin']}><AddVehicle /></ProtectedRoute>} />
+      <Route path="/admin/vehicles/:id/edit" element={<ProtectedRoute allowedRoles={['Admin']}><EditVehicle /></ProtectedRoute>} />
       <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['Admin']}><Reports /></ProtectedRoute>} />
 
       {/* Dispatcher */}

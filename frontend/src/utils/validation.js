@@ -21,3 +21,9 @@ export function isValidContactNumber(value) {
   const digits = value.replace(/\D/g, '')
   return digits.length >= 7 && digits.length <= 15
 }
+
+export function isValidCapacity(value) {
+  // Must be a whole positive number - matches AC Scenario 3
+  // ("invalid non-numeric capacity" must be rejected).
+  return /^\d+$/.test(String(value).trim()) && Number(value) > 0
+}

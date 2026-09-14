@@ -22,6 +22,7 @@ export async function listVehicles() {
 // US-06: full update of a vehicle's editable fields.
 export async function updateVehicle(id, form) {
   const { data } = await vehicleApi.put(`/api/vehicles/${id}`, {
+    registrationNo: form.registrationNo,
     type: form.type,
     capacity: form.capacity,
     status: form.status,

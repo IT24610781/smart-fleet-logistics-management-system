@@ -6,7 +6,7 @@ CREATE TABLE vehicles (
     id CHAR(36) NOT NULL,
     registration_no VARCHAR(20) NOT NULL,
     type VARCHAR(50) NOT NULL,
-    capacity INT NOT NULL,
+    capacity VARCHAR(50) NOT NULL,
 
     status VARCHAR(50) NOT NULL DEFAULT 'Available'
         CHECK (status IN ('Available', 'On Trip', 'Under Maintenance')),

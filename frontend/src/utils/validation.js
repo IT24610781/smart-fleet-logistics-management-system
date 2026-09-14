@@ -23,7 +23,5 @@ export function isValidContactNumber(value) {
 }
 
 export function isValidCapacity(value) {
-  // Must be a whole positive number - matches AC Scenario 3
-  // ("invalid non-numeric capacity" must be rejected).
-  return /^\d+$/.test(String(value).trim()) && Number(value) > 0
+  return isRequired(value)
 }

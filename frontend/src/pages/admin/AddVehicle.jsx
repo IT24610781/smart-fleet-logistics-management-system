@@ -5,7 +5,7 @@ import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import * as vehicleService from '../../services/vehicleService'
-import { isRequired, isValidCapacity } from '../../utils/validation'
+import { isRequired } from '../../utils/validation'
 
 const EMPTY = { registrationNo: '', type: '', capacity: '' }
 
@@ -25,7 +25,7 @@ export default function AddVehicle() {
     const errs = {}
     if (!isRequired(form.registrationNo)) errs.registrationNo = 'Registration number is required.'
     if (!isRequired(form.type)) errs.type = 'Vehicle type is required.'
-    if (!isValidCapacity(form.capacity)) errs.capacity = 'Capacity must be a valid positive number.'
+    if (!isRequired(form.capacity)) errs.capacity = 'Capacity is required.'
     return errs
   }
 

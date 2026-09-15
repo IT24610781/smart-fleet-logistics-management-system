@@ -12,9 +12,11 @@ export default function DataTable({ columns, rows, loading, emptyTitle = 'Nothin
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="text-left px-4 py-3 font-label-md text-label-md uppercase tracking-wide text-on-surface-variant"
-                >
-                  {col.header}
+                     className={`px-4 py-3 font-label-md text-label-md uppercase tracking-wide text-on-surface-variant ${
+                       col.align === 'right' ? 'text-right' : 'text-left'
+                       }`}
+>
+                      {col.header}
                 </th>
               ))}
             </tr>

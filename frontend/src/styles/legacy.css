@@ -105,7 +105,7 @@
 .btn-sm { height: 30px; padding: 0 var(--space-3); font-size: 12.5px; }
 .btn-block { width: 100%; }
 
-/* --- Card (generic panel used across pages) --- */
+/* --- Card --- */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -287,7 +287,7 @@
 .dialog-body { font-size: 13.5px; color: var(--ink-500); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
 
-/* --- PageHeader (used across pages) --- */
+/* --- PageHeader --- */
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -298,6 +298,9 @@
 }
 .page-header-title { font-size: 20px; font-weight: 700; color: var(--ink-900); margin-bottom: 2px; }
 .page-header-desc { font-size: 13px; color: var(--ink-500); max-width: 60ch; }
+
+.page-status-text { font-size: 13.5px; color: var(--ink-500); padding: 32px 0; text-align: center; }
+.page-status-error { color: var(--error); }
 .page-header-actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
 
 .section-title { font-size: 14px; font-weight: 600; color: var(--ink-900); margin-bottom: var(--space-3); }
@@ -322,7 +325,8 @@
   background: var(--surface);
   font-size: 13px;
   color: var(--ink-700);
-}
+
+  }
 
 .auth-page {
   min-height: 100vh;
@@ -361,7 +365,11 @@
 .auth-brand h1 { font-size: 18px; }
 .auth-brand p { font-size: 12.5px; color: var(--ink-500); }
 
-.auth-form { display: flex; flex-direction: column; gap: var(--space-4); }
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
 
 .auth-foot {
   text-align: center;
@@ -371,12 +379,7 @@
   border-top: 1px solid var(--border);
 }
 
-/* --- Base element styles the legacy pages rely on (Tailwind's preflight
-   resets element defaults, so these are restored explicitly here). Plain
-   element selectors have LOWER specificity than any Tailwind utility
-   class, so every page/component already migrated to Tailwind classes is
-   unaffected — these rules only ever "fill in" elements that have no
-   utility classes of their own, which is exactly the legacy pages. --- */
+
 h1, h2, h3, h4 {
   font-family: var(--font-ui);
   font-weight: 600;
@@ -384,11 +387,25 @@ h1, h2, h3, h4 {
   margin: 0;
   letter-spacing: -0.01em;
 }
+
 h1 { font-size: 22px; }
 h2 { font-size: 18px; }
 h3 { font-size: 15px; }
+
 p { margin: 0; }
-a { color: var(--brand-700); text-decoration: none; }
+
+a {
+  color: var(--brand-700);
+  text-decoration: none;
+}
+
 a:hover { text-decoration: underline; }
-table { border-collapse: collapse; width: 100%; }
-code, .mono { font-family: var(--font-mono); }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+code, .mono {
+  font-family: var(--font-mono);
+}

@@ -21,3 +21,7 @@ export function isValidContactNumber(value) {
   const digits = value.replace(/\D/g, '')
   return digits.length >= 7 && digits.length <= 15
 }
+
+export function isValidCapacity(value) {
+  return isRequired(value)
+}

@@ -16,8 +16,6 @@ const TONE = {
   idle: 'bg-surface-container text-on-surface-variant',
 }
 
-// One place mapping a status string to a tone, reused by every table/badge
-// across Admin, Dispatcher and Driver pages.
 export default function StatusBadge({ status }) {
   const tone = TONE[String(status).toLowerCase()] || 'bg-surface-container text-on-surface-variant'
   return (

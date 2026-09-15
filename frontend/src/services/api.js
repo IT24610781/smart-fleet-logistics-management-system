@@ -1,3 +1,5 @@
+// Central HTTP client. Every service module goes through this file so the
+// base URL, auth header, and error shape only need to be handled once.
 import axios from 'axios'
 
 const baseURL =
@@ -10,6 +12,7 @@ const api = axios.create({
   },
 })
 
+// Attach the JWT to every outgoing request, if we have one.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('smartfleet_token')
 
@@ -20,6 +23,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Normalize errors into a shape the UI can render without knowing about axios.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -30,6 +34,8 @@ api.interceptors.response.use(
     let fieldErrors = null
 
     if (status === 400 && data?.errors) {
+      // ASP.NET model-validation shape:
+      // { errors: { Field: [msg, ...] } }
       fieldErrors = data.errors
       message = 'Please fix the highlighted fields.'
     } else if (status === 401) {
@@ -37,6 +43,7 @@ api.interceptors.response.use(
     } else if (status === 403) {
       message = 'You are not authorized to access this page.'
     } else if (status === 409) {
+      // Conflict — e.g. duplicate username/email
       message =
         data?.message || 'That username or email is already in use.'
     } else if (error.code === 'ERR_NETWORK') {

@@ -5,7 +5,7 @@ import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import * as vehicleService from '../../services/vehicleService'
-import { isRequired, isValidCapacity } from '../../utils/validation'
+import { isRequired } from '../../utils/validation'
 
 const STATUSES = ['Available', 'On Trip', 'Under Maintenance']
 
@@ -18,8 +18,8 @@ export default function EditVehicle() {
 
   const [form, setForm] = useState(
     vehicle
-      ? { type: vehicle.type, capacity: String(vehicle.capacity), status: vehicle.status }
-      : { type: '', capacity: '', status: 'Available' }
+      ? { registrationNo: vehicle.registrationNo, type: vehicle.type, capacity: String(vehicle.capacity), status: vehicle.status }
+      : { registrationNo: '', type: '', capacity: '', status: 'Available' }
   )
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -32,8 +32,9 @@ export default function EditVehicle() {
 
   function validate() {
     const errs = {}
+    if (!isRequired(form.registrationNo)) errs.registrationNo = 'Registration number is required.'
     if (!isRequired(form.type)) errs.type = 'Vehicle type is required.'
-    if (!isValidCapacity(form.capacity)) errs.capacity = 'Capacity must be a valid positive number.'
+    if (!isRequired(form.capacity)) errs.capacity = 'Capacity is required.'
     if (!isRequired(form.status)) errs.status = 'Status is required.'
     return errs
   }
@@ -97,7 +98,7 @@ export default function EditVehicle() {
           <ErrorMessage>{formError}</ErrorMessage>
           <SuccessMessage>{saved ? 'Vehicle updated successfully.' : null}</SuccessMessage>
 
-          <FormField label="Registration number" name="registrationNo" value={vehicle.registrationNo} readOnly />
+          <FormField label="Registration number" name="registrationNo" value={form.registrationNo} onChange={update('registrationNo')} error={fieldErrors.registrationNo} required autoComplete="off" />
           <FormField label="Vehicle type" name="type" value={form.type} onChange={update('type')} error={fieldErrors.type} required placeholder="e.g. Van, Truck, Motorbike" />
           <FormField label="Capacity" name="capacity" value={form.capacity} onChange={update('capacity')} error={fieldErrors.capacity} required hint="Number of passengers or load units" />
 

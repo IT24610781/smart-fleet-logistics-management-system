@@ -145,29 +145,31 @@ public class VehicleRepository
 
     public async Task UpdateVehicleAsync(Vehicle vehicle)
     {
-        const string sql = """
-            UPDATE vehicles
-            SET
-                type = @type,
-                capacity = @capacity,
-                status = @status
-            WHERE id = @id;
-            """;
+    const string sql = """
+        UPDATE vehicles
+        SET
+            registration_no = @registration_no,
+            type = @type,
+            capacity = @capacity,
+            status = @status
+        WHERE id = @id;
+        """;
 
-        await using var connection =
-            _databaseConnection.CreateConnection();
+    await using var connection =
+        _databaseConnection.CreateConnection();
 
-        await connection.OpenAsync();
+    await connection.OpenAsync();
 
-        await using var command =
-            new MySqlCommand(sql, connection);
+    await using var command =
+        new MySqlCommand(sql, connection);
 
-        command.Parameters.AddWithValue("@id", vehicle.Id.ToString());
-        command.Parameters.AddWithValue("@type", vehicle.Type);
-        command.Parameters.AddWithValue("@capacity", vehicle.Capacity);
-        command.Parameters.AddWithValue("@status", vehicle.Status);
+    command.Parameters.AddWithValue("@id", vehicle.Id.ToString());
+    command.Parameters.AddWithValue("@registration_no", vehicle.RegistrationNo);
+    command.Parameters.AddWithValue("@type", vehicle.Type);
+    command.Parameters.AddWithValue("@capacity", vehicle.Capacity);
+    command.Parameters.AddWithValue("@status", vehicle.Status);
 
-        await command.ExecuteNonQueryAsync();
+    await command.ExecuteNonQueryAsync();
     }
 
     // ============================================================
@@ -250,7 +252,7 @@ public class VehicleRepository
 
             Type = reader.GetString("type"),
 
-            Capacity = reader.GetInt32("capacity"),
+            Capacity = reader.GetString("capacity"),
 
             Status = reader.GetString("status"),
 

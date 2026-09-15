@@ -230,4 +230,15 @@ public class UserService
             UpdatedAt = user.UpdatedAt
         };
     }
+
+    public async Task<UserResponse> GetUserByIdAsync(Guid userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+
+        if (user == null)
+            throw new KeyNotFoundException(
+                "User not found.");
+
+        return ToUserResponse(user);
+    }
 }

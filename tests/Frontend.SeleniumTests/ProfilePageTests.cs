@@ -82,7 +82,7 @@ public class ProfilePageTests : SeleniumTestBase
 
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
 
-        var successBanner = Wait.Until(d => d.FindElement(By.CssSelector(".success-banner")));
+        var successBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='status']")));
         Assert.Contains("Profile updated successfully.", successBanner.Text);
 
         // Reflected immediately on the page without a reload.
@@ -121,7 +121,7 @@ public class ProfilePageTests : SeleniumTestBase
         Assert.Contains("First name is required.", inlineError.Text);
 
         // No success banner should ever appear.
-        var successBanners = Driver.FindElements(By.CssSelector(".success-banner"));
+        var successBanners = Driver.FindElements(By.CssSelector("[role='status']"));
         Assert.Empty(successBanners);
 
         // Reload and confirm nothing was saved (the field is back to
@@ -166,7 +166,7 @@ public class ProfilePageTests : SeleniumTestBase
 
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
 
-        var successBanner = Wait.Until(d => d.FindElement(By.CssSelector(".success-banner")));
+        var successBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='status']")));
         Assert.Contains("Profile updated successfully.", successBanner.Text);
 
         // AC: "I remain logged in with my current session (no forced
@@ -199,7 +199,7 @@ public class ProfilePageTests : SeleniumTestBase
         var inlineError = Wait.Until(d => d.FindElement(By.Id("confirmPassword-error")));
         Assert.Contains("Passwords do not match.", inlineError.Text);
 
-        var successBanners = Driver.FindElements(By.CssSelector(".success-banner"));
+        var successBanners = Driver.FindElements(By.CssSelector("[role='status']"));
         Assert.Empty(successBanners);
     }
 }

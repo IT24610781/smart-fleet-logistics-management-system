@@ -34,18 +34,30 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Load test schema into MySQL
+      - name: Load Auth test schema into MySQL
         run: |
-          sed 's/fleet_identity_db/fleet_identity_db_test/g' database/auth-user/schema.sql > /tmp/schema.test.sql
-          mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/schema.test.sql
+          sed 's/fleet_identity_db/fleet_identity_db_test/g' database/auth-user/schema.sql > /tmp/auth-schema.test.sql
+          mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/auth-schema.test.sql
+      - name: Load Fleet test schema into MySQL
+        run: |
+          sed 's/fleet_vehicle_db/fleet_vehicle_db_test/g' database/fleet-vehicle/schema.sql > /tmp/fleet-schema.test.sql
+          mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/fleet-schema.test.sql
       - name: Restore
         run: dotnet restore SmartFleet.slnx
       - name: Build
         run: dotnet build SmartFleet.slnx --no-restore
-      - name: Test
+      - name: Test AuthUserService
         env:
           ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=test_root_password;"
-        run: dotnet test SmartFleet.slnx --no-build
+        run: dotnet test tests/AuthUserService.Tests --no-build
+      - name: Test FleetVehicleService
+        env:
+          ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_vehicle_db_test;Uid=root;Pwd=test_root_password;"
+        run: dotnet test tests/FleetVehicleService.Tests --no-build
+      - name: Test remaining projects
+        run: |
+          dotnet test tests/TrackingTelemetryService.Tests --no-build
+          dotnet test tests/TripDispatchService.Tests --no-build
 
   docker-build:
     name: Docker Build Check

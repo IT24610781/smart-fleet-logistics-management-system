@@ -117,6 +117,7 @@ public class VehicleDeleteEndpointTests : IClassFixture<CustomWebApplicationFact
 
         var setOnTrip = new UpdateVehicleRequest
         {
+            RegistrationNo = vehicle.RegistrationNo,
             Type = vehicle.Type,
             Capacity = vehicle.Capacity.ToString(),
             Status = "On Trip"

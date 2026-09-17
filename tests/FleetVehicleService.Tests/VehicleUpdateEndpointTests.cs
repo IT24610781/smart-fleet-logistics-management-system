@@ -44,6 +44,7 @@ public class VehicleUpdateEndpointTests : IClassFixture<CustomWebApplicationFact
 
         var update = new UpdateVehicleRequest
         {
+            RegistrationNo = vehicle.RegistrationNo,
             Type = "Truck",
             Capacity = "12",
             Status = "Available"
@@ -55,7 +56,7 @@ public class VehicleUpdateEndpointTests : IClassFixture<CustomWebApplicationFact
 
         var body = await response.Content.ReadFromJsonAsync<VehicleResponse>();
         Assert.Equal("Truck", body!.Type);
-        Assert.Equal(12, body.Capacity);
+        Assert.Equal("12", body.Capacity);
     }
 
     [Fact]
@@ -139,6 +140,7 @@ public class VehicleUpdateEndpointTests : IClassFixture<CustomWebApplicationFact
 
         var update = new UpdateVehicleRequest
         {
+            RegistrationNo = vehicle.RegistrationNo,
             Type = vehicle.Type,
             Capacity = vehicle.Capacity.ToString(),
             Status = "Under Maintenance"
@@ -163,6 +165,7 @@ public class VehicleUpdateEndpointTests : IClassFixture<CustomWebApplicationFact
 
         var update = new UpdateVehicleRequest
         {
+            RegistrationNo = vehicle.RegistrationNo,
             Type = vehicle.Type,
             Capacity = vehicle.Capacity.ToString(),
             Status = vehicle.Status

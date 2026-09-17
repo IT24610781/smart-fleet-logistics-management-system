@@ -48,6 +48,10 @@ public class VehicleService
     {
         errors["capacity"] = "Capacity is required.";
     }
+    else if (!int.TryParse(capacity, out var capacityValue) || capacityValue <= 0)
+{
+    errors["capacity"] = "Capacity must be a positive number.";
+}
 
     if (errors.Count > 0)
     {
@@ -125,6 +129,10 @@ public class VehicleService
     {
         errors["capacity"] = "Capacity is required.";
     }
+    else if (!int.TryParse(capacity, out var capacityValue) || capacityValue <= 0)
+{
+    errors["capacity"] = "Capacity must be a positive number.";
+}
 
     var status = request.Status?.Trim() ?? string.Empty;
 

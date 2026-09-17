@@ -59,6 +59,32 @@ jobs:
           dotnet test tests/TrackingTelemetryService.Tests --no-build
           dotnet test tests/TripDispatchService.Tests --no-build
 
+  frontend-check:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Frontend Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build Frontend
+        working-directory: frontend
+        run: npm run build
+
   docker-build:
     name: Docker Build Check
     runs-on: ubuntu-latest
@@ -67,10 +93,12 @@ jobs:
         uses: actions/checkout@v4
       - name: Build Auth Service Docker Image
         run: docker build -t auth-service:ci ./services/AuthUserService
+      - name: Build Fleet Service Docker Image
+        run: docker build -t fleet-service:ci ./services/FleetVehicleService
 
   deploy:
     name: Deploy to Azure (Auth Service)
-    needs: [build-test, docker-build]
+    needs: [build-test, frontend-check, docker-build]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
@@ -91,3 +119,39 @@ jobs:
           app-name: smart-fleet-auth-service
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./publish
+
+  fleet-deploy:
+    name: Deploy Fleet Service to Azure
+    needs: [build-test, frontend-check, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: az acr login --name smartfleetacr 
+
+      - name: Build Fleet Docker Image
+        run: docker build -t smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }} ./services/FleetVehicleService
+
+      - name: Push Fleet Docker Image
+        run: docker push smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }}
+
+      - name: Deploy Fleet Container
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: smart-fleet-vehicle-container
+          images: smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }}

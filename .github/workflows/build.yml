@@ -119,3 +119,39 @@ jobs:
           app-name: smart-fleet-auth-service
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./publish
+
+  fleet-deploy:
+    name: Deploy Fleet Service to Azure
+    needs: [build-test, frontend-check, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: az acr login --name smartfleetacr 
+
+      - name: Build Fleet Docker Image
+        run: docker build -t smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }} ./services/FleetVehicleService
+
+      - name: Push Fleet Docker Image
+        run: docker push smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }}
+
+      - name: Deploy Fleet Container
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: smart-fleet-vehicle-container
+          images: smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }}

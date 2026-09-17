@@ -118,7 +118,7 @@ export default function Vehicles() {
           <p className="page-header-desc">Fleet inventory and current status, live from the Fleet Service.</p>
         </div>
         <div className="page-header-actions">
-          <Link to="/admin/vehicles/create"><Button variant="accent">+ Add Vehicle</Button></Link>
+          <Link to="/admin/vehicles/create"><Button variant="accent">Add Vehicle</Button></Link>
         </div>
       </div>
 

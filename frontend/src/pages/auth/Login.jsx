@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import FormField from '../../components/forms/FormField'
@@ -20,7 +20,6 @@ export default function Login() {
   const { login } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -41,7 +40,7 @@ export default function Login() {
     try {
       const user = await login(username.trim(), password)
       showToast('Signed in successfully.', 'success')
-      const redirectTo = location.state?.from?.pathname || HOME_BY_ROLE[user.role] || '/login'
+      const redirectTo = HOME_BY_ROLE[user.role] || '/login'
       navigate(redirectTo, { replace: true })
     } catch (err) {
       setError(err.message || 'Invalid username or password.')

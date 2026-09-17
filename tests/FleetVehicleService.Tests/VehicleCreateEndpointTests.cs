@@ -42,7 +42,7 @@ public class VehicleCreateEndpointTests : IClassFixture<CustomWebApplicationFact
         Assert.NotNull(body);
         Assert.Equal(request.RegistrationNo, body!.RegistrationNo);
         Assert.Equal("Van", body.Type);
-        Assert.Equal(8, body.Capacity);
+        Assert.Equal("8", body.Capacity);
         Assert.Equal("Available", body.Status);
     }
 

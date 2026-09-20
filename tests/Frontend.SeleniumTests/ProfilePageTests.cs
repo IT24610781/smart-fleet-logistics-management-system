@@ -15,6 +15,18 @@ namespace Frontend.SeleniumTests;
 /// A test driver account is seeded automatically once per test run
 /// via SeededDriverFixture (see TestDataSeeder.cs) — you don't need to
 /// create one manually.
+///
+/// HOW THE PAGE WORKS (redesigned):
+///   - VIEW mode shows the details as plain text: <dd id="view-firstName">,
+///     view-lastName, view-username, view-email, view-contactNumber, view-role.
+///   - Clicking "Edit details" (id="edit-profile-button") switches to EDIT
+///     mode: inputs #firstName, #lastName, #contactNumber are editable;
+///     #username, #email, #role are read-only. "Save changes" is the
+///     submit button; "Cancel" is id="cancel-edit-button" and asks for
+///     confirmation ("Discard changes") when something was changed.
+///   - There are NO password fields on this page. A logged-in session must
+///     not be able to change the password without re-verifying the current
+///     one, so the old ChangePassword_* tests were removed with the feature.
 /// </summary>
 [Collection("Selenium collection")]
 public class ProfilePageTests : SeleniumTestBase
@@ -26,35 +38,82 @@ public class ProfilePageTests : SeleniumTestBase
         _seeded = seeded;
     }
 
+    // ---------- helpers ----------
+
+    private void OpenProfile()
+    {
+        Driver.Navigate().GoToUrl($"{FrontendBaseUrl}/profile");
+    }
+
+    // Text shown in VIEW mode for a field (firstName, lastName, email, ...).
+    private string ViewText(string field)
+    {
+        return Wait.Until(d => d.FindElement(By.Id($"view-{field}"))).Text;
+    }
+
+    private void ClickEditDetails()
+    {
+        Wait.Until(d => d.FindElement(By.Id("edit-profile-button"))).Click();
+        Wait.Until(d => d.FindElement(By.Id("firstName")));
+    }
+
+    // NOTE: WebDriver's native .Clear() sometimes doesn't fire the
+    // events a React-controlled input listens for, leaving React's
+    // internal state out of sync with the visible DOM value. Using
+    // real keyboard input (select-all + delete) instead guarantees
+    // proper onChange events fire, exactly like a real user typing.
+    private static void ClearField(IWebElement field)
+    {
+        field.SendKeys(Keys.Control + "a");
+        field.SendKeys(Keys.Delete);
+    }
+
     // ============================================================
     // Scenario 1 - View profile
     // ============================================================
 
     [Fact]
-    public void ViewProfile_ShowsCurrentNameEmailAndContactNumber()
+    public void ViewProfile_ShowsCurrentDetailsAsReadOnlyText()
     {
         LoginAs(_seeded.Username, _seeded.Password);
 
-        // Navigate via the real UI element, not a direct URL — this is
-        // literally what the AC describes ("navigate to My Profile").
-        Driver.FindElement(By.CssSelector(".topbar-user")).Click();
+        // Navigate via the real UI element (the user chip in the top bar),
+        // not a direct URL — this is literally what the AC describes
+        // ("navigate to My Profile").
+        Driver.FindElement(By.CssSelector("header a[href='/profile']")).Click();
 
         Wait.Until(d => d.Url.Contains("/profile"));
 
-        var firstName = Wait.Until(d => d.FindElement(By.Id("firstName")));
-        var lastName = Driver.FindElement(By.Id("lastName"));
-        var email = Driver.FindElement(By.Id("email"));
-        var contactNumber = Driver.FindElement(By.Id("contactNumber"));
+        Assert.Equal("Selenium", ViewText("firstName"));
+        Assert.Equal("Tester", ViewText("lastName"));
+        Assert.Equal("selenium_test_driver@example.com", ViewText("email"));
+        Assert.Equal("0770000000", ViewText("contactNumber"));
 
-        Assert.Equal("Selenium", firstName.GetAttribute("value"));
-        Assert.Equal("Tester", lastName.GetAttribute("value"));
-        Assert.Equal("selenium_test_driver@example.com", email.GetAttribute("value"));
-        Assert.Equal("0770000000", contactNumber.GetAttribute("value"));
+        // View mode is plain text: no editable inputs until "Edit details".
+        Assert.Empty(Driver.FindElements(By.Id("firstName")));
+        Assert.True(Driver.FindElement(By.Id("edit-profile-button")).Displayed);
+    }
+
+    [Fact]
+    public void EditDetails_EmailUsernameAndRoleAreReadOnly_NameAndContactAreEditable()
+    {
+        LoginAs(_seeded.Username, _seeded.Password);
+        OpenProfile();
+        ClickEditDetails();
 
         // DoD: "Email address is read-only". Confirm the input itself
-        // is actually disabled/read-only in the DOM, not just
-        // convention.
-        Assert.NotNull(email.GetAttribute("readonly"));
+        // is actually read-only in the DOM, not just convention.
+        Assert.NotNull(Driver.FindElement(By.Id("email")).GetAttribute("readonly"));
+        Assert.NotNull(Driver.FindElement(By.Id("username")).GetAttribute("readonly"));
+        Assert.NotNull(Driver.FindElement(By.Id("role")).GetAttribute("readonly"));
+
+        Assert.Null(Driver.FindElement(By.Id("firstName")).GetAttribute("readonly"));
+        Assert.Null(Driver.FindElement(By.Id("lastName")).GetAttribute("readonly"));
+        Assert.Null(Driver.FindElement(By.Id("contactNumber")).GetAttribute("readonly"));
+
+        // Inputs are pre-filled with the current values.
+        Assert.Equal("Selenium", Driver.FindElement(By.Id("firstName")).GetAttribute("value"));
+        Assert.Equal("selenium_test_driver@example.com", Driver.FindElement(By.Id("email")).GetAttribute("value"));
     }
 
     // ============================================================
@@ -66,18 +125,13 @@ public class ProfilePageTests : SeleniumTestBase
     {
         var (username, password) = await TestDataSeeder.CreateFreshDriverAsync("upd");
         LoginAs(username, password);
-        Driver.Navigate().GoToUrl($"{FrontendBaseUrl}/profile");
+        OpenProfile();
+        ClickEditDetails();
 
-        var lastNameField = Wait.Until(d => d.FindElement(By.Id("lastName")));
+        var lastNameField = Driver.FindElement(By.Id("lastName"));
         var newLastName = $"Updated{Guid.NewGuid():N}"[..12];
 
-        // NOTE: WebDriver's native .Clear() sometimes doesn't fire the
-        // events a React-controlled input listens for, leaving React's
-        // internal state out of sync with the visible DOM value. Using
-        // real keyboard input (select-all + delete) instead guarantees
-        // proper onChange events fire, exactly like a real user typing.
-        lastNameField.SendKeys(Keys.Control + "a");
-        lastNameField.SendKeys(Keys.Delete);
+        ClearField(lastNameField);
         lastNameField.SendKeys(newLastName);
 
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
@@ -85,15 +139,13 @@ public class ProfilePageTests : SeleniumTestBase
         var successBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='status']")));
         Assert.Contains("Profile updated successfully.", successBanner.Text);
 
-        // Reflected immediately on the page without a reload.
-        var lastNameAfterSave = Driver.FindElement(By.Id("lastName"));
-        Assert.Equal(newLastName, lastNameAfterSave.GetAttribute("value"));
+        // Back in view mode, reflected immediately without a reload.
+        Assert.Equal(newLastName, ViewText("lastName"));
 
         // Reflected after a real reload too (proves persistence, not
         // just optimistic local state).
         Driver.Navigate().Refresh();
-        var lastNameAfterReload = Wait.Until(d => d.FindElement(By.Id("lastName")));
-        Assert.Equal(newLastName, lastNameAfterReload.GetAttribute("value"));
+        Assert.Equal(newLastName, ViewText("lastName"));
     }
 
     // ============================================================
@@ -105,13 +157,13 @@ public class ProfilePageTests : SeleniumTestBase
     {
         var (username, password) = await TestDataSeeder.CreateFreshDriverAsync("inv");
         LoginAs(username, password);
-        Driver.Navigate().GoToUrl($"{FrontendBaseUrl}/profile");
+        OpenProfile();
 
-        var firstNameField = Wait.Until(d => d.FindElement(By.Id("firstName")));
-        var originalValue = firstNameField.GetAttribute("value");
+        var originalValue = ViewText("firstName");
+        Assert.NotEqual(string.Empty, originalValue);
 
-        firstNameField.SendKeys(Keys.Control + "a");
-        firstNameField.SendKeys(Keys.Delete);
+        ClickEditDetails();
+        ClearField(Driver.FindElement(By.Id("firstName")));
 
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
 
@@ -121,85 +173,62 @@ public class ProfilePageTests : SeleniumTestBase
         Assert.Contains("First name is required.", inlineError.Text);
 
         // No success banner should ever appear.
-        var successBanners = Driver.FindElements(By.CssSelector("[role='status']"));
-        Assert.Empty(successBanners);
+        Assert.Empty(Driver.FindElements(By.CssSelector("[role='status']")));
 
-        // Reload and confirm nothing was saved (the field is back to
-        // whatever was actually persisted, not left blank).
+        // Reload and confirm nothing was saved (back to whatever was
+        // actually persisted, not left blank).
         Driver.Navigate().Refresh();
-        var firstNameAfterReload = Wait.Until(d => d.FindElement(By.Id("firstName")));
-        Assert.Equal(originalValue, firstNameAfterReload.GetAttribute("value"));
-        Assert.NotEqual(string.Empty, firstNameAfterReload.GetAttribute("value"));
+        Assert.Equal(originalValue, ViewText("firstName"));
     }
 
     // ============================================================
-    // Scenario 4 - Password change
+    // Scenario 4 - Cancel discards unsaved changes
     // ============================================================
 
     [Fact]
-    public async Task ChangePassword_ValidNewPassword_SucceedsAndStaysLoggedIn()
+    public async Task EditDetails_Cancel_AsksToConfirmAndDiscardsChanges()
     {
-        // Uses its own fresh account — password changes must never
-        // touch the shared fixture account other tests depend on.
-        var (username, originalPassword) = await TestDataSeeder.CreateFreshDriverAsync("pwd");
-        LoginAs(username, originalPassword);
-        Driver.Navigate().GoToUrl($"{FrontendBaseUrl}/profile");
+        var (username, password) = await TestDataSeeder.CreateFreshDriverAsync("cnl");
+        LoginAs(username, password);
+        OpenProfile();
 
-        var newPassword = "ChangedPass123";
+        var originalLastName = ViewText("lastName");
 
-        var newPasswordField = Wait.Until(d => d.FindElement(By.Id("newPassword")));
-        var confirmPasswordField = Driver.FindElement(By.Id("confirmPassword"));
+        ClickEditDetails();
+        Driver.FindElement(By.Id("lastName")).SendKeys("Changed");
 
-        // Defensive: Chrome's password manager can autofill/suggest
-        // content into a fresh type="password" field, and any leftover
-        // suggestion dropdown can intercept the next click. Clear via
-        // keyboard first, then press Escape to dismiss any popup.
-        newPasswordField.SendKeys(Keys.Control + "a");
-        newPasswordField.SendKeys(Keys.Delete);
-        newPasswordField.SendKeys(newPassword);
-        newPasswordField.SendKeys(Keys.Escape);
+        Driver.FindElement(By.Id("cancel-edit-button")).Click();
 
-        confirmPasswordField.SendKeys(Keys.Control + "a");
-        confirmPasswordField.SendKeys(Keys.Delete);
-        confirmPasswordField.SendKeys(newPassword);
-        confirmPasswordField.SendKeys(Keys.Escape);
+        // Something was changed, so the user is asked before losing it.
+        var dialog = Wait.Until(d => d.FindElement(By.CssSelector("[role='dialog']")));
+        Assert.Contains("Discard", dialog.Text);
 
-        Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
+        Driver.FindElement(By.XPath("//div[@role='dialog']//button[normalize-space()='Discard changes']")).Click();
 
-        var successBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='status']")));
-        Assert.Contains("Profile updated successfully.", successBanner.Text);
+        // Back to view mode with the ORIGINAL value, and nothing saved.
+        Assert.Equal(originalLastName, ViewText("lastName"));
+        Assert.Empty(Driver.FindElements(By.CssSelector("[role='status']")));
 
-        // AC: "I remain logged in with my current session (no forced
-        // re-login required)." Prove we're still on an authenticated
-        // page, not bounced back to /login.
-        Assert.Contains("/profile", Driver.Url);
-        Assert.DoesNotContain("/login", Driver.Url);
-
-        // Confirm the new password actually works by logging out and
-        // back in with it (best-effort: click the visible Logout
-        // button, then log in fresh).
-        Driver.FindElement(By.CssSelector(".topbar-logout")).Click();
-        Wait.Until(d => d.Url.Contains("/login"));
-
-        LoginAs(username, newPassword);
-        Assert.DoesNotContain("/login", Driver.Url);
+        Driver.Navigate().Refresh();
+        Assert.Equal(originalLastName, ViewText("lastName"));
     }
 
+    // ============================================================
+    // Security - no password fields on the profile page
+    // ============================================================
+
     [Fact]
-    public void ChangePassword_MismatchedConfirmation_ShowsInlineErrorAndDoesNotSubmit()
+    public void ProfilePage_HasNoPasswordFields_InViewOrEditMode()
     {
         LoginAs(_seeded.Username, _seeded.Password);
-        Driver.Navigate().GoToUrl($"{FrontendBaseUrl}/profile");
+        OpenProfile();
 
-        Wait.Until(d => d.FindElement(By.Id("newPassword"))).SendKeys("SomeNewPass123");
-        Driver.FindElement(By.Id("confirmPassword")).SendKeys("ADifferentPass456");
+        Wait.Until(d => d.FindElement(By.Id("edit-profile-button")));
+        Assert.Empty(Driver.FindElements(By.CssSelector("input[type='password']")));
 
-        Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
-
-        var inlineError = Wait.Until(d => d.FindElement(By.Id("confirmPassword-error")));
-        Assert.Contains("Passwords do not match.", inlineError.Text);
-
-        var successBanners = Driver.FindElements(By.CssSelector("[role='status']"));
-        Assert.Empty(successBanners);
+        ClickEditDetails();
+        Assert.Empty(Driver.FindElements(By.CssSelector("input[type='password']")));
+        Assert.Empty(Driver.FindElements(By.Id("newPassword")));
+        Assert.Empty(Driver.FindElements(By.Id("confirmPassword")));
     }
 }

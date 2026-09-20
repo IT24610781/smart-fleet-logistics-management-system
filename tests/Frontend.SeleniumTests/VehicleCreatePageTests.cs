@@ -34,6 +34,22 @@ public class VehicleCreatePageTests : SeleniumTestBase
     }
 
     [Fact]
+    public void CreateVehicle_CapacityWithUnit_ShowsSuccessMessage()
+    {
+        LoginAsAdmin();
+        Driver.Navigate().GoToUrl($"{FrontendBaseUrl}/admin/vehicles/create");
+        Wait.Until(d => d.FindElement(By.Id("registrationNo")));
+
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        FillVehicleForm($"SEL-U{suffix}", "Van", "500 kg");
+
+        Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
+
+        var successBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='status']")));
+        Assert.Contains("Vehicle added successfully.", successBanner.Text);
+    }
+
+    [Fact]
     public void CreateVehicle_DuplicateRegistrationNo_ShowsErrorAndDoesNotCreateSecondRecord()
     {
         LoginAsAdmin();

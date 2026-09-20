@@ -5,7 +5,7 @@ import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import * as vehicleService from '../../services/vehicleService'
-import { isRequired } from '../../utils/validation'
+import { isRequired, isValidCapacity, CAPACITY_HINT, CAPACITY_ERROR } from '../../utils/validation'
 
 const EMPTY = { registrationNo: '', type: '', capacity: '' }
 
@@ -26,6 +26,7 @@ export default function AddVehicle() {
     if (!isRequired(form.registrationNo)) errs.registrationNo = 'Registration number is required.'
     if (!isRequired(form.type)) errs.type = 'Vehicle type is required.'
     if (!isRequired(form.capacity)) errs.capacity = 'Capacity is required.'
+    else if (!isValidCapacity(form.capacity)) errs.capacity = CAPACITY_ERROR
     return errs
   }
 
@@ -72,7 +73,7 @@ export default function AddVehicle() {
 
           <FormField label="Registration number" name="registrationNo" value={form.registrationNo} onChange={update('registrationNo')} error={fieldErrors.registrationNo} required autoComplete="off" />
           <FormField label="Vehicle type" name="type" value={form.type} onChange={update('type')} error={fieldErrors.type} required placeholder="e.g. Van, Truck, Motorbike" />
-          <FormField label="Capacity" name="capacity" value={form.capacity} onChange={update('capacity')} error={fieldErrors.capacity} required hint="Number of passengers or load units" />
+          <FormField label="Capacity" name="capacity" value={form.capacity} onChange={update('capacity')} error={fieldErrors.capacity} required placeholder="e.g. 500 kg" hint={CAPACITY_HINT} />
 
           <FormField label="Status" name="status" value="Available" readOnly />
 

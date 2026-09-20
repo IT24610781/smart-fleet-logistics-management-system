@@ -51,6 +51,121 @@ public class UserService
             throw new ArgumentException(
                 "Password must be at least 8 characters.");
 
+        return await SaveNewUserAsync(request, "Driver");
+    }
+
+
+    // ============================================================
+    // US-08: Dispatcher creates their own account
+    //
+    // Unlike CreateUserAsync (US-01), this collects ALL validation
+    // problems and reports them per field, because AC Scenario 2
+    // asks for "clear field-level validation errors".
+    // The role is decided here on the server - the request DTO has no
+    // Role property, so a caller can never register as Admin.
+    // ============================================================
+
+    public async Task<UserResponse> RegisterDispatcherAsync(
+        CreateUserRequest request)
+    {
+        var errors = ValidateRegistration(request);
+
+        if (errors.Count > 0)
+            throw new ValidationException(errors);
+
+        return await SaveNewUserAsync(request, "Dispatcher");
+    }
+
+    // Limits mirror database/auth-user/schema.sql (SCRUM-86 lesson:
+    // validate against the column size BEFORE the INSERT, otherwise MySQL
+    // throws "Data too long" and the API returns a raw 500).
+    private const int UsernameMaxLength = 50;
+    private const int EmailMaxLength = 255;
+    private const int NameMaxLength = 100;
+    private const int ContactNumberMaxLength = 20;
+
+    // Same rules as the frontend (src/utils/validation.js) so the UI and
+    // the API always agree on what is valid.
+    private static readonly System.Text.RegularExpressions.Regex UsernamePattern =
+        new(@"^[a-zA-Z][a-zA-Z0-9_.]{2,19}$");
+
+    private static readonly System.Text.RegularExpressions.Regex EmailPattern =
+        new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$");
+
+    private static Dictionary<string, string> ValidateRegistration(
+        CreateUserRequest request)
+    {
+        var errors = new Dictionary<string, string>();
+
+        var username = request.Username?.Trim() ?? string.Empty;
+        var email = request.Email?.Trim() ?? string.Empty;
+        var password = request.Password ?? string.Empty;
+        var firstName = request.FirstName?.Trim() ?? string.Empty;
+        var lastName = request.LastName?.Trim() ?? string.Empty;
+        var contactNumber = request.ContactNumber?.Trim() ?? string.Empty;
+
+        if (username.Length == 0)
+            errors["username"] = "Username is required.";
+        else if (username.Length > UsernameMaxLength)
+            errors["username"] =
+                $"Username must be {UsernameMaxLength} characters or fewer.";
+        else if (!UsernamePattern.IsMatch(username))
+            errors["username"] =
+                "Username must be 3-20 characters, start with a letter, and use only letters, numbers, \"_\" or \".\".";
+
+        if (email.Length == 0)
+            errors["email"] = "Email is required.";
+        else if (email.Length > EmailMaxLength)
+            errors["email"] =
+                $"Email must be {EmailMaxLength} characters or fewer.";
+        else if (!EmailPattern.IsMatch(email))
+            errors["email"] = "Enter a valid email address.";
+
+        if (password.Length == 0)
+            errors["password"] = "Password is required.";
+        else if (password.Length < 8)
+            errors["password"] = "Password must be at least 8 characters.";
+
+        if (firstName.Length == 0)
+            errors["firstName"] = "First name is required.";
+        else if (firstName.Length > NameMaxLength)
+            errors["firstName"] =
+                $"First name must be {NameMaxLength} characters or fewer.";
+
+        if (lastName.Length == 0)
+            errors["lastName"] = "Last name is required.";
+        else if (lastName.Length > NameMaxLength)
+            errors["lastName"] =
+                $"Last name must be {NameMaxLength} characters or fewer.";
+
+        if (contactNumber.Length == 0)
+        {
+            errors["contactNumber"] = "Contact number is required.";
+        }
+        else
+        {
+            var digitCount = contactNumber.Count(char.IsDigit);
+
+            if (contactNumber.Length > ContactNumberMaxLength ||
+                digitCount < 7 || digitCount > 15)
+            {
+                errors["contactNumber"] = "Enter a valid contact number.";
+            }
+        }
+
+        return errors;
+    }
+
+
+    // ============================================================
+    // Shared by US-01 (Driver) and US-08 (Dispatcher):
+    // normalise -> reject duplicates -> hash password -> save.
+    // Callers MUST have validated the request already.
+    // ============================================================
+
+    private async Task<UserResponse> SaveNewUserAsync(
+        CreateUserRequest request, string role)
+    {
         // Normalize values
         var username = request.Username.Trim();
 
@@ -73,7 +188,7 @@ public class UserService
             throw new InvalidOperationException(
                 "An account with this email already exists.");
 
-        // Create Driver
+        // Create the user with the role chosen by the server
         var user = new User
         {
             Id = Guid.CreateVersion7(),
@@ -95,7 +210,7 @@ public class UserService
             ContactNumber =
                 request.ContactNumber.Trim(),
 
-            Role = "Driver",
+            Role = role,
 
             IsActive = true,
 

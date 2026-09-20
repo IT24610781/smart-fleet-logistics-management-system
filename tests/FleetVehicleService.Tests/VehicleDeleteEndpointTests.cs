@@ -97,20 +97,10 @@ public class VehicleDeleteEndpointTests : IClassFixture<CustomWebApplicationFact
         Assert.Equal(HttpStatusCode.NotFound, second.StatusCode);
     }
 
-    // KNOWN GAP — documented, not a passing/failing assertion of
-    // "correct" behavior. DeleteVehicleAsync only calls
-    // ITripEligibilityChecker.HasActiveOrUpcomingTripsAsync, which
-    // is currently StubTripEligibilityChecker (always returns false).
-    // It never inspects the vehicle's OWN `status` column. This test
-    // documents that a vehicle marked "On Trip" can be deleted TODAY.
-    // Recommendation raised to the team: add an explicit status check
-    // independent of the real Trip service integration (deferred to
-    // a later sprint), OR explicitly accept this as a documented
-    // limitation until Trip integration lands.
-    // See: QA finding, Sprint 2 — raise as a new Jira ticket.
-
+    // SCRUM-85: a vehicle whose own status is "On Trip" must not be deletable,
+    // regardless of what the Trip service integration reports.
     [Fact]
-    public async Task DeleteVehicle_VehicleStatusIsOnTrip_CurrentlySucceeds_KnownGap()
+    public async Task DeleteVehicle_VehicleStatusIsOnTrip_Returns409AndKeepsVehicle()
     {
         var client = CreateAuthorizedClient("Admin");
         var vehicle = await CreateTestVehicleAsync(client);
@@ -119,7 +109,7 @@ public class VehicleDeleteEndpointTests : IClassFixture<CustomWebApplicationFact
         {
             RegistrationNo = vehicle.RegistrationNo,
             Type = vehicle.Type,
-            Capacity = vehicle.Capacity.ToString(),
+            Capacity = vehicle.Capacity,
             Status = "On Trip"
         };
         var updateResponse = await client.PutAsJsonAsync($"/api/vehicles/{vehicle.Id}", setOnTrip);
@@ -127,6 +117,32 @@ public class VehicleDeleteEndpointTests : IClassFixture<CustomWebApplicationFact
 
         var deleteResponse = await client.DeleteAsync($"/api/vehicles/{vehicle.Id}");
 
+        Assert.Equal(HttpStatusCode.Conflict, deleteResponse.StatusCode);
+
+        // The vehicle must still be in the registry.
+        var list = await client.GetFromJsonAsync<List<VehicleResponse>>("/api/vehicles");
+        Assert.Contains(list!, v => v.Id == vehicle.Id);
+    }
+
+    // Design decision for SCRUM-85: only "On Trip" blocks deletion. A vehicle
+    // that is Under Maintenance can still be removed (e.g. retired/written off).
+    [Fact]
+    public async Task DeleteVehicle_VehicleUnderMaintenance_Returns204()
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var vehicle = await CreateTestVehicleAsync(client);
+
+        var setMaintenance = new UpdateVehicleRequest
+        {
+            RegistrationNo = vehicle.RegistrationNo,
+            Type = vehicle.Type,
+            Capacity = vehicle.Capacity,
+            Status = "Under Maintenance"
+        };
+        var updateResponse = await client.PutAsJsonAsync($"/api/vehicles/{vehicle.Id}", setMaintenance);
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+
+        var deleteResponse = await client.DeleteAsync($"/api/vehicles/{vehicle.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
     }

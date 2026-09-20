@@ -10,6 +10,12 @@ public class VehicleService
     private readonly IVehicleEventPublisher _eventPublisher;
     private readonly ITripEligibilityChecker _tripEligibilityChecker;
 
+    // SCRUM-86: must match the column sizes in database/fleet-vehicle/schema.sql
+    // (registration_no VARCHAR(20), type VARCHAR(50)). Validating here turns
+    // what used to be a raw MySQL "Data too long" 500 into a clean 400.
+    private const int RegistrationNoMaxLength = 20;
+    private const int TypeMaxLength = 50;
+
     public VehicleService(
         VehicleRepository vehicleRepository,
         IVehicleEventPublisher eventPublisher,
@@ -36,10 +42,20 @@ public class VehicleService
     {
         errors["registrationNo"] = "Registration number is required.";
     }
+    else if (registrationNo.Length > RegistrationNoMaxLength)
+    {
+        errors["registrationNo"] =
+            $"Registration number must be {RegistrationNoMaxLength} characters or fewer.";
+    }
 
     if (string.IsNullOrWhiteSpace(type))
     {
         errors["type"] = "Vehicle type is required.";
+    }
+    else if (type.Length > TypeMaxLength)
+    {
+        errors["type"] =
+            $"Vehicle type must be {TypeMaxLength} characters or fewer.";
     }
 
     var capacity = request.Capacity?.Trim() ?? string.Empty;
@@ -48,10 +64,16 @@ public class VehicleService
     {
         errors["capacity"] = "Capacity is required.";
     }
-    else if (!int.TryParse(capacity, out var capacityValue) || capacityValue <= 0)
-{
-    errors["capacity"] = "Capacity must be a positive number.";
-}
+    else if (!CapacityParser.TryParse(capacity, out _, out _, out var normalizedCapacity))
+    {
+        errors["capacity"] =
+            "Capacity must be a positive number, optionally with a unit (for example 500 kg, 8 persons, 20 units).";
+    }
+    else
+    {
+        // Store one consistent format: "500kg" and "500  kg" both become "500 kg".
+        capacity = normalizedCapacity;
+    }
 
     if (errors.Count > 0)
     {
@@ -115,12 +137,22 @@ public class VehicleService
     {
         errors["registrationNo"] = "Registration number is required.";
     }
+    else if (registrationNo.Length > RegistrationNoMaxLength)
+    {
+        errors["registrationNo"] =
+            $"Registration number must be {RegistrationNoMaxLength} characters or fewer.";
+    }
 
     var type = request.Type?.Trim() ?? string.Empty;
 
     if (string.IsNullOrWhiteSpace(type))
     {
         errors["type"] = "Vehicle type is required.";
+    }
+    else if (type.Length > TypeMaxLength)
+    {
+        errors["type"] =
+            $"Vehicle type must be {TypeMaxLength} characters or fewer.";
     }
 
     var capacity = request.Capacity?.Trim() ?? string.Empty;
@@ -129,10 +161,16 @@ public class VehicleService
     {
         errors["capacity"] = "Capacity is required.";
     }
-    else if (!int.TryParse(capacity, out var capacityValue) || capacityValue <= 0)
-{
-    errors["capacity"] = "Capacity must be a positive number.";
-}
+    else if (!CapacityParser.TryParse(capacity, out _, out _, out var normalizedCapacity))
+    {
+        errors["capacity"] =
+            "Capacity must be a positive number, optionally with a unit (for example 500 kg, 8 persons, 20 units).";
+    }
+    else
+    {
+        // Store one consistent format: "500kg" and "500  kg" both become "500 kg".
+        capacity = normalizedCapacity;
+    }
 
     var status = request.Status?.Trim() ?? string.Empty;
 
@@ -225,6 +263,17 @@ public class VehicleService
             throw new NotFoundException(
                 $"No vehicle found with id '{id}'.");
         }
+
+        // SCRUM-85: check the vehicle's OWN status first, independent of the
+        // Trip service. A vehicle that is currently On Trip must never be
+        // removed. (Under Maintenance vehicles can still be deleted - that is
+        // how a broken/retired vehicle leaves the registry.)
+        if (vehicle.Status == VehicleStatus.OnTrip)
+        {
+            throw new InvalidOperationException(
+                "Cannot remove a vehicle that is currently on a trip.");
+        }
+
         var hasActiveOrUpcomingTrips =
             await _tripEligibilityChecker.HasActiveOrUpcomingTripsAsync(id);
 

@@ -88,6 +88,113 @@ public class VehicleCreateEndpointTests : IClassFixture<CustomWebApplicationFact
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // SCRUM-86: registration_no is VARCHAR(20). Oversized input used to reach
+    // MySQL and surface as a raw 500 with a stack trace.
+    [Fact]
+    public async Task CreateVehicle_RegistrationNoTooLong_Returns400WithFieldError()
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var request = new CreateVehicleRequest
+        {
+            RegistrationNo = new string('X', 41),
+            Type = "Van",
+            Capacity = "5"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/vehicles", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("registrationNo", body);
+        Assert.DoesNotContain("MySqlException", body);
+    }
+
+    [Fact]
+    public async Task CreateVehicle_RegistrationNoExactly20Chars_Returns201()
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var request = new CreateVehicleRequest
+        {
+            RegistrationNo = Guid.NewGuid().ToString("N")[..20],
+            Type = "Van",
+            Capacity = "5"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/vehicles", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateVehicle_TypeTooLong_Returns400WithFieldError()
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var request = new CreateVehicleRequest
+        {
+            RegistrationNo = $"TYP-{Guid.NewGuid().ToString()[..8]}",
+            Type = new string('T', 51),
+            Capacity = "5"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/vehicles", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("type", body);
+    }
+
+    // Capacity accepts a number with an optional unit and is stored in one
+    // consistent format ("500kg" -> "500 kg").
+    [Theory]
+    [InlineData("1 unit", "1 unit")]
+    [InlineData("1 kg", "1 kg")]
+    [InlineData("8 persons", "8 persons")]
+    [InlineData("500kg", "500 kg")]
+    [InlineData("2.5 tons", "2.5 tons")]
+    public async Task CreateVehicle_CapacityWithUnit_Returns201AndStoresNormalisedText(
+        string capacity, string expectedStored)
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var request = new CreateVehicleRequest
+        {
+            RegistrationNo = $"CU-{Guid.NewGuid().ToString("N")[..10]}",
+            Type = "Van",
+            Capacity = capacity
+        };
+
+        var response = await client.PostAsJsonAsync("/api/vehicles", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<VehicleResponse>();
+        Assert.Equal(expectedStored, body!.Capacity);
+    }
+
+    [Theory]
+    [InlineData("kg")]
+    [InlineData("5 @#")]
+    [InlineData("0 kg")]
+    [InlineData("-3 kg")]
+    [InlineData("1000000000000 kg")]
+    [InlineData("5 abcdefghijklmnopqrstuvwxyz")]
+    public async Task CreateVehicle_InvalidCapacityFormat_Returns400(string invalidCapacity)
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var request = new CreateVehicleRequest
+        {
+            RegistrationNo = $"CF-{Guid.NewGuid().ToString("N")[..10]}",
+            Type = "Van",
+            Capacity = invalidCapacity
+        };
+
+        var response = await client.PostAsJsonAsync("/api/vehicles", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("capacity", await response.Content.ReadAsStringAsync());
+    }
+
     [Theory]
     [InlineData("abc")]
     [InlineData("-5")]

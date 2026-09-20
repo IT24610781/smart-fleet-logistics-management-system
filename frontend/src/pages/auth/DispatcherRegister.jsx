@@ -4,9 +4,9 @@ import * as authService from '../../services/authService'
 import { useToast } from '../../context/ToastContext'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
+import AuthShell from '../../components/layout/AuthShell'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import { isRequired, isValidEmail, isValidPassword, isValidUsername, isValidContactNumber } from '../../utils/validation'
-import './AuthLayout.css'
 
 const EMPTY = {
   firstName: '', lastName: '', username: '', email: '',
@@ -85,41 +85,42 @@ export default function DispatcherRegister() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card wide">
-        <div className="auth-brand">
-          <img src="/fleet-mark.svg" alt="" />
-          <h1>Create Dispatcher Account</h1>
-          <p>Registration is limited to the Dispatcher role</p>
+    <AuthShell>
+      <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Create your account</h2>
+      <p className="font-body-md text-body-md text-on-surface-variant mb-6">
+        Register as a Dispatcher to create trips and assign vehicles.
+      </p>
+
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+        <ErrorMessage>{formError}</ErrorMessage>
+        <SuccessMessage>{success ? 'Account created successfully. Redirecting you to the login page…' : null}</SuccessMessage>
+
+        <div className="form-grid-2">
+          <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} required autoComplete="given-name" />
+          <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} required autoComplete="family-name" />
         </div>
-
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          <ErrorMessage>{formError}</ErrorMessage>
-          <SuccessMessage>{success ? 'Account created successfully. Redirecting you to the login page…' : null}</SuccessMessage>
-
-          <div className="form-grid-2">
-            <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} required />
-            <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} required />
-          </div>
-          <FormField label="Username" name="username" value={form.username} onChange={update('username')} error={fieldErrors.username} required />
-          <FormField label="Email" name="email" type="email" value={form.email} onChange={update('email')} error={fieldErrors.email} required autoComplete="email" />
-          <div className="form-grid-2">
-            <FormField label="Password" name="password" type="password" value={form.password} onChange={update('password')} error={fieldErrors.password} hint="At least 8 characters" required autoComplete="new-password" />
-            <FormField label="Confirm password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={update('confirmPassword')} error={fieldErrors.confirmPassword} required autoComplete="new-password" />
-          </div>
-          <FormField label="Contact number" name="contactNumber" type="tel" value={form.contactNumber} onChange={update('contactNumber')} error={fieldErrors.contactNumber} required />
-
+        <FormField label="Username" name="username" value={form.username} onChange={update('username')} error={fieldErrors.username} hint="3-20 characters, starts with a letter" required autoComplete="username" />
+        <FormField label="Email" name="email" type="email" value={form.email} onChange={update('email')} error={fieldErrors.email} required autoComplete="email" />
+        <div className="form-grid-2">
+          <FormField label="Password" name="password" type="password" value={form.password} onChange={update('password')} error={fieldErrors.password} hint="At least 8 characters" required autoComplete="new-password" />
+          <FormField label="Confirm password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={update('confirmPassword')} error={fieldErrors.confirmPassword} required autoComplete="new-password" />
+        </div>
+        <div className="form-grid-2">
+          <FormField label="Contact number" name="contactNumber" type="tel" value={form.contactNumber} onChange={update('contactNumber')} error={fieldErrors.contactNumber} required autoComplete="tel" />
           <FormField label="Role" name="role" value="Dispatcher" readOnly />
-
-          <Button type="submit" block loading={submitting}>
-            {submitting ? 'Creating account…' : 'Create account'}
-          </Button>
-        </form>
-
-        <div className="auth-foot">
-          Already have an account? <Link to="/login">Log in</Link>
         </div>
+
+        <Button type="submit" block loading={submitting}>
+          {submitting ? 'Creating account…' : 'Create account'}
+        </Button>
+      </form>
+
+      <div className="mt-6 text-center font-body-sm text-body-sm text-on-surface-variant">
+        Already have an account?{' '}
+        <Link to="/login" className="text-primary font-semibold hover:underline">
+          Log in
+        </Link>
       </div>
-    </div>
+    </AuthShell>
   )
 }

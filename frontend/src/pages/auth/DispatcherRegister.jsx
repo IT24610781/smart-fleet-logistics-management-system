@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import * as authService from '../../services/authService'
 import { useToast } from '../../context/ToastContext'
@@ -25,6 +25,16 @@ export default function DispatcherRegister() {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState(null)
   const [success, setSuccess] = useState(false)
+
+  // US-08 Scenario 4: after a successful registration, show the confirmation
+  // for a moment, then send the person to the login page. Done in an effect
+  // (with window.setTimeout, like ToastContext) so the timer is cancelled if
+  // they leave the page first.
+  useEffect(() => {
+    if (!success) return undefined
+    const timer = window.setTimeout(() => navigate('/login'), 2000)
+    return () => window.clearTimeout(timer)
+  }, [success, navigate])
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
@@ -65,9 +75,6 @@ export default function DispatcherRegister() {
       setSuccess(true)
       setForm(EMPTY)
       showToast('Account created. You can now log in.', 'success')
-      // Give the person a moment to read the confirmation, then send them
-      // to the login page (US-08 Scenario 4: they log in with these credentials).
-      setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
       setFormError(err.fieldErrors ? null : err.message)
       if (!err.fieldErrors) showToast(err.message || 'Unable to create the account.', 'error')

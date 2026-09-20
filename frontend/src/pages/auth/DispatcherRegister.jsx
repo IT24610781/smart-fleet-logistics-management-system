@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import * as authService from '../../services/authService'
 import { useToast } from '../../context/ToastContext'
 import FormField from '../../components/forms/FormField'
@@ -13,11 +13,13 @@ const EMPTY = {
   password: '', confirmPassword: '', contactNumber: '',
 }
 
-// Section 15 — UI architecture only. The registration endpoint is not live
-// yet (planned for a later sprint), so submission surfaces that plainly
-// instead of pretending the account was created.
+// US-08: Dispatcher creates their own account via
+// POST /api/auth/register/dispatcher. Client-side checks run first; any
+// field-level errors returned by the API (400) are shown under the matching
+// input, and a duplicate username/email (409) is shown as a form error.
 export default function DispatcherRegister() {
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [form, setForm] = useState(EMPTY)
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -62,18 +64,14 @@ export default function DispatcherRegister() {
       })
       setSuccess(true)
       setForm(EMPTY)
-      showToast('Dispatcher account request submitted.', 'success')
+      showToast('Account created. You can now log in.', 'success')
+      // Give the person a moment to read the confirmation, then send them
+      // to the login page (US-08 Scenario 4: they log in with these credentials).
+      setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
-      // Backend registration endpoint does not exist yet — say so clearly
-      // rather than showing a generic or misleading error.
-      if (err.status === 404) {
-        setFormError('Dispatcher registration is not available yet. This screen is ready for when the backend adds it.')
-        showToast('Dispatcher registration is not available yet.', 'error')
-      } else {
-        setFormError(err.fieldErrors ? null : err.message)
-        if (!err.fieldErrors) showToast(err.message || 'Unable to create the account.', 'error')
-        if (err.fieldErrors) setFieldErrors((f) => ({ ...f, ...err.fieldErrors }))
-      }
+      setFormError(err.fieldErrors ? null : err.message)
+      if (!err.fieldErrors) showToast(err.message || 'Unable to create the account.', 'error')
+      if (err.fieldErrors) setFieldErrors((f) => ({ ...f, ...err.fieldErrors }))
     } finally {
       setSubmitting(false)
     }
@@ -90,7 +88,7 @@ export default function DispatcherRegister() {
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <ErrorMessage>{formError}</ErrorMessage>
-          <SuccessMessage>{success ? 'Account request submitted.' : null}</SuccessMessage>
+          <SuccessMessage>{success ? 'Account created successfully. Redirecting you to the login page…' : null}</SuccessMessage>
 
           <div className="form-grid-2">
             <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} required />

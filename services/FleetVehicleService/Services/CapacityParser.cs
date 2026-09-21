@@ -3,20 +3,6 @@ using System.Text.RegularExpressions;
 
 namespace FleetVehicleService.Services;
 
-// ============================================================
-// Vehicle capacity: a positive number with an OPTIONAL unit.
-//
-//   "12"          -> 12
-//   "500 kg"      -> 500 kg
-//   "500kg"       -> 500 kg      (normalised to "<number> <unit>")
-//   "8 persons"   -> 8 persons
-//   "2.5 tons"    -> 2.5 tons
-//
-// Capacity is stored as text (capacity VARCHAR(50)), so the unit can be
-// anything a dispatcher understands (kg, persons, units, litres...).
-// This parser is the ONE place that decides what is valid, and it also
-// gives trip matching (US-10) a number to compare instead of raw text.
-// ============================================================
 
 public static class CapacityParser
 {

@@ -1,41 +1,73 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
 import DataTable from '../../components/common/DataTable'
 import StatusBadge from '../../components/common/StatusBadge'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
-import { MOCK_TRIPS } from '../../utils/mockData'
+import { ErrorMessage } from '../../components/common/ErrorMessage'
+import * as tripService from '../../services/tripService'
 import './Trips.css'
 
-const TABS = ['All', 'Pending', 'Assigned', 'In Progress', 'Completed', 'Rejected']
+const TABS = ['All', 'Requested', 'Assigned', 'In-Progress', 'Completed', 'Cancelled']
 
+function formatDateTime(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+}
+
+// US-13: trip list, filterable by status. Fetches a fresh list every time
+// reflects what "All" statuses actually contains right now.
 export default function Trips() {
   const [tab, setTab] = useState('All')
   const [query, setQuery] = useState('')
+  const [trips, setTrips] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadTrips() {
+      setLoading(true)
+      setLoadError(null)
+      try {
+        const status = tab === 'All' ? undefined : tab
+        const data = await tripService.listTrips(status)
+        if (cancelled) return
+        setTrips(data)
+      } catch (err) {
+        if (!cancelled) setLoadError(err.message || 'Unable to load trips.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    loadTrips()
+    return () => {
+      cancelled = true
+    }
+  }, [tab, reloadKey])
 
   const rows = useMemo(() => {
-    const byTab = tab === 'All' ? MOCK_TRIPS : MOCK_TRIPS.filter((t) => t.status === tab)
-    const q = query.toLowerCase()
-    if (!q) return byTab
-    return byTab.filter((t) =>
-      t.origin.toLowerCase().includes(q) ||
-      t.destination.toLowerCase().includes(q) ||
-      t.driver.toLowerCase().includes(q) ||
-      t.vehicle.toLowerCase().includes(q) ||
+    const q = query.trim().toLowerCase()
+    if (!q) return trips
+    return trips.filter((t) =>
+      t.pickupLocation.toLowerCase().includes(q) ||
+      t.dropoffLocation.toLowerCase().includes(q) ||
       t.id.toLowerCase().includes(q)
     )
-  }, [tab, query])
+  }, [trips, query])
 
   const columns = [
-    { key: 'id', header: 'Trip ID', render: (r) => <span className="cell-id">{r.id}</span> },
-    { key: 'origin', header: 'Origin' },
-    { key: 'destination', header: 'Destination' },
-    { key: 'vehicle', header: 'Vehicle' },
-    { key: 'driver', header: 'Driver' },
-    { key: 'scheduledTime', header: 'Scheduled Time' },
+    { key: 'id', header: 'Trip ID', render: (r) => <span className="cell-id">{r.id.slice(0, 8)}</span> },
+    { key: 'pickupLocation', header: 'Pickup' },
+    { key: 'dropoffLocation', header: 'Drop-off' },
+    { key: 'requiredCapacity', header: 'Capacity' },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
-    { key: 'createdDate', header: 'Created Date' },
+    { key: 'createdAt', header: 'Created', render: (r) => formatDateTime(r.createdAt) },
   ]
 
   return (
@@ -55,7 +87,7 @@ export default function Trips() {
       <div className="toolbar">
         <div className="search-input-wrap">
           <Icon name="search" size={15} className="icon" />
-          <input className="search-input" placeholder="Search by route, driver or vehicle" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input className="search-input" placeholder="Search by pickup, drop-off or trip ID" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
       </div>
 
@@ -65,7 +97,23 @@ export default function Trips() {
         ))}
       </div>
 
-      <DataTable columns={columns} rows={rows} emptyTitle="No trips match your search" />
+      {loadError ? (
+        <div className="card card-pad">
+          <ErrorMessage>{loadError}</ErrorMessage>
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            <Button variant="secondary" onClick={() => setReloadKey((k) => k + 1)}>Try again</Button>
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={rows}
+          loading={loading}
+          rowKey="id"
+          emptyTitle={tab === 'All' ? 'No trips yet' : `No ${tab} trips`}
+          emptyDescription={tab === 'All' ? 'Create a trip request to get started.' : 'Try a different tab or search.'}
+        />
+      )}
     </AppShell>
   )
 }

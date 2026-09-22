@@ -14,8 +14,10 @@ export async function createTrip(payload) {
   return data
 }
 
-export async function listTrips() {
-  const { data } = await tripApi.get('/api/trips')
+export async function listTrips(status) {
+  const { data } = await tripApi.get('/api/trips', {
+    params: status ? { status } : undefined,
+  })
   return data
 }
 

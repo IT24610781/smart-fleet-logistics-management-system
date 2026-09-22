@@ -7,4 +7,6 @@ namespace TripDispatchService.Data;
 public interface ITripRepository
 {
     Task CreateTripAsync(Trip trip);
+// status == null means "all trips".
+    Task<List<Trip>> GetAllAsync(string? status);
 }

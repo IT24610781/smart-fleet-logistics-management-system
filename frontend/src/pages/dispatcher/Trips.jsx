@@ -5,7 +5,6 @@ import DataTable from '../../components/common/DataTable'
 import StatusBadge from '../../components/common/StatusBadge'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
-import * as tripService from '../../services/tripService'
 import { MOCK_TRIPS } from '../../utils/mockData'
 import './Trips.css'
 

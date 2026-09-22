@@ -16,6 +16,27 @@ public class TripsController : ControllerBase
         _tripService = tripService;
     }
 
+    //US-13: List trips, optionally filtered by status
+
+    [Authorize(Roles = "Dispatcher,Admin")]
+    [HttpGet]
+    public async Task<IActionResult> GetTrips([FromQuery] string? status)
+    {
+        try
+        {
+            var trips = await _tripService.GetTripsAsync(status);
+            return Ok(trips);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new
+            {
+                message = "Validation failed.",
+                errors = ex.Errors
+            });
+        }
+    }
+
     // US-09: Dispatcher creates a trip request
 
     [Authorize(Roles = "Dispatcher")]

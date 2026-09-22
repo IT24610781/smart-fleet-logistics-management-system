@@ -87,7 +87,23 @@ public class TripService
 
         return ToResponse(trip);
     }
+    
+    // US-13: List trips, optionally filtered to one status
 
+    public async Task<List<TripResponse>> GetTripsAsync(string? status)
+    {
+        if (!string.IsNullOrWhiteSpace(status) && !TripStatus.All.Contains(status))
+        {
+            throw new ValidationException(new Dictionary<string, string>
+            {
+                ["status"] = $"Status must be one of: {string.Join(", ", TripStatus.All)}."
+            });
+        }
+
+        var trips = await _tripRepository.GetAllAsync(status);
+
+        return trips.Select(ToResponse).ToList();
+    }
 
     private static TripResponse ToResponse(Trip trip)
     {

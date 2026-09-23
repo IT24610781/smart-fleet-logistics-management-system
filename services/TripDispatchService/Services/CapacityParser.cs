@@ -7,7 +7,7 @@ public static class CapacityParser
 {
     // Amount: up to 9 digits, optional 1-2 decimal places.
     // Unit:   starts with a letter; letters, digits, spaces, "." "/" "-";
-    //         at most 20 characters. Together they always fit VARCHAR(50).
+    // at most 20 characters. Together they always fit VARCHAR(50).
     private static readonly Regex Pattern = new(
         @"^(?<amount>[0-9]{1,9}(?:\.[0-9]{1,2})?)\s*(?<unit>\p{L}[\p{L}\p{N} ./-]{0,19})?\z",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -41,6 +41,7 @@ public static class CapacityParser
 
         amount = parsedAmount;
 
+        // Collapse repeated spaces so "20   litres" and "20 litres" match.
         unit = Regex.Replace(match.Groups["unit"].Value.Trim(), @"\s+", " ");
 
         var amountText = amount.ToString(CultureInfo.InvariantCulture);

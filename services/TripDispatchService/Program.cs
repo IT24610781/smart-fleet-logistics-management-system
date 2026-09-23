@@ -6,6 +6,8 @@ using TripDispatchService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Machine-specific settings (database connection string, JWT key) live in
+// appsettings.Local.json, which git ignores - see appsettings.Local.example.json.
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables();
 

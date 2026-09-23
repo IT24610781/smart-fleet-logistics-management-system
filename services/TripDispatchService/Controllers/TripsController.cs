@@ -16,7 +16,7 @@ public class TripsController : ControllerBase
         _tripService = tripService;
     }
 
-    //US-10: Ranked vehicle suggestions for a trip
+    //US-10 Ranked vehicle suggestions for a trip
 
     [Authorize(Roles = "Dispatcher")]
     [HttpGet("{id}/suggestions")]
@@ -34,7 +34,7 @@ public class TripsController : ControllerBase
         }
     }
 
-    //US-13: List trips, optionally filtered by status
+    //US-13 List trips, optionally filtered by status
 
     [Authorize(Roles = "Dispatcher,Admin")]
     [HttpGet]
@@ -55,7 +55,7 @@ public class TripsController : ControllerBase
         }
     }
 
-    // US-09: Dispatcher creates a trip request
+    //US-09 Dispatcher creates a trip request
 
     [Authorize(Roles = "Dispatcher")]
     [HttpPost]

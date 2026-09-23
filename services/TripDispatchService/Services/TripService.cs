@@ -1,0 +1,173 @@
+using TripDispatchService.Data;
+using TripDispatchService.DTOs;
+using TripDispatchService.Models;
+
+namespace TripDispatchService.Services;
+
+public class TripService
+{
+    private const int LocationMaxLength = 255;
+
+    private readonly ITripRepository _tripRepository;
+    private readonly IFleetVehicleClient _fleetVehicleClient;
+
+    public TripService(ITripRepository tripRepository, IFleetVehicleClient fleetVehicleClient)
+    {
+        _tripRepository = tripRepository;
+        _fleetVehicleClient = fleetVehicleClient;
+    }
+
+
+    // US-09: Dispatcher creates a trip request
+
+    public async Task<TripResponse> CreateTripAsync(CreateTripRequest request)
+    {
+        var errors = new Dictionary<string, string>();
+
+        var pickup = request.PickupLocation?.Trim() ?? string.Empty;
+        var dropoff = request.DropoffLocation?.Trim() ?? string.Empty;
+        var capacity = request.RequiredCapacity?.Trim() ?? string.Empty;
+
+        if (pickup.Length == 0)
+        {
+            errors["pickupLocation"] = "Pickup location is required.";
+        }
+        else if (pickup.Length > LocationMaxLength)
+        {
+            errors["pickupLocation"] =
+                $"Pickup location must be {LocationMaxLength} characters or fewer.";
+        }
+
+        if (dropoff.Length == 0)
+        {
+            errors["dropoffLocation"] = "Drop-off location is required.";
+        }
+        else if (dropoff.Length > LocationMaxLength)
+        {
+            errors["dropoffLocation"] =
+                $"Drop-off location must be {LocationMaxLength} characters or fewer.";
+        }
+
+        if (capacity.Length == 0)
+        {
+            errors["requiredCapacity"] = "Required capacity is missing.";
+        }
+        else if (!CapacityParser.TryParse(capacity, out _, out _, out var normalizedCapacity))
+        {
+            errors["requiredCapacity"] =
+                "Capacity must be a positive number, optionally with a unit (for example 500 kg, 8 persons, 20 units).";
+        }
+        else
+        {
+            // Store one consistent format: "500kg" and "500  kg" both become "500 kg".
+            capacity = normalizedCapacity;
+        }
+
+        // Nothing is saved unless EVERY field is valid (Scenario 2).
+        if (errors.Count > 0)
+        {
+            throw new ValidationException(errors);
+        }
+
+        var now = DateTime.UtcNow;
+
+        // The status is decided here. It is never read from the request, so a
+        // client cannot create a trip that is already "Assigned" or "Completed".
+        var trip = new Trip
+        {
+            Id = Guid.CreateVersion7(),
+            PickupLocation = pickup,
+            DropoffLocation = dropoff,
+            RequiredCapacity = capacity,
+            Status = TripStatus.Requested,
+            AssignedVehicleId = null,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        await _tripRepository.CreateTripAsync(trip);
+
+        return ToResponse(trip);
+    }
+    
+    // US-13: List trips, optionally filtered to one status
+
+    public async Task<List<TripResponse>> GetTripsAsync(string? status)
+    {
+        if (!string.IsNullOrWhiteSpace(status) && !TripStatus.All.Contains(status))
+        {
+            throw new ValidationException(new Dictionary<string, string>
+            {
+                ["status"] = $"Status must be one of: {string.Join(", ", TripStatus.All)}."
+            });
+        }
+
+        var trips = await _tripRepository.GetAllAsync(status);
+
+        return trips.Select(ToResponse).ToList();
+    }
+
+    // US-10: Ranked vehicle suggestions for a trip
+
+    public async Task<List<VehicleSuggestionResponse>> GetSuggestionsAsync(
+        Guid tripId, string? authorizationHeader)
+    {
+        var trip = await _tripRepository.GetByIdAsync(tripId)
+            ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
+
+        if (!CapacityParser.TryParse(trip.RequiredCapacity, out var requiredAmount, out var requiredUnit, out _))
+        {
+            throw new InvalidOperationException(
+                $"Trip {tripId} has an unparseable required capacity: '{trip.RequiredCapacity}'.");
+        }
+
+        var vehicles = await _fleetVehicleClient.GetVehiclesAsync(authorizationHeader);
+
+        var suggestions = new List<VehicleSuggestionResponse>();
+
+        foreach (var vehicle in vehicles)
+        {
+            if (!string.Equals(vehicle.Status, "Available", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (!CapacityParser.TryParse(vehicle.Capacity, out var vehicleAmount, out var vehicleUnit, out _))
+                continue;
+
+            // Same unit only - "5 persons" can never satisfy "500 kg".
+            if (!string.Equals(vehicleUnit, requiredUnit, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (vehicleAmount < requiredAmount)
+                continue;
+
+            suggestions.Add(new VehicleSuggestionResponse
+            {
+                VehicleId = vehicle.Id,
+                RegistrationNo = vehicle.RegistrationNo,
+                Type = vehicle.Type,
+                Capacity = vehicle.Capacity,
+                Unit = vehicleUnit,
+                ExcessCapacity = vehicleAmount - requiredAmount
+            });
+        }
+
+        return suggestions
+            .OrderBy(s => s.ExcessCapacity)
+            .ToList();
+    }
+
+    private static TripResponse ToResponse(Trip trip)
+    {
+        return new TripResponse
+        {
+            Id = trip.Id,
+            PickupLocation = trip.PickupLocation,
+            DropoffLocation = trip.DropoffLocation,
+            RequiredCapacity = trip.RequiredCapacity,
+            Status = trip.Status,
+            AssignedVehicleId = trip.AssignedVehicleId,
+            CreatedAt = trip.CreatedAt,
+            UpdatedAt = trip.UpdatedAt
+        };
+    }
+}

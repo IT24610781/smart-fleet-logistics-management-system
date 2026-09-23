@@ -2,8 +2,8 @@ namespace TripDispatchService.Models;
 
 // The five lifecycle states. They must match the CHECK constraint on
 // trips.status in database/trip-dispatch/schema.sql.
-//
-//   Requested -> Assigned -> In-Progress -> Completed      (or Cancelled)
+
+//   Requested -> Assigned -> In-Progress -> Completed  (or Cancelled)
 public static class TripStatus
 {
     public const string Requested = "Requested";

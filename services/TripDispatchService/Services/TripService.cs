@@ -9,6 +9,7 @@ public class TripService
     private const int LocationMaxLength = 255;
 
     private readonly ITripRepository _tripRepository;
+
     private readonly IFleetVehicleClient _fleetVehicleClient;
 
     public TripService(ITripRepository tripRepository, IFleetVehicleClient fleetVehicleClient)
@@ -16,7 +17,6 @@ public class TripService
         _tripRepository = tripRepository;
         _fleetVehicleClient = fleetVehicleClient;
     }
-
 
     // US-09: Dispatcher creates a trip request
 
@@ -108,7 +108,6 @@ public class TripService
     }
 
     // US-10: Ranked vehicle suggestions for a trip
-
     public async Task<List<VehicleSuggestionResponse>> GetSuggestionsAsync(
         Guid tripId, string? authorizationHeader)
     {

@@ -54,7 +54,7 @@ public class TripRepository : ITripRepository
             "@assigned_vehicle_id",
             trip.AssignedVehicleId?.ToString() ?? (object)DBNull.Value);
 
-                await command.ExecuteNonQueryAsync();
+         await command.ExecuteNonQueryAsync();
     }
 
     public async Task<List<Trip>> GetAllAsync(string? status)

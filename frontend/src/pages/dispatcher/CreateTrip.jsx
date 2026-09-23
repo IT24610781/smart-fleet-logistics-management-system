@@ -9,7 +9,7 @@ import { isRequired } from '../../utils/validation'
 
 const EMPTY = { pickupLocation: '', dropoffLocation: '', requiredCapacity: '' }
 
-// US-09 — connects to POST /api/trips on the Trip Dispatch Service.
+// US-09 connects to POST /api/trips on the Trip Dispatch Service.
 export default function CreateTrip() {
   const [form, setForm] = useState(EMPTY)
   const [fieldErrors, setFieldErrors] = useState({})

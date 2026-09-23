@@ -68,6 +68,7 @@ export default function Trips() {
     { key: 'requiredCapacity', header: 'Capacity' },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
     { key: 'createdAt', header: 'Created', render: (r) => formatDateTime(r.createdAt) },
+
     {
       key: 'actions',
       header: '',

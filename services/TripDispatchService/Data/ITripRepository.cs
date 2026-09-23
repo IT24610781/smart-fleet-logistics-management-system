@@ -8,9 +8,9 @@ public interface ITripRepository
 {
     Task CreateTripAsync(Trip trip);
 // status == null means "all trips".
-        Task<List<Trip>> GetAllAsync(string? status);
+    Task<List<Trip>> GetAllAsync(string? status);
 
 // US-10: look up a single trip (used by the vehicle-suggestions endpoint).
     Task<Trip?> GetByIdAsync(Guid id);
-
+ 
 }

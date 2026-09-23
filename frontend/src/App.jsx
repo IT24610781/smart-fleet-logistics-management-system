@@ -15,6 +15,8 @@ import EditVehicle from './pages/admin/EditVehicle'
 
 import DispatcherDashboard from './pages/dispatcher/DispatcherDashboard'
 import Trips from './pages/dispatcher/Trips'
+import CreateTrip from './pages/dispatcher/CreateTrip'
+import TripSuggestions from './pages/dispatcher/TripSuggestions'
 import Tracking from './pages/dispatcher/Tracking'
 
 import DriverDashboard from './pages/driver/DriverDashboard'
@@ -60,6 +62,8 @@ export default function App() {
         {/* Dispatcher */}
         <Route path="/dispatcher/dashboard" element={<ProtectedRoute allowedRoles={['Dispatcher']}><DispatcherDashboard /></ProtectedRoute>} />
         <Route path="/dispatcher/trips" element={<ProtectedRoute allowedRoles={['Dispatcher']}><Trips /></ProtectedRoute>} />
+        <Route path="/dispatcher/trips/create" element={<ProtectedRoute allowedRoles={['Dispatcher']}><CreateTrip /></ProtectedRoute>} />
+        <Route path="/dispatcher/trips/:id/suggestions" element={<ProtectedRoute allowedRoles={['Dispatcher']}><TripSuggestions /></ProtectedRoute>} />
         <Route path="/dispatcher/tracking" element={<ProtectedRoute allowedRoles={['Dispatcher']}><Tracking /></ProtectedRoute>} />
         <Route path="/dispatcher/reports" element={<ProtectedRoute allowedRoles={['Dispatcher']}><Reports /></ProtectedRoute>} />
 

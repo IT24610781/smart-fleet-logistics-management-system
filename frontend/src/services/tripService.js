@@ -1,22 +1,38 @@
-// Dispatch / Trip Service — not yet implemented by the backend.
-import api from './api'
+import { createApiClient } from './api'
 
-export async function listTrips() {
-  const { data } = await api.get('/api/trips')
+const tripApi = createApiClient(
+  import.meta.env.VITE_TRIP_API_URL || 'http://localhost:5294'
+)
+
+// US-09: create a trip request.
+export async function createTrip(payload) {
+  const { data } = await tripApi.post('/api/trips', {
+    pickupLocation: payload.pickupLocation,
+    dropoffLocation: payload.dropoffLocation,
+    requiredCapacity: payload.requiredCapacity,
+  })
   return data
 }
 
-export async function createTripRequest(payload) {
-  const { data } = await api.post('/api/trips', payload)
+export async function listTrips(status) {
+  const { data } = await tripApi.get('/api/trips', {
+    params: status ? { status } : undefined,
+  })
   return data
 }
 
 export async function respondToTrip(tripId, decision) {
-  const { data } = await api.post(`/api/trips/${tripId}/respond`, { decision })
+  const { data } = await tripApi.post(`/api/trips/${tripId}/respond`, { decision })
   return data
 }
 
 export async function updateTripStatus(tripId, status) {
-  const { data } = await api.patch(`/api/trips/${tripId}/status`, { status })
+  const { data } = await tripApi.patch(`/api/trips/${tripId}/status`, { status })
+  return data
+}
+
+// US-10: ranked list of vehicles that fit a trip's required capacity.
+export async function getSuggestions(tripId) {
+  const { data } = await tripApi.get(`/api/trips/${tripId}/suggestions`)
   return data
 }

@@ -18,6 +18,15 @@ builder.Services.AddSingleton<DatabaseConnection>();
 builder.Services.AddScoped<ITripRepository, TripRepository>();
 builder.Services.AddScoped<TripService>();
 
+// US-10: Fleet base URL - same pattern as the DB connection string, read
+var fleetBaseUrl = builder.Configuration["FleetService:BaseUrl"]
+    ?? throw new InvalidOperationException("FleetService:BaseUrl is not configured.");
+
+builder.Services.AddHttpClient<IFleetVehicleClient, FleetVehicleClient>(client =>
+{
+    client.BaseAddress = new Uri(fleetBaseUrl);
+});
+
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT key is not configured.");
 

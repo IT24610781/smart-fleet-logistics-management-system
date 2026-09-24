@@ -16,7 +16,25 @@ public class TripsController : ControllerBase
         _tripService = tripService;
     }
 
-    //US-13: List trips, optionally filtered by status
+    //US-10 Ranked vehicle suggestions for a trip
+
+    [Authorize(Roles = "Dispatcher")]
+    [HttpGet("{id}/suggestions")]
+    public async Task<IActionResult> GetSuggestions(Guid id)
+    {
+        try
+        {
+            var authorizationHeader = Request.Headers.Authorization.ToString();
+            var suggestions = await _tripService.GetSuggestionsAsync(id, authorizationHeader);
+            return Ok(suggestions);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    //US-13 List trips, optionally filtered by status
 
     [Authorize(Roles = "Dispatcher,Admin")]
     [HttpGet]
@@ -37,7 +55,7 @@ public class TripsController : ControllerBase
         }
     }
 
-    // US-09: Dispatcher creates a trip request
+    //US-09 Dispatcher creates a trip request
 
     [Authorize(Roles = "Dispatcher")]
     [HttpPost]

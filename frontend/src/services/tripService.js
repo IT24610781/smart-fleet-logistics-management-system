@@ -30,3 +30,9 @@ export async function updateTripStatus(tripId, status) {
   const { data } = await tripApi.patch(`/api/trips/${tripId}/status`, { status })
   return data
 }
+
+// US-10: ranked list of vehicles that fit a trip's required capacity.
+export async function getSuggestions(tripId) {
+  const { data } = await tripApi.get(`/api/trips/${tripId}/suggestions`)
+  return data
+}

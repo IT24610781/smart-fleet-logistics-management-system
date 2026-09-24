@@ -10,11 +10,13 @@ public class TripService
 
     private readonly ITripRepository _tripRepository;
 
-    public TripService(ITripRepository tripRepository)
+    private readonly IFleetVehicleClient _fleetVehicleClient;
+
+    public TripService(ITripRepository tripRepository, IFleetVehicleClient fleetVehicleClient)
     {
         _tripRepository = tripRepository;
+        _fleetVehicleClient = fleetVehicleClient;
     }
-
 
     // US-09: Dispatcher creates a trip request
 
@@ -103,6 +105,54 @@ public class TripService
         var trips = await _tripRepository.GetAllAsync(status);
 
         return trips.Select(ToResponse).ToList();
+    }
+
+    // US-10: Ranked vehicle suggestions for a trip
+    public async Task<List<VehicleSuggestionResponse>> GetSuggestionsAsync(
+        Guid tripId, string? authorizationHeader)
+    {
+        var trip = await _tripRepository.GetByIdAsync(tripId)
+            ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
+
+        if (!CapacityParser.TryParse(trip.RequiredCapacity, out var requiredAmount, out var requiredUnit, out _))
+        {
+            throw new InvalidOperationException(
+                $"Trip {tripId} has an unparseable required capacity: '{trip.RequiredCapacity}'.");
+        }
+
+        var vehicles = await _fleetVehicleClient.GetVehiclesAsync(authorizationHeader);
+
+        var suggestions = new List<VehicleSuggestionResponse>();
+
+        foreach (var vehicle in vehicles)
+        {
+            if (!string.Equals(vehicle.Status, "Available", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (!CapacityParser.TryParse(vehicle.Capacity, out var vehicleAmount, out var vehicleUnit, out _))
+                continue;
+
+            // Same unit only - "5 persons" can never satisfy "500 kg".
+            if (!string.Equals(vehicleUnit, requiredUnit, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (vehicleAmount < requiredAmount)
+                continue;
+
+            suggestions.Add(new VehicleSuggestionResponse
+            {
+                VehicleId = vehicle.Id,
+                RegistrationNo = vehicle.RegistrationNo,
+                Type = vehicle.Type,
+                Capacity = vehicle.Capacity,
+                Unit = vehicleUnit,
+                ExcessCapacity = vehicleAmount - requiredAmount
+            });
+        }
+
+        return suggestions
+            .OrderBy(s => s.ExcessCapacity)
+            .ToList();
     }
 
     private static TripResponse ToResponse(Trip trip)

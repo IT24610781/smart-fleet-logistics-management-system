@@ -68,6 +68,18 @@ export default function Trips() {
     { key: 'requiredCapacity', header: 'Capacity' },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
     { key: 'createdAt', header: 'Created', render: (r) => formatDateTime(r.createdAt) },
+
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (r) =>
+        r.status === 'Requested' ? (
+          <Link to={`/dispatcher/trips/${r.id}/suggestions`}>
+            <Button variant="ghost">Suggest vehicles</Button>
+          </Link>
+        ) : null,
+    },
   ]
 
   return (

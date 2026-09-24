@@ -54,7 +54,7 @@ public class TripRepository : ITripRepository
             "@assigned_vehicle_id",
             trip.AssignedVehicleId?.ToString() ?? (object)DBNull.Value);
 
-                await command.ExecuteNonQueryAsync();
+         await command.ExecuteNonQueryAsync();
     }
 
     public async Task<List<Trip>> GetAllAsync(string? status)
@@ -104,7 +104,45 @@ public class TripRepository : ITripRepository
         return trips;
     }
 
-    // Map database row - Trip model
+    // US-10: Look up a single trip by id
+
+    public async Task<Trip?> GetByIdAsync(Guid id)
+    {
+        const string sql = """
+            SELECT
+                id,
+                pickup_location,
+                dropoff_location,
+                required_capacity,
+                status,
+                assigned_vehicle_id,
+                created_at,
+                updated_at
+            FROM trips
+            WHERE id = @id;
+            """;
+
+        await using var connection =
+            _databaseConnection.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("@id", id.ToString());
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        if (!await reader.ReadAsync())
+        {
+            return null;
+        }
+
+        return MapTrip(reader);
+    }
+
+    // Map database row to Trip model
 
     private static Trip MapTrip(MySqlDataReader reader)
     {

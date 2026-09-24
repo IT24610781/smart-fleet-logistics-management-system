@@ -16,7 +16,7 @@ public class VehiclesController : ControllerBase
         _vehicleService = vehicleService;
     }
 
-    // =======US-04: Admin registers a vehicle
+    //US-04 Admin registers a vehicle
 
     [Authorize(Roles = "Admin")]
     [HttpPost]
@@ -50,7 +50,7 @@ public class VehiclesController : ControllerBase
         }
     }
 
-    // =======US-06: Admin updates a vehicle's details and status
+    //US-06 Admin updates a vehicle's details and status
 
     [Authorize(Roles = "Admin")]
     [HttpPut("{id}")]
@@ -81,8 +81,45 @@ public class VehiclesController : ControllerBase
         }
     }
 
+    //US-11 Dispatcher starts/ends a vehicle's use on a trip
 
-    // =======US-05: Dispatcher/Admin views all registered vehicles
+    [Authorize(Roles = "Admin,Dispatcher")]
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdateVehicleStatus(
+        Guid id, UpdateVehicleStatusRequest request)
+    {
+        try
+        {
+            var vehicle =
+                await _vehicleService.UpdateVehicleStatusAsync(id, request.Status);
+
+            return Ok(vehicle);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new
+            {
+                message = "Validation failed.",
+                errors = ex.Errors
+            });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    //US-05 Dispatcher/Admin views all registered vehicles
 
     [Authorize(Roles = "Admin,Dispatcher")]
     [HttpGet]
@@ -94,7 +131,7 @@ public class VehiclesController : ControllerBase
     }
 
 
-    // =======US-07: Admin removes a vehicle from the registry
+    //US-07 Admin removes a vehicle from the registry
 
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]

@@ -9,12 +9,19 @@ import { isRequired, isValidCapacity, CAPACITY_HINT, CAPACITY_ERROR } from '../.
 
 const STATUSES = ['Available', 'On Trip', 'Under Maintenance']
 
-// US-06 — Admin updates a vehicle's details and status.
+//US-06 Admin updates a vehicle's details and status.
 export default function EditVehicle() {
   const { id } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const vehicle = location.state?.vehicle
+
+  // While a vehicle is On Trip, a Dispatcher has already picked it based on
+  // exactly these details (reg. no, type, capacity) and it is in active use.
+  // Changing ANY of them here - not just status - would silently invalidate
+  // what the Dispatcher is relying on, so the whole form is locked, not just
+  // the status field.
+  const isLocked = vehicle?.status === 'On Trip'
 
   const [form, setForm] = useState(
     vehicle
@@ -30,10 +37,6 @@ export default function EditVehicle() {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
   }
 
-  // After a successful save, leave the confirmation on screen for a moment,
-  // then return to the vehicle list (which reloads and shows the new values).
-  // window.setTimeout + cleanup: if the admin navigates away first, the timer
-  // is cancelled instead of pulling them back to the list.
   useEffect(() => {
     if (!saved) return undefined
     const timer = window.setTimeout(() => navigate('/admin/vehicles'), 2000)
@@ -52,6 +55,11 @@ export default function EditVehicle() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    // Defence in depth: even if the form were somehow submitted while
+    // locked (e.g. disabled attributes stripped via devtools), nothing is
+    // sent to the server for an On Trip vehicle.
+    if (isLocked) return
+
     setFormError(null)
     setSaved(false)
 
@@ -109,9 +117,18 @@ export default function EditVehicle() {
           <ErrorMessage>{formError}</ErrorMessage>
           <SuccessMessage>{saved ? 'Vehicle updated successfully. Redirecting to the vehicle list…' : null}</SuccessMessage>
 
-          <FormField label="Registration number" name="registrationNo" value={form.registrationNo} onChange={update('registrationNo')} error={fieldErrors.registrationNo} required autoComplete="off" />
-          <FormField label="Vehicle type" name="type" value={form.type} onChange={update('type')} error={fieldErrors.type} required placeholder="e.g. Van, Truck, Motorbike" />
-          <FormField label="Capacity" name="capacity" value={form.capacity} onChange={update('capacity')} error={fieldErrors.capacity} required placeholder="e.g. 500 kg" hint={CAPACITY_HINT} />
+          {isLocked && (
+            <div
+              className="flex items-start gap-2.5 rounded-xl border border-error/30 bg-error-container/60 px-4 py-3 font-body-sm text-body-sm text-on-error-container"
+              role="alert"
+            >
+              This vehicle is currently on a trip. Editing will be available again once the trip is completed or cancelled.
+            </div>
+          )}
+
+          <FormField label="Registration number" name="registrationNo" value={form.registrationNo} onChange={update('registrationNo')} error={fieldErrors.registrationNo} required autoComplete="off" readOnly={isLocked} />
+          <FormField label="Vehicle type" name="type" value={form.type} onChange={update('type')} error={fieldErrors.type} required placeholder="e.g. Van, Truck, Motorbike" readOnly={isLocked} />
+          <FormField label="Capacity" name="capacity" value={form.capacity} onChange={update('capacity')} error={fieldErrors.capacity} required placeholder="e.g. 500 kg" hint={CAPACITY_HINT} readOnly={isLocked} />
 
           <div className="flex flex-col gap-1.5">
             <label className="flex items-center justify-between font-title-md text-body-sm text-on-surface" htmlFor="status">
@@ -122,6 +139,7 @@ export default function EditVehicle() {
               className="select-input"
               value={form.status}
               onChange={update('status')}
+              disabled={isLocked}
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -133,8 +151,12 @@ export default function EditVehicle() {
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <Button type="submit" loading={submitting} disabled={saved}>{submitting ? 'Saving…' : 'Save changes'}</Button>
-            <Button variant="secondary" type="button" onClick={() => navigate('/admin/vehicles')}>Cancel</Button>
+            {!isLocked && (
+              <Button type="submit" loading={submitting} disabled={saved}>{submitting ? 'Saving…' : 'Save changes'}</Button>
+            )}
+            <Button variant="secondary" type="button" onClick={() => navigate('/admin/vehicles')}>
+              {isLocked ? 'Back to Vehicles' : 'Cancel'}
+            </Button>
           </div>
         </form>
       </div>

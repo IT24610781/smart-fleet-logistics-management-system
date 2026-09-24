@@ -6,4 +6,8 @@ namespace TripDispatchService.Services;
 public interface IFleetVehicleClient
 {
     Task<List<FleetVehicleDto>> GetVehiclesAsync(string? authorizationHeader);
+
+    // US-11: PATCH /api/vehicles/{id}/status on Fleet. Throws NotFoundException
+    Task SetVehicleStatusAsync(Guid vehicleId, string status, string? authorizationHeader);
+
 }

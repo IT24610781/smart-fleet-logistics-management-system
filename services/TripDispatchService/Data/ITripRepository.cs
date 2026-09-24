@@ -10,7 +10,9 @@ public interface ITripRepository
 // status == null means "all trips".
     Task<List<Trip>> GetAllAsync(string? status);
 
-// US-10: look up a single trip (used by the vehicle-suggestions endpoint).
+//US-10 look up a single trip (used by the vehicle-suggestions endpoint).
     Task<Trip?> GetByIdAsync(Guid id);
- 
+
+//US-11 persist a trip's status and assigned vehicle after assignment.
+    Task UpdateAsync(Trip trip);
 }

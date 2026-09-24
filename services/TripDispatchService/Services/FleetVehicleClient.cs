@@ -35,4 +35,54 @@ public class FleetVehicleClient : IFleetVehicleClient
 
         return vehicles ?? new List<FleetVehicleDto>();
     }
+
+    public async Task SetVehicleStatusAsync(Guid vehicleId, string status, string? authorizationHeader)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/vehicles/{vehicleId}/status")
+        {
+            Content = JsonContent.Create(new { status })
+        };
+
+        if (!string.IsNullOrWhiteSpace(authorizationHeader) &&
+            AuthenticationHeaderValue.TryParse(authorizationHeader, out var auth))
+        {
+            request.Headers.Authorization = auth;
+        }
+
+        using var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new NotFoundException($"No vehicle found with id '{vehicleId}'.");
+        }
+
+        if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            throw new InvalidOperationException(
+                ExtractMessage(body) ?? $"Vehicle '{vehicleId}' is not available for this status change.");
+        }
+
+        throw new InvalidOperationException(
+            $"Fleet service returned {(int)response.StatusCode} while updating vehicle status.");
+    }
+
+    private static string? ExtractMessage(string jsonBody)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(jsonBody);
+            return doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

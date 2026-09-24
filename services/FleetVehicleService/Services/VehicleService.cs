@@ -26,9 +26,7 @@ public class VehicleService
         _tripEligibilityChecker = tripEligibilityChecker;
     }
 
-    // ============================================================
     // US-04: Admin registers a vehicle
-    // ============================================================
 
     public async Task<VehicleResponse> CreateVehicleAsync(
     CreateVehicleRequest request)
@@ -71,7 +69,7 @@ public class VehicleService
     }
     else
     {
-        // Store one consistent format: "500kg" and "500  kg" both become "500 kg".
+    // Store one consistent format: "500kg" and "500  kg" both become "500 kg".
         capacity = normalizedCapacity;
     }
 
@@ -113,10 +111,7 @@ public class VehicleService
     };
 }
 
-
-    // ============================================================
     // US-06: Admin updates a vehicle's details and status
-    // ============================================================
 
     public async Task<VehicleResponse> UpdateVehicleAsync(
     Guid id, UpdateVehicleRequest request)
@@ -168,7 +163,7 @@ public class VehicleService
     }
     else
     {
-        // Store one consistent format: "500kg" and "500  kg" both become "500 kg".
+    // Store one consistent format: "500kg" and "500  kg" both become "500 kg".
         capacity = normalizedCapacity;
     }
 
@@ -228,10 +223,71 @@ public class VehicleService
     };
 }
     
-    
-    // ============================================================
-    // US-05: Dispatcher/Admin views all registered vehicles
-    // ============================================================
+    // US-11 Dispatcher starts/ends a vehicle's use on a trip
+    // Narrow on purpose: only Available <-> On Trip, and only when the
+    // vehicle is actually in the state that transition expects.
+   
+    public async Task<VehicleResponse> UpdateVehicleStatusAsync(Guid id, string? status)
+    {
+        var vehicle = await _vehicleRepository.GetByIdAsync(id);
+
+        if (vehicle is null)
+        {
+            throw new NotFoundException(
+                $"No vehicle found with id '{id}'.");
+        }
+
+        var trimmedStatus = status?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(trimmedStatus))
+        {
+            throw new ValidationException(new Dictionary<string, string>
+            {
+                ["status"] = "Status is required."
+            });
+        }
+
+        if (trimmedStatus != VehicleStatus.OnTrip && trimmedStatus != VehicleStatus.Available)
+        {
+            throw new ValidationException(new Dictionary<string, string>
+            {
+                ["status"] = $"Status must be one of: {VehicleStatus.OnTrip}, {VehicleStatus.Available}."
+            });
+        }
+
+        if (trimmedStatus == VehicleStatus.OnTrip && vehicle.Status != VehicleStatus.Available)
+        {
+            throw new InvalidOperationException(
+                $"Vehicle '{vehicle.RegistrationNo}' is not Available (current status: {vehicle.Status}).");
+        }
+
+        if (trimmedStatus == VehicleStatus.Available && vehicle.Status != VehicleStatus.OnTrip)
+        {
+            throw new InvalidOperationException(
+                $"Vehicle '{vehicle.RegistrationNo}' is not currently On Trip (current status: {vehicle.Status}).");
+        }
+
+        var previousStatus = vehicle.Status;
+        vehicle.Status = trimmedStatus;
+
+        await _vehicleRepository.UpdateVehicleAsync(vehicle);
+
+        await _eventPublisher.PublishStatusChangedAsync(
+            vehicle, previousStatus, trimmedStatus);
+
+        return new VehicleResponse
+        {
+            Id = vehicle.Id,
+            RegistrationNo = vehicle.RegistrationNo,
+            Type = vehicle.Type,
+            Capacity = vehicle.Capacity,
+            Status = vehicle.Status,
+            CreatedAt = vehicle.CreatedAt,
+            UpdatedAt = DateTime.UtcNow
+        };
+    }
+
+    // US-05 Dispatcher/Admin views all registered vehicles
 
     public async Task<List<VehicleResponse>> GetAllVehiclesAsync()
     {
@@ -249,10 +305,7 @@ public class VehicleService
         }).ToList();
     }
 
-
-    // ============================================================
     // US-07: Admin removes a vehicle from the registry
-    // ============================================================
 
     public async Task DeleteVehicleAsync(Guid id)
     {

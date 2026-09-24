@@ -4,7 +4,7 @@ const tripApi = createApiClient(
   import.meta.env.VITE_TRIP_API_URL || 'http://localhost:5294'
 )
 
-// US-09: create a trip request.
+//US-09 create a trip request.
 export async function createTrip(payload) {
   const { data } = await tripApi.post('/api/trips', {
     pickupLocation: payload.pickupLocation,
@@ -31,8 +31,14 @@ export async function updateTripStatus(tripId, status) {
   return data
 }
 
-// US-10: ranked list of vehicles that fit a trip's required capacity.
+//US-10 ranked list of vehicles that fit a trip's required capacity.
 export async function getSuggestions(tripId) {
   const { data } = await tripApi.get(`/api/trips/${tripId}/suggestions`)
+  return data
+}
+
+//US-11 assign a suggested vehicle to a trip.
+export async function assignVehicle(tripId, vehicleId) {
+  const { data } = await tripApi.post(`/api/trips/${tripId}/assign`, { vehicleId })
   return data
 }

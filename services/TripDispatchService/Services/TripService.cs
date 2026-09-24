@@ -18,7 +18,7 @@ public class TripService
         _fleetVehicleClient = fleetVehicleClient;
     }
 
-    // US-09: Dispatcher creates a trip request
+    //US-09 Dispatcher creates a trip request
 
     public async Task<TripResponse> CreateTripAsync(CreateTripRequest request)
     {
@@ -90,7 +90,7 @@ public class TripService
         return ToResponse(trip);
     }
     
-    // US-13: List trips, optionally filtered to one status
+    //US-13 List trips, optionally filtered to one status
 
     public async Task<List<TripResponse>> GetTripsAsync(string? status)
     {
@@ -107,7 +107,7 @@ public class TripService
         return trips.Select(ToResponse).ToList();
     }
 
-    // US-10: Ranked vehicle suggestions for a trip
+    //US-10 Ranked vehicle suggestions for a trip
     public async Task<List<VehicleSuggestionResponse>> GetSuggestionsAsync(
         Guid tripId, string? authorizationHeader)
     {
@@ -153,6 +153,44 @@ public class TripService
         return suggestions
             .OrderBy(s => s.ExcessCapacity)
             .ToList();
+    }
+
+    // US-11: Dispatcher assigns a suggested vehicle to a trip
+    // Order matters: the trip is only updated AFTER Fleet confirms the
+    // vehicle really is Available and has been switched to On Trip. 
+
+    public async Task<TripResponse> AssignVehicleAsync(
+        Guid tripId, Guid? vehicleId, string? authorizationHeader)
+    {
+        if (vehicleId is null)
+        {
+            throw new ValidationException(new Dictionary<string, string>
+            {
+                ["vehicleId"] = "A vehicle is required."
+            });
+        }
+
+        var trip = await _tripRepository.GetByIdAsync(tripId)
+            ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
+
+        if (trip.Status != TripStatus.Requested)
+        {
+            throw new InvalidOperationException(
+                $"This trip cannot be assigned a vehicle because its status is '{trip.Status}' (expected '{TripStatus.Requested}').");
+        }
+
+        // Throws NotFoundException or InvalidOperationException if this fails -
+        // nothing below runs, and the trip stays exactly as it was.
+        await _fleetVehicleClient.SetVehicleStatusAsync(
+            vehicleId.Value, "On Trip", authorizationHeader);
+
+        trip.AssignedVehicleId = vehicleId;
+        trip.Status = TripStatus.Assigned;
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        await _tripRepository.UpdateAsync(trip);
+
+        return ToResponse(trip);
     }
 
     private static TripResponse ToResponse(Trip trip)

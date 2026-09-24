@@ -12,7 +12,7 @@ public class TripRepository : ITripRepository
         _databaseConnection = databaseConnection;
     }
 
-    // US-09: Create a trip request
+    //US-09 Create a trip request
 
     public async Task CreateTripAsync(Trip trip)
     {
@@ -104,7 +104,7 @@ public class TripRepository : ITripRepository
         return trips;
     }
 
-    // US-10: Look up a single trip by id
+    //US-10 Look up a single trip by id
 
     public async Task<Trip?> GetByIdAsync(Guid id)
     {
@@ -140,6 +140,37 @@ public class TripRepository : ITripRepository
         }
 
         return MapTrip(reader);
+    }
+
+    //US-11 Update a trip's status and assigned vehicle
+
+    public async Task UpdateAsync(Trip trip)
+    {
+        // updated_at is not set here: the column is
+        // "ON UPDATE CURRENT_TIMESTAMP", so MySQL sets it automatically.
+        const string sql = """
+            UPDATE trips
+            SET
+                status = @status,
+                assigned_vehicle_id = @assigned_vehicle_id
+            WHERE id = @id;
+            """;
+
+        await using var connection =
+            _databaseConnection.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("@id", trip.Id.ToString());
+        command.Parameters.AddWithValue("@status", trip.Status);
+        command.Parameters.AddWithValue(
+            "@assigned_vehicle_id",
+            trip.AssignedVehicleId?.ToString() ?? (object)DBNull.Value);
+
+        await command.ExecuteNonQueryAsync();
     }
 
     // Map database row to Trip model

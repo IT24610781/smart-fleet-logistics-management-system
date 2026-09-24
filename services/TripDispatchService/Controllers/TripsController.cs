@@ -34,6 +34,36 @@ public class TripsController : ControllerBase
         }
     }
 
+    //US-11 Dispatcher assigns a vehicle to a trip
+
+    [Authorize(Roles = "Dispatcher")]
+    [HttpPost("{id}/assign")]
+    public async Task<IActionResult> AssignVehicle(Guid id, AssignVehicleRequest request)
+    {
+        try
+        {
+            var authorizationHeader = Request.Headers.Authorization.ToString();
+            var trip = await _tripService.AssignVehicleAsync(id, request.VehicleId, authorizationHeader);
+            return Ok(trip);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new
+            {
+                message = "Validation failed.",
+                errors = ex.Errors
+            });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
     //US-13 List trips, optionally filtered by status
 
     [Authorize(Roles = "Dispatcher,Admin")]

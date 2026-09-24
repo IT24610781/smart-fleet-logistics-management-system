@@ -149,16 +149,11 @@ export default function Vehicles() {
         <DataTable columns={columns} rows={rows} emptyTitle="No vehicles found" emptyDescription="Try a different search or filter." />
       )}
 
-      <ConfirmDialog
+        <ConfirmDialog
         open={!!deleteTarget}
         title="Remove vehicle?"
-        body={
-          deleteError
-            ? deleteError
-            : deleteTarget
-              ? `This will permanently remove ${deleteTarget.registrationNo} from the registry.`
-              : ''
-        }
+        body={deleteTarget ? `This will permanently remove ${deleteTarget.registrationNo} from the registry.` : ''}
+        errorMessage={deleteError || undefined}
         confirmLabel="Remove"
         cancelLabel="Cancel"
         variant="danger"

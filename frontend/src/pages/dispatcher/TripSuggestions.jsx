@@ -1,21 +1,31 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
 import EmptyState from '../../components/common/EmptyState'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import { ErrorMessage } from '../../components/common/ErrorMessage'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
+import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
+import { useToast } from '../../context/ToastContext'
 import * as tripService from '../../services/tripService'
 
-// US-10: ranked vehicle suggestions for one trip. Read-only for now -
-// actually assigning a vehicle is US-11.
+// US-10/US-11: ranked vehicle suggestions for one trip, with the ability to
+// assign one of them.
 export default function TripSuggestions() {
   const { id } = useParams()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+
   const [suggestions, setSuggestions] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+
+  const [confirmTarget, setConfirmTarget] = useState(null)
+  const [assigning, setAssigning] = useState(false)
+  const [assignError, setAssignError] = useState(null)
+  const [assigned, setAssigned] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -46,6 +56,30 @@ export default function TripSuggestions() {
     }
   }, [id, reloadKey])
 
+  async function handleConfirmAssign() {
+    if (!confirmTarget) return
+    setAssigning(true)
+    setAssignError(null)
+    try {
+      await tripService.assignVehicle(id, confirmTarget.vehicleId)
+      setAssigned(true)
+      setConfirmTarget(null)
+      showToast(`${confirmTarget.registrationNo} assigned to this trip.`, 'success')
+      window.setTimeout(() => navigate('/dispatcher/trips'), 1500)
+    } catch (err) {
+      setConfirmTarget(null)
+      setAssignError(
+        err.status === 409
+          ? (err.message || 'This vehicle is no longer available. It may have just been assigned to another trip.')
+          : err.status === 404
+            ? 'This trip or vehicle could not be found. It may have changed.'
+            : err.message || 'Unable to assign this vehicle. Please try again.'
+      )
+    } finally {
+      setAssigning(false)
+    }
+  }
+
   return (
     <AppShell title="Vehicle Suggestions">
       <div className="page-header">
@@ -63,6 +97,9 @@ export default function TripSuggestions() {
       </div>
 
       <div className="card card-pad">
+        <SuccessMessage>{assigned ? 'Vehicle assigned. Redirecting to Trips…' : null}</SuccessMessage>
+        <ErrorMessage>{assignError}</ErrorMessage>
+
         {loading && <LoadingSpinner center label="Finding suggestions…" />}
 
         {!loading && loadError && (
@@ -106,15 +143,36 @@ export default function TripSuggestions() {
                     <div className="page-header-desc">{s.type} · {s.capacity} capacity</div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div className="page-header-desc">Spare capacity</div>
-                  <div style={{ fontWeight: 600 }}>{s.excessCapacity} {s.unit}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div className="page-header-desc">Spare capacity</div>
+                    <div style={{ fontWeight: 600 }}>{s.excessCapacity} {s.unit}</div>
+                  </div>
+                  <Button
+                    variant={index === 0 ? 'accent' : 'secondary'}
+                    disabled={assigned}
+                    onClick={() => setConfirmTarget(s)}
+                  >
+                    Assign
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmTarget !== null}
+        title="Assign this vehicle?"
+        body={confirmTarget ? `Assign ${confirmTarget.registrationNo} (${confirmTarget.type}) to this trip? The vehicle will be marked On Trip.` : ''}
+        confirmLabel="Assign vehicle"
+        cancelLabel="Cancel"
+        variant="accent"
+        loading={assigning}
+        onConfirm={handleConfirmAssign}
+        onCancel={() => setConfirmTarget(null)}
+      />
     </AppShell>
   )
 }

@@ -86,6 +86,20 @@ body {
   animation: spin 0.7s linear infinite;
 }
 
+/* Two-column form row (First/Last name, Password/Confirm, ...).
+   Used by DispatcherRegister and the Trips form. Stacks on small screens. */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .toast-viewport {
   position: fixed;
   top: 1rem;

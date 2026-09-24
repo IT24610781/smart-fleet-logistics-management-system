@@ -1,28 +1,40 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import * as authService from '../../services/authService'
 import { useToast } from '../../context/ToastContext'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
+import AuthShell from '../../components/layout/AuthShell'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import { isRequired, isValidEmail, isValidPassword, isValidUsername, isValidContactNumber } from '../../utils/validation'
-import './AuthLayout.css'
 
 const EMPTY = {
   firstName: '', lastName: '', username: '', email: '',
   password: '', confirmPassword: '', contactNumber: '',
 }
 
-// Section 15 — UI architecture only. The registration endpoint is not live
-// yet (planned for a later sprint), so submission surfaces that plainly
-// instead of pretending the account was created.
+// US-08: Dispatcher creates their own account via
+// POST /api/auth/register/dispatcher. Client-side checks run first; any
+// field-level errors returned by the API (400) are shown under the matching
+// input, and a duplicate username/email (409) is shown as a form error.
 export default function DispatcherRegister() {
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [form, setForm] = useState(EMPTY)
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState(null)
   const [success, setSuccess] = useState(false)
+
+  // US-08 Scenario 4: after a successful registration, show the confirmation
+  // for a moment, then send the person to the login page. Done in an effect
+  // (with window.setTimeout, like ToastContext) so the timer is cancelled if
+  // they leave the page first.
+  useEffect(() => {
+    if (!success) return undefined
+    const timer = window.setTimeout(() => navigate('/login'), 2000)
+    return () => window.clearTimeout(timer)
+  }, [success, navigate])
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
@@ -62,59 +74,53 @@ export default function DispatcherRegister() {
       })
       setSuccess(true)
       setForm(EMPTY)
-      showToast('Dispatcher account request submitted.', 'success')
+      showToast('Account created. You can now log in.', 'success')
     } catch (err) {
-      // Backend registration endpoint does not exist yet — say so clearly
-      // rather than showing a generic or misleading error.
-      if (err.status === 404) {
-        setFormError('Dispatcher registration is not available yet. This screen is ready for when the backend adds it.')
-        showToast('Dispatcher registration is not available yet.', 'error')
-      } else {
-        setFormError(err.fieldErrors ? null : err.message)
-        if (!err.fieldErrors) showToast(err.message || 'Unable to create the account.', 'error')
-        if (err.fieldErrors) setFieldErrors((f) => ({ ...f, ...err.fieldErrors }))
-      }
+      setFormError(err.fieldErrors ? null : err.message)
+      if (!err.fieldErrors) showToast(err.message || 'Unable to create the account.', 'error')
+      if (err.fieldErrors) setFieldErrors((f) => ({ ...f, ...err.fieldErrors }))
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card wide">
-        <div className="auth-brand">
-          <img src="/fleet-mark.svg" alt="" />
-          <h1>Create Dispatcher Account</h1>
-          <p>Registration is limited to the Dispatcher role</p>
+    <AuthShell>
+      <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Create your account</h2>
+      <p className="font-body-md text-body-md text-on-surface-variant mb-6">
+        Register as a Dispatcher to create trips and assign vehicles.
+      </p>
+
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+        <ErrorMessage>{formError}</ErrorMessage>
+        <SuccessMessage>{success ? 'Account created successfully. Redirecting you to the login page…' : null}</SuccessMessage>
+
+        <div className="form-grid-2">
+          <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} required autoComplete="given-name" />
+          <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} required autoComplete="family-name" />
         </div>
-
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          <ErrorMessage>{formError}</ErrorMessage>
-          <SuccessMessage>{success ? 'Account request submitted.' : null}</SuccessMessage>
-
-          <div className="form-grid-2">
-            <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} required />
-            <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} required />
-          </div>
-          <FormField label="Username" name="username" value={form.username} onChange={update('username')} error={fieldErrors.username} required />
-          <FormField label="Email" name="email" type="email" value={form.email} onChange={update('email')} error={fieldErrors.email} required autoComplete="email" />
-          <div className="form-grid-2">
-            <FormField label="Password" name="password" type="password" value={form.password} onChange={update('password')} error={fieldErrors.password} hint="At least 8 characters" required autoComplete="new-password" />
-            <FormField label="Confirm password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={update('confirmPassword')} error={fieldErrors.confirmPassword} required autoComplete="new-password" />
-          </div>
-          <FormField label="Contact number" name="contactNumber" type="tel" value={form.contactNumber} onChange={update('contactNumber')} error={fieldErrors.contactNumber} required />
-
+        <FormField label="Username" name="username" value={form.username} onChange={update('username')} error={fieldErrors.username} hint="3-20 characters, starts with a letter" required autoComplete="username" />
+        <FormField label="Email" name="email" type="email" value={form.email} onChange={update('email')} error={fieldErrors.email} required autoComplete="email" />
+        <div className="form-grid-2">
+          <FormField label="Password" name="password" type="password" value={form.password} onChange={update('password')} error={fieldErrors.password} hint="At least 8 characters" required autoComplete="new-password" />
+          <FormField label="Confirm password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={update('confirmPassword')} error={fieldErrors.confirmPassword} required autoComplete="new-password" />
+        </div>
+        <div className="form-grid-2">
+          <FormField label="Contact number" name="contactNumber" type="tel" value={form.contactNumber} onChange={update('contactNumber')} error={fieldErrors.contactNumber} required autoComplete="tel" />
           <FormField label="Role" name="role" value="Dispatcher" readOnly />
-
-          <Button type="submit" block loading={submitting}>
-            {submitting ? 'Creating account…' : 'Create account'}
-          </Button>
-        </form>
-
-        <div className="auth-foot">
-          Already have an account? <Link to="/login">Log in</Link>
         </div>
+
+        <Button type="submit" block loading={submitting}>
+          {submitting ? 'Creating account…' : 'Create account'}
+        </Button>
+      </form>
+
+      <div className="mt-6 text-center font-body-sm text-body-sm text-on-surface-variant">
+        Already have an account?{' '}
+        <Link to="/login" className="text-primary font-semibold hover:underline">
+          Log in
+        </Link>
       </div>
-    </div>
+    </AuthShell>
   )
 }

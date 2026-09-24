@@ -87,7 +87,7 @@ Comments in `services/userService.js` incorrectly label profile endpoints as uni
 - Frontend scripts, from `frontend/`: `npm ci`, `npm run dev`, `npm run lint`, `npm run build`.
 - .NET commands from root: `dotnet restore SmartFleet.slnx`, `dotnet build SmartFleet.slnx`; run individual services with `dotnet run --project services/<ServiceName>`.
 - Default frontend Vite origin: localhost:5173. Auth HTTP profile: localhost:5100; Fleet HTTP profile: localhost:5041. Check launch settings and environment overrides before running.
-- Compose defines Auth MySQL at host port 3307, Fleet MySQL at 3317, Fleet API at 5041, and Kafka with exposed ports 9092/9094. It does not define the complete application stack.
+- Compose defines Auth MySQL at host port 3607, Fleet MySQL at 3617, Fleet API at 5041, and Kafka with exposed ports 9092/9094. It does not define the complete application stack.
 - Runtime setup requires database schemas, connection strings, JWT settings, and Kafka configuration for the Fleet publisher. Consult local configuration without copying secrets into documentation.
 - Auth/Fleet tests include validation and API integration scenarios. Database integration tests require configured MySQL test databases; CI creates `fleet_identity_db_test` and `fleet_vehicle_db_test`.
 - Selenium tests cover login/logout/profile, driver creation, and vehicle CRUD. These need the browser and application services configured separately.

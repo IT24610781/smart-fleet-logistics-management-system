@@ -93,6 +93,67 @@ public class VehicleUpdateEndpointTests : IClassFixture<CustomWebApplicationFact
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // SCRUM-86 (same root cause): type is VARCHAR(50), registration_no VARCHAR(20).
+    [Fact]
+    public async Task UpdateVehicle_TypeTooLong_Returns400()
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var vehicle = await CreateTestVehicleAsync(client);
+
+        var update = new UpdateVehicleRequest
+        {
+            RegistrationNo = vehicle.RegistrationNo,
+            Type = new string('T', 51),
+            Capacity = "12",
+            Status = "Available"
+        };
+
+        var response = await client.PutAsJsonAsync($"/api/vehicles/{vehicle.Id}", update);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateVehicle_RegistrationNoTooLong_Returns400()
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var vehicle = await CreateTestVehicleAsync(client);
+
+        var update = new UpdateVehicleRequest
+        {
+            RegistrationNo = new string('X', 41),
+            Type = "Truck",
+            Capacity = "12",
+            Status = "Available"
+        };
+
+        var response = await client.PutAsJsonAsync($"/api/vehicles/{vehicle.Id}", update);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateVehicle_CapacityWithUnit_Returns200AndStoresNormalisedText()
+    {
+        var client = CreateAuthorizedClient("Admin");
+        var vehicle = await CreateTestVehicleAsync(client);
+
+        var update = new UpdateVehicleRequest
+        {
+            RegistrationNo = vehicle.RegistrationNo,
+            Type = "Truck",
+            Capacity = "20kg",
+            Status = "Available"
+        };
+
+        var response = await client.PutAsJsonAsync($"/api/vehicles/{vehicle.Id}", update);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<VehicleResponse>();
+        Assert.Equal("20 kg", body!.Capacity);
+    }
+
     [Fact]
     public async Task UpdateVehicle_InvalidCapacity_Returns400()
     {

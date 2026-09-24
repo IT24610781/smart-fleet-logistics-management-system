@@ -1,6 +1,36 @@
-@AuthUserService_HostAddress = http://localhost:5000
+@AuthUserService_HostAddress = http://localhost:5100
 
-GET {{AuthUserService_HostAddress}}/weatherforecast/
-Accept: application/json
+### US-08: Dispatcher registers their own account (public - no token)
+POST {{AuthUserService_HostAddress}}/api/auth/register/dispatcher
+Content-Type: application/json
 
-###
+{
+  "username": "dispatcher.one",
+  "email": "dispatcher.one@example.com",
+  "password": "Passw0rd!",
+  "firstName": "Dina",
+  "lastName": "Perera",
+  "contactNumber": "0771234567"
+}
+
+### US-08 Scenario 2: missing/invalid fields -> 400 with per-field errors
+POST {{AuthUserService_HostAddress}}/api/auth/register/dispatcher
+Content-Type: application/json
+
+{
+  "username": "",
+  "email": "not-an-email",
+  "password": "short",
+  "firstName": "",
+  "lastName": "",
+  "contactNumber": "12"
+}
+
+### US-08 Scenario 4: log in with the registered credentials -> JWT with role Dispatcher
+POST {{AuthUserService_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "dispatcher.one",
+  "password": "Passw0rd!"
+}

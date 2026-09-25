@@ -6,7 +6,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: fleet_identity_db
     ports:
-      - "3607:3306"
+      - "3307:3306"
     volumes:
       - auth-db-data:/var/lib/mysql
       - ./database/auth-user/schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -18,10 +18,22 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: fleet_vehicle_db
     ports:
-      - "3617:3306"
+      - "3317:3306"
     volumes:
       - fleet-db-data:/var/lib/mysql
       - ./database/fleet-vehicle/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  trip-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: trip_dispatch_db
+    ports:
+      - "3327:3306"
+    volumes:
+      - trip-db-data:/var/lib/mysql
+      - ./database/trip-dispatch/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
   fleet-service:
     build:
@@ -62,3 +74,4 @@ services:
 volumes:
   auth-db-data:
   fleet-db-data:
+  trip-db-data:

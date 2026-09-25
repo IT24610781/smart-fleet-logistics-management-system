@@ -67,6 +67,7 @@ public class TripRepository : ITripRepository
                 required_capacity,
                 status,
                 assigned_vehicle_id,
+                assigned_driver_id,
                 created_at,
                 updated_at
             FROM trips
@@ -116,6 +117,7 @@ public class TripRepository : ITripRepository
                 required_capacity,
                 status,
                 assigned_vehicle_id,
+                assigned_driver_id,
                 created_at,
                 updated_at
             FROM trips
@@ -144,7 +146,7 @@ public class TripRepository : ITripRepository
 
     //US-11 Update a trip's status and assigned vehicle
 
-    public async Task UpdateAsync(Trip trip)
+        public async Task UpdateAsync(Trip trip)
     {
         // updated_at is not set here: the column is
         // "ON UPDATE CURRENT_TIMESTAMP", so MySQL sets it automatically.
@@ -152,7 +154,8 @@ public class TripRepository : ITripRepository
             UPDATE trips
             SET
                 status = @status,
-                assigned_vehicle_id = @assigned_vehicle_id
+                assigned_vehicle_id = @assigned_vehicle_id,
+                assigned_driver_id = @assigned_driver_id
             WHERE id = @id;
             """;
 
@@ -169,8 +172,53 @@ public class TripRepository : ITripRepository
         command.Parameters.AddWithValue(
             "@assigned_vehicle_id",
             trip.AssignedVehicleId?.ToString() ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue(
+            "@assigned_driver_id",
+            trip.AssignedDriverId?.ToString() ?? (object)DBNull.Value);
 
         await command.ExecuteNonQueryAsync();
+    }
+
+    //US-12 A driver's own trips, newest first
+
+    public async Task<List<Trip>> GetByDriverIdAsync(Guid driverId)
+    {
+        const string sql = """
+            SELECT
+                id,
+                pickup_location,
+                dropoff_location,
+                required_capacity,
+                status,
+                assigned_vehicle_id,
+                assigned_driver_id,
+                created_at,
+                updated_at
+            FROM trips
+            WHERE assigned_driver_id = @driver_id
+            ORDER BY created_at DESC;
+            """;
+
+        await using var connection =
+            _databaseConnection.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("@driver_id", driverId.ToString());
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        var trips = new List<Trip>();
+
+        while (await reader.ReadAsync())
+        {
+            trips.Add(MapTrip(reader));
+        }
+
+        return trips;
     }
 
     // Map database row to Trip model
@@ -178,6 +226,7 @@ public class TripRepository : ITripRepository
     private static Trip MapTrip(MySqlDataReader reader)
     {
         var assignedVehicleOrdinal = reader.GetOrdinal("assigned_vehicle_id");
+        var assignedDriverOrdinal = reader.GetOrdinal("assigned_driver_id");
 
         return new Trip
         {
@@ -189,6 +238,9 @@ public class TripRepository : ITripRepository
             AssignedVehicleId = reader.IsDBNull(assignedVehicleOrdinal)
                 ? null
                 : reader.GetGuid(assignedVehicleOrdinal),
+            AssignedDriverId = reader.IsDBNull(assignedDriverOrdinal)
+                ? null
+                : reader.GetGuid(assignedDriverOrdinal),
             CreatedAt = reader.GetDateTime("created_at"),
             UpdatedAt = reader.GetDateTime("updated_at")
         };

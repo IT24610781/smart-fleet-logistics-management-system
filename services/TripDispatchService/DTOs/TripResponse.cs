@@ -14,6 +14,8 @@ public class TripResponse
 
     public Guid? AssignedVehicleId { get; set; }
 
+    public Guid? AssignedDriverId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

@@ -4,11 +4,15 @@ const tripApi = createApiClient(
   import.meta.env.VITE_TRIP_API_URL || 'http://localhost:5294'
 )
 
-//US-09 create a trip request.
+//US-09 create a trip request. pickupLat/Lng and dropoffLat/Lng are optional
 export async function createTrip(payload) {
   const { data } = await tripApi.post('/api/trips', {
     pickupLocation: payload.pickupLocation,
+    pickupLat: payload.pickupLat,
+    pickupLng: payload.pickupLng,
     dropoffLocation: payload.dropoffLocation,
+    dropoffLat: payload.dropoffLat,
+    dropoffLng: payload.dropoffLng,
     requiredCapacity: payload.requiredCapacity,
   })
   return data
@@ -31,9 +35,20 @@ export async function updateTripStatus(tripId, status) {
   return data
 }
 
+// Trip Details page: fetch one trip's full information.
+export async function getTrip(tripId) {
+  const { data } = await tripApi.get(`/api/trips/${tripId}`)
+  return data
+}
+
 //US-10 ranked list of vehicles that fit a trip's required capacity.
 export async function getSuggestions(tripId) {
   const { data } = await tripApi.get(`/api/trips/${tripId}/suggestions`)
+  return data
+}
+
+export async function previewSuggestions(capacity) {
+  const { data } = await tripApi.get('/api/trips/preview-suggestions', { params: { capacity } })
   return data
 }
 

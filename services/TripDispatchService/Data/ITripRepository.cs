@@ -15,4 +15,7 @@ public interface ITripRepository
 
 //US-11 persist a trip's status and assigned vehicle after assignment.
     Task UpdateAsync(Trip trip);
+
+//US-12 a driver's own trips, newest first.
+    Task<List<Trip>> GetByDriverIdAsync(Guid driverId);
 }

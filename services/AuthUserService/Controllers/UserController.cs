@@ -52,13 +52,11 @@ public class UsersController : ControllerBase
         }
     }
 
-
-    // ============================================================
     // US-01: Admin lists Driver accounts
+    // US-12: Dispatcher also needs this list to pick a driver at assign time.
     // GET /api/users/drivers
-    // ============================================================
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Dispatcher")]
     [HttpGet("drivers")]
     public async Task<IActionResult> GetDrivers()
     {
@@ -66,11 +64,8 @@ public class UsersController : ControllerBase
         return Ok(drivers);
     }
 
-
-    // ============================================================
     // US-04: View own profile
     // GET /api/users/me
-    // ============================================================
 
     [Authorize]
     [HttpGet("me")]
@@ -94,11 +89,8 @@ public class UsersController : ControllerBase
         }
     }
 
-
-    // ============================================================
     // US-04: Edit own profile
     // PUT /api/users/me
-    // ============================================================
 
     [Authorize]
     [HttpPut("me")]
@@ -132,10 +124,7 @@ public class UsersController : ControllerBase
         }
     }
 
-
-    // ============================================================
     // Get authenticated user's ID from JWT
-    // ============================================================
 
     private Guid GetCurrentUserId()
     {

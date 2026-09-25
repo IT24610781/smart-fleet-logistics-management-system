@@ -160,14 +160,14 @@ public class TripService
     // vehicle really is Available and has been switched to On Trip. 
 
     public async Task<TripResponse> AssignVehicleAsync(
-        Guid tripId, Guid? vehicleId, string? authorizationHeader)
+        Guid tripId, Guid? vehicleId, Guid? driverId, string? authorizationHeader)
     {
-        if (vehicleId is null)
+        var errors = new Dictionary<string, string>();
+        if (vehicleId is null) errors["vehicleId"] = "A vehicle is required.";
+        if (driverId is null) errors["driverId"] = "A driver is required.";
+        if (errors.Count > 0)
         {
-            throw new ValidationException(new Dictionary<string, string>
-            {
-                ["vehicleId"] = "A vehicle is required."
-            });
+            throw new ValidationException(errors);
         }
 
         var trip = await _tripRepository.GetByIdAsync(tripId)
@@ -176,21 +176,90 @@ public class TripService
         if (trip.Status != TripStatus.Requested)
         {
             throw new InvalidOperationException(
-                $"This trip cannot be assigned a vehicle because its status is '{trip.Status}' (expected '{TripStatus.Requested}').");
+                $"This trip cannot be assigned because its status is '{trip.Status}' (expected '{TripStatus.Requested}').");
         }
 
         // Throws NotFoundException or InvalidOperationException if this fails -
         // nothing below runs, and the trip stays exactly as it was.
         await _fleetVehicleClient.SetVehicleStatusAsync(
-            vehicleId.Value, "On Trip", authorizationHeader);
+            vehicleId!.Value, "On Trip", authorizationHeader);
 
         trip.AssignedVehicleId = vehicleId;
+        trip.AssignedDriverId = driverId;
         trip.Status = TripStatus.Assigned;
         trip.UpdatedAt = DateTime.UtcNow;
 
         await _tripRepository.UpdateAsync(trip);
 
         return ToResponse(trip);
+    }
+
+    //US-12 A driver responds to a trip that has been assigned to them
+
+    public async Task<TripResponse> RespondAsync(
+        Guid tripId, Guid driverId, string? decision, string? authorizationHeader)
+    {
+        var normalizedDecision = decision?.Trim().ToLowerInvariant();
+
+        if (normalizedDecision != "accept" && normalizedDecision != "reject")
+        {
+            throw new ValidationException(new Dictionary<string, string>
+            {
+                ["decision"] = "Decision must be either 'accept' or 'reject'."
+            });
+        }
+
+        var trip = await _tripRepository.GetByIdAsync(tripId)
+            ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
+
+        if (trip.AssignedDriverId != driverId)
+        {
+            // Deliberately the same message as "doesn't exist" - a driver
+            // should not be able to tell the difference between a trip that
+            // isn't theirs and one that doesn't exist.
+            throw new NotFoundException($"No trip found with id '{tripId}'.");
+        }
+
+        if (trip.Status != TripStatus.Assigned)
+        {
+            throw new InvalidOperationException(
+                $"This trip cannot be responded to because its status is '{trip.Status}' (expected '{TripStatus.Assigned}').");
+        }
+
+        if (normalizedDecision == "accept")
+        {
+            trip.Status = TripStatus.InProgress;
+        }
+        else
+        {
+            var vehicleId = trip.AssignedVehicleId;
+
+            if (vehicleId is not null)
+            {
+                await _fleetVehicleClient.SetVehicleStatusAsync(
+                    vehicleId.Value, "Available", authorizationHeader);
+            }
+
+            trip.Status = TripStatus.Requested;
+            trip.AssignedVehicleId = null;
+            trip.AssignedDriverId = null;
+        }
+
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        await _tripRepository.UpdateAsync(trip);
+
+        return ToResponse(trip);
+    }
+
+
+    //US-12 A driver's own trips
+
+    public async Task<List<TripResponse>> GetMyTripsAsync(Guid driverId)
+    {
+        var trips = await _tripRepository.GetByDriverIdAsync(driverId);
+
+        return trips.Select(ToResponse).ToList();
     }
 
     private static TripResponse ToResponse(Trip trip)
@@ -203,6 +272,7 @@ public class TripService
             RequiredCapacity = trip.RequiredCapacity,
             Status = trip.Status,
             AssignedVehicleId = trip.AssignedVehicleId,
+            AssignedDriverId = trip.AssignedDriverId,
             CreatedAt = trip.CreatedAt,
             UpdatedAt = trip.UpdatedAt
         };

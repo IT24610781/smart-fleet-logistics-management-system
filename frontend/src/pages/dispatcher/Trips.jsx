@@ -7,6 +7,7 @@ import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
 import { ErrorMessage } from '../../components/common/ErrorMessage'
 import * as tripService from '../../services/tripService'
+import * as userService from '../../services/userService'
 import './Trips.css'
 
 const TABS = ['All', 'Requested', 'Assigned', 'In-Progress', 'Completed', 'Cancelled']
@@ -17,8 +18,15 @@ function formatDateTime(value) {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
 }
 
+function driverName(driver) {
+  if (!driver) return null
+  const name = [driver.firstName, driver.lastName].filter(Boolean).join(' ')
+  return name || driver.username
+}
+
 // US-13: trip list, filterable by status. Fetches a fresh list every time
-// reflects what "All" statuses actually contains right now.
+// the tab changes, and joins against the driver list so the Dispatcher can
+// see who a trip is with and, once accepted, how to reach them.
 export default function Trips() {
   const [tab, setTab] = useState('All')
   const [query, setQuery] = useState('')
@@ -26,6 +34,8 @@ export default function Trips() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+
+  const [driversById, setDriversById] = useState({})
 
   useEffect(() => {
     let cancelled = false
@@ -51,6 +61,25 @@ export default function Trips() {
     }
   }, [tab, reloadKey])
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadDrivers() {
+      try {
+        const data = await userService.listDrivers()
+        if (cancelled) return
+        setDriversById(Object.fromEntries(data.map((d) => [d.id, d])))
+      } catch {
+        // Non-fatal: the trip list still works, just without driver names.
+      }
+    }
+
+    loadDrivers()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return trips
@@ -61,24 +90,53 @@ export default function Trips() {
     )
   }, [trips, query])
 
+  function driverCell(row) {
+    if (row.status === 'Requested' && row.rejectedByDriverId) {
+      const name = driverName(driversById[row.rejectedByDriverId]) || 'The previously assigned driver'
+      return (
+        <div className="cell-warning">
+          <Icon name="alert" size={14} />
+          <span>{name} is busy — assign someone else</span>
+        </div>
+      )
+    }
+
+    if (row.assignedDriverId) {
+      const driver = driversById[row.assignedDriverId]
+      const name = driverName(driver) || 'Assigned driver'
+      if (row.status === 'In-Progress') {
+        return (
+          <div>
+            <div>{name}</div>
+            {driver?.contactNumber && (
+              <div className="page-header-desc">{driver.contactNumber}</div>
+            )}
+          </div>
+        )
+      }
+      return <span>{name} · awaiting response</span>
+    }
+
+    return null
+  }
+
   const columns = [
     { key: 'id', header: 'Trip ID', render: (r) => <span className="cell-id">{r.id.slice(0, 8)}</span> },
     { key: 'pickupLocation', header: 'Pickup' },
     { key: 'dropoffLocation', header: 'Drop-off' },
     { key: 'requiredCapacity', header: 'Capacity' },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
+    { key: 'driver', header: 'Driver', render: driverCell },
     { key: 'createdAt', header: 'Created', render: (r) => formatDateTime(r.createdAt) },
-
     {
       key: 'actions',
       header: '',
       align: 'right',
-      render: (r) =>
-        r.status === 'Requested' ? (
-          <Link to={`/dispatcher/trips/${r.id}/suggestions`}>
-            <Button variant="ghost">Suggest vehicles</Button>
-          </Link>
-        ) : null,
+      render: (r) => (
+        <Link to={`/dispatcher/trips/${r.id}/details`}>
+          <Button variant="ghost">View details</Button>
+        </Link>
+      ),
     },
   ]
 

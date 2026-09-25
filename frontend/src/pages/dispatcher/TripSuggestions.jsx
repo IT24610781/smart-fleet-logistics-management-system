@@ -9,9 +9,16 @@ import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import { useToast } from '../../context/ToastContext'
 import * as tripService from '../../services/tripService'
+import * as userService from '../../services/userService'
 
-// US-10/US-11: ranked vehicle suggestions for one trip, with the ability to
-// assign one of them.
+function driverLabel(driver) {
+  const name = [driver.firstName, driver.lastName].filter(Boolean).join(' ')
+  return name ? `${name} (@${driver.username})` : driver.username
+}
+
+// US-10/US-11/US-12: ranked vehicle suggestions for one trip. Assigning
+// requires picking BOTH a vehicle and a driver - the driver then accepts or
+// rejects this specific offer from their own My Trips page.
 export default function TripSuggestions() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -21,6 +28,11 @@ export default function TripSuggestions() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+
+  const [drivers, setDrivers] = useState([])
+  const [driversLoading, setDriversLoading] = useState(true)
+  const [driversError, setDriversError] = useState(null)
+  const [selectedDriverId, setSelectedDriverId] = useState('')
 
   const [confirmTarget, setConfirmTarget] = useState(null)
   const [assigning, setAssigning] = useState(false)
@@ -56,12 +68,36 @@ export default function TripSuggestions() {
     }
   }, [id, reloadKey])
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadDrivers() {
+      setDriversLoading(true)
+      setDriversError(null)
+      try {
+        const data = await userService.listDrivers()
+        if (!cancelled) setDrivers(data)
+      } catch (err) {
+        if (!cancelled) setDriversError(err.message || 'Unable to load drivers.')
+      } finally {
+        if (!cancelled) setDriversLoading(false)
+      }
+    }
+
+    loadDrivers()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const selectedDriver = drivers.find((d) => d.id === selectedDriverId) || null
+
   async function handleConfirmAssign() {
-    if (!confirmTarget) return
+    if (!confirmTarget || !selectedDriverId) return
     setAssigning(true)
     setAssignError(null)
     try {
-      await tripService.assignVehicle(id, confirmTarget.vehicleId)
+      await tripService.assignVehicle(id, confirmTarget.vehicleId, selectedDriverId)
       setAssigned(true)
       setConfirmTarget(null)
       showToast(`${confirmTarget.registrationNo} assigned to this trip.`, 'success')
@@ -94,6 +130,37 @@ export default function TripSuggestions() {
             <Button variant="secondary">Back to Trips</Button>
           </Link>
         </div>
+      </div>
+
+      <div className="card card-pad" style={{ marginBottom: 'var(--space-4)' }}>
+        <label className="font-title-md text-body-sm text-on-surface" htmlFor="driver-select">
+          Assign to driver
+        </label>
+        <select
+          id="driver-select"
+          className="select-input"
+          style={{ marginTop: 'var(--space-2)' }}
+          value={selectedDriverId}
+          onChange={(e) => setSelectedDriverId(e.target.value)}
+          disabled={driversLoading || assigned}
+        >
+          <option value="">
+            {driversLoading ? 'Loading drivers…' : '— Select a driver —'}
+          </option>
+          {drivers.map((d) => (
+            <option key={d.id} value={d.id}>{driverLabel(d)}</option>
+          ))}
+        </select>
+        {driversError && (
+          <div style={{ marginTop: 'var(--space-2)' }}>
+            <ErrorMessage>{driversError}</ErrorMessage>
+          </div>
+        )}
+        {!driversLoading && !driversError && drivers.length === 0 && (
+          <p className="font-body-sm text-body-sm text-on-surface-variant" style={{ marginTop: 'var(--space-2)' }}>
+            No driver accounts exist yet. Ask an Admin to create one before assigning this trip.
+          </p>
+        )}
       </div>
 
       <div className="card card-pad">
@@ -150,7 +217,7 @@ export default function TripSuggestions() {
                   </div>
                   <Button
                     variant={index === 0 ? 'accent' : 'secondary'}
-                    disabled={assigned}
+                    disabled={assigned || !selectedDriverId}
                     onClick={() => setConfirmTarget(s)}
                   >
                     Assign
@@ -160,12 +227,22 @@ export default function TripSuggestions() {
             ))}
           </div>
         )}
+
+        {!loading && !loadError && suggestions && suggestions.length > 0 && !selectedDriverId && (
+          <p className="font-body-sm text-body-sm text-on-surface-variant" style={{ marginTop: 'var(--space-3)' }}>
+            Select a driver above before assigning a vehicle.
+          </p>
+        )}
       </div>
 
       <ConfirmDialog
         open={confirmTarget !== null}
         title="Assign this vehicle?"
-        body={confirmTarget ? `Assign ${confirmTarget.registrationNo} (${confirmTarget.type}) to this trip? The vehicle will be marked On Trip.` : ''}
+        body={
+          confirmTarget && selectedDriver
+            ? `Assign ${confirmTarget.registrationNo} (${confirmTarget.type}) and driver ${driverLabel(selectedDriver)} to this trip? The vehicle will be marked On Trip, and ${selectedDriver.firstName || 'the driver'} will be asked to accept or reject it.`
+            : ''
+        }
         confirmLabel="Assign vehicle"
         cancelLabel="Cancel"
         variant="accent"

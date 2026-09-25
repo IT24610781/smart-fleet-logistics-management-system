@@ -37,8 +37,14 @@ export async function getSuggestions(tripId) {
   return data
 }
 
-//US-11 assign a suggested vehicle to a trip.
-export async function assignVehicle(tripId, vehicleId) {
-  const { data } = await tripApi.post(`/api/trips/${tripId}/assign`, { vehicleId })
+//US-11/US-12 assign a suggested vehicle AND a driver to a trip.
+export async function assignVehicle(tripId, vehicleId, driverId) {
+  const { data } = await tripApi.post(`/api/trips/${tripId}/assign`, { vehicleId, driverId })
+  return data
+}
+
+//US-12 the current driver's own trips.
+export async function getMyTrips() {
+  const { data } = await tripApi.get('/api/trips/mine')
   return data
 }

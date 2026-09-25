@@ -83,7 +83,7 @@ public class VehiclesController : ControllerBase
 
     //US-11 Dispatcher starts/ends a vehicle's use on a trip
 
-    [Authorize(Roles = "Admin,Dispatcher")]
+    [Authorize(Roles = "Admin,Dispatcher,Driver")]
     [HttpPatch("{id}/status")]
     public async Task<IActionResult> UpdateVehicleStatus(
         Guid id, UpdateVehicleStatusRequest request)

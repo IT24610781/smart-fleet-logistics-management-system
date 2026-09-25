@@ -17,6 +17,45 @@ public class TripsController : ControllerBase
         _tripService = tripService;
     }
 
+    //Trip Details page fetch one trip's full information
+
+    [Authorize(Roles = "Dispatcher,Admin")]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTrip(Guid id)
+    {
+        try
+        {
+            var trip = await _tripService.GetTripByIdAsync(id);
+            return Ok(trip);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    //Create-Trip page preview ranked vehicles before the trip exists
+
+    [Authorize(Roles = "Dispatcher")]
+    [HttpGet("preview-suggestions")]
+    public async Task<IActionResult> PreviewSuggestions([FromQuery] string? capacity)
+    {
+        try
+        {
+            var authorizationHeader = Request.Headers.Authorization.ToString();
+            var suggestions = await _tripService.GetSuggestionsForCapacityAsync(capacity, authorizationHeader);
+            return Ok(suggestions);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new
+            {
+                message = "Validation failed.",
+                errors = ex.Errors
+            });
+        }
+    }
+
     //US-10 Ranked vehicle suggestions for a trip
 
     [Authorize(Roles = "Dispatcher")]

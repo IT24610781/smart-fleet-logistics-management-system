@@ -48,6 +48,26 @@ public class TripService
                 $"Drop-off location must be {LocationMaxLength} characters or fewer.";
         }
 
+        // Coordinates are optional (a typed address has none), but if given,
+        // must be real points on Earth - catches a swapped lat/lng or a
+        // stray value slipping through from the map picker.
+        if (request.PickupLat is < -90 or > 90)
+        {
+            errors["pickupLat"] = "Pickup latitude must be between -90 and 90.";
+        }
+        if (request.PickupLng is < -180 or > 180)
+        {
+            errors["pickupLng"] = "Pickup longitude must be between -180 and 180.";
+        }
+        if (request.DropoffLat is < -90 or > 90)
+        {
+            errors["dropoffLat"] = "Drop-off latitude must be between -90 and 90.";
+        }
+        if (request.DropoffLng is < -180 or > 180)
+        {
+            errors["dropoffLng"] = "Drop-off longitude must be between -180 and 180.";
+        }
+
         if (capacity.Length == 0)
         {
             errors["requiredCapacity"] = "Required capacity is missing.";
@@ -77,7 +97,11 @@ public class TripService
         {
             Id = Guid.CreateVersion7(),
             PickupLocation = pickup,
+            PickupLat = request.PickupLat,
+            PickupLng = request.PickupLng,
             DropoffLocation = dropoff,
+            DropoffLat = request.DropoffLat,
+            DropoffLng = request.DropoffLng,
             RequiredCapacity = capacity,
             Status = TripStatus.Requested,
             AssignedVehicleId = null,
@@ -107,6 +131,15 @@ public class TripService
         return trips.Select(ToResponse).ToList();
     }
 
+    // Trip Details page: fetch one trip's full information.
+    public async Task<TripResponse> GetTripByIdAsync(Guid tripId)
+    {
+        var trip = await _tripRepository.GetByIdAsync(tripId)
+            ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
+
+        return ToResponse(trip);
+    }
+    
     //US-10 Ranked vehicle suggestions for a trip
     public async Task<List<VehicleSuggestionResponse>> GetSuggestionsAsync(
         Guid tripId, string? authorizationHeader)
@@ -114,11 +147,36 @@ public class TripService
         var trip = await _tripRepository.GetByIdAsync(tripId)
             ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
 
-        if (!CapacityParser.TryParse(trip.RequiredCapacity, out var requiredAmount, out var requiredUnit, out _))
+        if (!CapacityParser.TryParse(trip.RequiredCapacity, out _, out _, out _))
         {
+            // Should not happen for a trip created through this API (capacity
+            // is validated on the way in), but guards against bad data.
             throw new InvalidOperationException(
                 $"Trip {tripId} has an unparseable required capacity: '{trip.RequiredCapacity}'.");
         }
+
+        return await RankVehiclesAsync(trip.RequiredCapacity, authorizationHeader);
+    }
+
+    public async Task<List<VehicleSuggestionResponse>> GetSuggestionsForCapacityAsync(
+        string? requiredCapacity, string? authorizationHeader)
+    {
+        if (!CapacityParser.TryParse(requiredCapacity, out _, out _, out var normalized))
+        {
+            throw new ValidationException(new Dictionary<string, string>
+            {
+                ["requiredCapacity"] =
+                    "Capacity must be a positive number, optionally with a unit (for example 500 kg, 8 persons, 20 units)."
+            });
+        }
+
+        return await RankVehiclesAsync(normalized, authorizationHeader);
+    }
+
+    private async Task<List<VehicleSuggestionResponse>> RankVehiclesAsync(
+        string requiredCapacity, string? authorizationHeader)
+    {
+        CapacityParser.TryParse(requiredCapacity, out var requiredAmount, out var requiredUnit, out _);
 
         var vehicles = await _fleetVehicleClient.GetVehiclesAsync(authorizationHeader);
 
@@ -187,6 +245,7 @@ public class TripService
         trip.AssignedVehicleId = vehicleId;
         trip.AssignedDriverId = driverId;
         trip.Status = TripStatus.Assigned;
+        trip.RejectedByDriverId = null;
         trip.UpdatedAt = DateTime.UtcNow;
 
         await _tripRepository.UpdateAsync(trip);
@@ -226,9 +285,10 @@ public class TripService
                 $"This trip cannot be responded to because its status is '{trip.Status}' (expected '{TripStatus.Assigned}').");
         }
 
-        if (normalizedDecision == "accept")
+                if (normalizedDecision == "accept")
         {
             trip.Status = TripStatus.InProgress;
+            trip.RejectedByDriverId = null;
         }
         else
         {
@@ -242,6 +302,7 @@ public class TripService
 
             trip.Status = TripStatus.Requested;
             trip.AssignedVehicleId = null;
+            trip.RejectedByDriverId = trip.AssignedDriverId;
             trip.AssignedDriverId = null;
         }
 
@@ -251,7 +312,6 @@ public class TripService
 
         return ToResponse(trip);
     }
-
 
     //US-12 A driver's own trips
 
@@ -268,11 +328,16 @@ public class TripService
         {
             Id = trip.Id,
             PickupLocation = trip.PickupLocation,
+            PickupLat = trip.PickupLat,
+            PickupLng = trip.PickupLng,
             DropoffLocation = trip.DropoffLocation,
+            DropoffLat = trip.DropoffLat,
+            DropoffLng = trip.DropoffLng,
             RequiredCapacity = trip.RequiredCapacity,
             Status = trip.Status,
             AssignedVehicleId = trip.AssignedVehicleId,
             AssignedDriverId = trip.AssignedDriverId,
+            RejectedByDriverId = trip.RejectedByDriverId,
             CreatedAt = trip.CreatedAt,
             UpdatedAt = trip.UpdatedAt
         };

@@ -21,7 +21,11 @@ public class TripRepository : ITripRepository
             (
                 id,
                 pickup_location,
+                pickup_lat,
+                pickup_lng,
                 dropoff_location,
+                dropoff_lat,
+                dropoff_lng,
                 required_capacity,
                 status,
                 assigned_vehicle_id
@@ -30,7 +34,11 @@ public class TripRepository : ITripRepository
             (
                 @id,
                 @pickup_location,
+                @pickup_lat,
+                @pickup_lng,
                 @dropoff_location,
+                @dropoff_lat,
+                @dropoff_lng,
                 @required_capacity,
                 @status,
                 @assigned_vehicle_id
@@ -47,7 +55,11 @@ public class TripRepository : ITripRepository
 
         command.Parameters.AddWithValue("@id", trip.Id.ToString());
         command.Parameters.AddWithValue("@pickup_location", trip.PickupLocation);
+        command.Parameters.AddWithValue("@pickup_lat", (object?)trip.PickupLat ?? DBNull.Value);
+        command.Parameters.AddWithValue("@pickup_lng", (object?)trip.PickupLng ?? DBNull.Value);
         command.Parameters.AddWithValue("@dropoff_location", trip.DropoffLocation);
+        command.Parameters.AddWithValue("@dropoff_lat", (object?)trip.DropoffLat ?? DBNull.Value);
+        command.Parameters.AddWithValue("@dropoff_lng", (object?)trip.DropoffLng ?? DBNull.Value);
         command.Parameters.AddWithValue("@required_capacity", trip.RequiredCapacity);
         command.Parameters.AddWithValue("@status", trip.Status);
         command.Parameters.AddWithValue(
@@ -63,11 +75,16 @@ public class TripRepository : ITripRepository
             SELECT
                 id,
                 pickup_location,
+                pickup_lat,
+                pickup_lng,
                 dropoff_location,
+                dropoff_lat,
+                dropoff_lng,
                 required_capacity,
                 status,
                 assigned_vehicle_id,
                 assigned_driver_id,
+                rejected_by_driver_id,
                 created_at,
                 updated_at
             FROM trips
@@ -113,11 +130,16 @@ public class TripRepository : ITripRepository
             SELECT
                 id,
                 pickup_location,
+                pickup_lat,
+                pickup_lng,
                 dropoff_location,
+                dropoff_lat,
+                dropoff_lng,
                 required_capacity,
                 status,
                 assigned_vehicle_id,
                 assigned_driver_id,
+                rejected_by_driver_id,
                 created_at,
                 updated_at
             FROM trips
@@ -146,7 +168,7 @@ public class TripRepository : ITripRepository
 
     //US-11 Update a trip's status and assigned vehicle
 
-        public async Task UpdateAsync(Trip trip)
+    public async Task UpdateAsync(Trip trip)
     {
         // updated_at is not set here: the column is
         // "ON UPDATE CURRENT_TIMESTAMP", so MySQL sets it automatically.
@@ -155,7 +177,8 @@ public class TripRepository : ITripRepository
             SET
                 status = @status,
                 assigned_vehicle_id = @assigned_vehicle_id,
-                assigned_driver_id = @assigned_driver_id
+                assigned_driver_id = @assigned_driver_id,
+                rejected_by_driver_id = @rejected_by_driver_id
             WHERE id = @id;
             """;
 
@@ -175,6 +198,9 @@ public class TripRepository : ITripRepository
         command.Parameters.AddWithValue(
             "@assigned_driver_id",
             trip.AssignedDriverId?.ToString() ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue(
+            "@rejected_by_driver_id",
+            trip.RejectedByDriverId?.ToString() ?? (object)DBNull.Value);
 
         await command.ExecuteNonQueryAsync();
     }
@@ -187,11 +213,16 @@ public class TripRepository : ITripRepository
             SELECT
                 id,
                 pickup_location,
+                pickup_lat,
+                pickup_lng,
                 dropoff_location,
+                dropoff_lat,
+                dropoff_lng,
                 required_capacity,
                 status,
                 assigned_vehicle_id,
                 assigned_driver_id,
+                rejected_by_driver_id,
                 created_at,
                 updated_at
             FROM trips
@@ -225,14 +256,19 @@ public class TripRepository : ITripRepository
 
     private static Trip MapTrip(MySqlDataReader reader)
     {
-        var assignedVehicleOrdinal = reader.GetOrdinal("assigned_vehicle_id");
+                var assignedVehicleOrdinal = reader.GetOrdinal("assigned_vehicle_id");
         var assignedDriverOrdinal = reader.GetOrdinal("assigned_driver_id");
+        var rejectedByDriverOrdinal = reader.GetOrdinal("rejected_by_driver_id");
 
         return new Trip
         {
             Id = reader.GetGuid("id"),
             PickupLocation = reader.GetString("pickup_location"),
+            PickupLat = reader.IsDBNull(reader.GetOrdinal("pickup_lat")) ? null : reader.GetDecimal("pickup_lat"),
+            PickupLng = reader.IsDBNull(reader.GetOrdinal("pickup_lng")) ? null : reader.GetDecimal("pickup_lng"),
             DropoffLocation = reader.GetString("dropoff_location"),
+            DropoffLat = reader.IsDBNull(reader.GetOrdinal("dropoff_lat")) ? null : reader.GetDecimal("dropoff_lat"),
+            DropoffLng = reader.IsDBNull(reader.GetOrdinal("dropoff_lng")) ? null : reader.GetDecimal("dropoff_lng"),
             RequiredCapacity = reader.GetString("required_capacity"),
             Status = reader.GetString("status"),
             AssignedVehicleId = reader.IsDBNull(assignedVehicleOrdinal)
@@ -241,6 +277,9 @@ public class TripRepository : ITripRepository
             AssignedDriverId = reader.IsDBNull(assignedDriverOrdinal)
                 ? null
                 : reader.GetGuid(assignedDriverOrdinal),
+            RejectedByDriverId = reader.IsDBNull(rejectedByDriverOrdinal)
+                ? null
+                : reader.GetGuid(rejectedByDriverOrdinal),
             CreatedAt = reader.GetDateTime("created_at"),
             UpdatedAt = reader.GetDateTime("updated_at")
         };

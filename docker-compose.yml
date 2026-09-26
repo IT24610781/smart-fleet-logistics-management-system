@@ -35,6 +35,24 @@ services:
       - trip-db-data:/var/lib/mysql
       - ./database/trip-dispatch/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
+  trip-service:
+    build:
+      context: ./services/TripDispatchService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5051:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=trip-db;Port=3306;Database=trip_dispatch_db;User ID=root;Password=rootpassword;"
+      FleetService__BaseUrl: "http://fleet-service:8080"
+      Jwt__Key: "${FLEET_JWT_KEY}"
+      Jwt__Issuer: "SmartFleet.AuthUserService"
+      Jwt__Audience: "SmartFleet"
+    depends_on:
+      - trip-db
+      - fleet-service
+
   fleet-service:
     build:
       context: ./services/FleetVehicleService

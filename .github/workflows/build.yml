@@ -95,6 +95,8 @@ jobs:
         run: docker build -t auth-service:ci ./services/AuthUserService
       - name: Build Fleet Service Docker Image
         run: docker build -t fleet-service:ci ./services/FleetVehicleService
+      - name: Build Trip Dispatch Service Docker Image
+        run: docker build -t trip-service:ci ./services/TripDispatchService
 
   deploy:
     name: Deploy to Azure (Auth Service)

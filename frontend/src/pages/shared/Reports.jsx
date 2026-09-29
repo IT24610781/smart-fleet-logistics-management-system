@@ -1,3 +1,4 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useState } from 'react'
 import AppShell from '../../components/layout/AppShell'
 import MiniChart from '../../components/common/MiniChart'
@@ -20,7 +21,7 @@ export default function Reports() {
     <AppShell title="Reports">
       <div className="page-header">
         <div>
-          <div className="page-header-title">Reports</div>
+          <PageHeading eyebrow="Reporting & analytics" title="Reports" />
           <p className="page-header-desc">Fleet utilization, trip completion, and activity over time. Demo data until the Reporting service is live.</p>
         </div>
         <div className="page-header-actions">

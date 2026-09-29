@@ -40,7 +40,13 @@ export function createApiClient(baseURL) {
         fieldErrors = data.errors
         message = 'Please fix the highlighted fields.'
       } else if (status === 401) {
-        message = data?.message || 'Invalid username or password.'
+        const isLogin = error.config?.url?.includes('/api/auth/login')
+        if (!isLogin && error.config?.headers?.Authorization && error.config.headers.Authorization === `Bearer ${localStorage.getItem('smartfleet_token')}`) {
+          localStorage.removeItem('smartfleet_token')
+          localStorage.removeItem('smartfleet_user')
+          window.dispatchEvent(new window.Event('smartfleet:session-ended'))
+        }
+        message = data?.message || (isLogin ? 'Invalid username or password.' : 'Your session has ended. Please sign in again.')
       } else if (status === 403) {
         message = 'You are not authorized to access this page.'
       } else if (status === 409) {

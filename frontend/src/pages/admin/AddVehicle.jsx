@@ -1,6 +1,7 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import AppShell from '../../components/layout/AppShell'
+import AppShell from '../../components/layout/AdminShell'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
@@ -58,10 +59,10 @@ export default function AddVehicle() {
   }
 
   return (
-    <AppShell title="Add Vehicle">
+    <AppShell dirty={Object.values(form).some(value => String(value).trim()) && !created} title="Add Vehicle">
       <div className="page-header">
         <div>
-          <div className="page-header-title">Add Vehicle</div>
+          <PageHeading eyebrow="Fleet management" title="Add Vehicle" />
           <p className="page-header-desc">Register a new vehicle. It will default to "Available" status.</p>
         </div>
       </div>
@@ -79,9 +80,10 @@ export default function AddVehicle() {
 
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
             <Button type="submit" loading={submitting}>{submitting ? 'Adding…' : 'Add vehicle'}</Button>
+            <Link className="admin-cancel-link" to="/admin/vehicles">Cancel</Link>
             {created && (
               <>
-                <Link to="/admin/vehicles"><Button variant="secondary" type="button">View Vehicles</Button></Link>
+                <Link className="admin-cancel-link" to="/admin/vehicles">View Vehicles</Link>
                 <Button variant="ghost" type="button" onClick={() => setCreated(false)}>Add Another Vehicle</Button>
               </>
             )}

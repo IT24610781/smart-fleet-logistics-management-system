@@ -1,35 +1,28 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../common/Icon'
-
-// Now a slim in-content header inside AppShell (nav itself moved into
-// Sidebar). Keeps the page title + quick link to Profile visible on every
-// authenticated page, and owns the mobile hamburger that opens Sidebar.
-export default function Topbar({ title, user, onOpenMobileMenu }) {
-  return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 sm:px-6 py-4 bg-surface-container-lowest border-b border-outline-variant/40">
-      <div className="flex items-center gap-3 min-w-0">
-        <button
-          type="button"
-          onClick={onOpenMobileMenu}
-          className="lg:hidden p-2 -ml-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low"
-          aria-label="Open navigation"
-        >
-          <Icon name="menu" size={20} />
-        </button>
-        <h1 className="font-headline-sm text-headline-sm text-on-surface truncate">{title}</h1>
-      </div>
-
-      <Link
-        to="/profile"
-        className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-surface-container-low transition-colors"
-      >
-        <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-title-md text-label-md">
-          {(user?.firstName?.[0] || user?.username?.[0] || '?').toUpperCase()}
-        </div>
-        <span className="hidden sm:inline font-title-md text-body-sm text-on-surface">
-          {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.username}
-        </span>
-      </Link>
-    </header>
-  )
+import { NAV_BY_ROLE } from './navConfig'
+export default function Topbar({ user, onOpenMobileMenu }) {
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const pages = NAV_BY_ROLE[user?.role] || []
+  const mainPage = pages.some(page => page.to !== '/profile' && page.to === pathname)
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const matches = pages.filter(page => page.label.toLowerCase().includes(query.trim().toLowerCase()))
+  function search(event) { event.preventDefault(); if (matches[0]) { navigate(matches[0].to); setQuery(''); setOpen(false) } }
+  return <header className="fleet-topbar">
+    <button type="button" onClick={onOpenMobileMenu} className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low" aria-label="Open navigation"><Icon name="menu" size={22} /></button>
+    {mainPage && <div className="fleet-page-search" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}>
+      <form role="search" onSubmit={search}>
+        <Icon name="search" size={19} />
+        <input aria-label="Search pages" placeholder="Search pages..." value={query} onFocus={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setOpen(true) }} onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); event.currentTarget.blur() } }} aria-expanded={open} aria-controls="page-search-results" autoComplete="off" />
+        <button type="submit" aria-label="Go to matching page" disabled={!matches.length}><Icon name="chevronRight" size={18} /></button>
+      </form>
+      {open && <div className="fleet-search-results" id="page-search-results">
+        <span className="fleet-search-caption">Pages available to you</span>
+        {matches.length ? matches.map(page => <Link key={page.to} to={page.to} onClick={() => { setOpen(false); setQuery('') }}><Icon name={page.icon} size={18} />{page.label}<Icon name="chevronRight" size={14} /></Link>) : <p>No matching pages.</p>}
+      </div>}
+    </div>}
+  </header>
 }

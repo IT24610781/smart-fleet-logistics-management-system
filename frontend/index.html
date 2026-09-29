@@ -2,6 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try { document.documentElement.dataset.theme = localStorage.getItem('smartfleet_theme') === 'dark' ? 'dark' : 'light'; }
+      catch { document.documentElement.dataset.theme = 'light'; }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/fleet-mark.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart Fleet — Fleet &amp; Logistics Management</title>

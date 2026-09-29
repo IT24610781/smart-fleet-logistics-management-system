@@ -22,3 +22,7 @@ export async function updateProfile(payload) {
   const { data } = await api.put('/api/users/me', payload)
   return data
 }
+
+export async function deactivateDriver(id) {
+  await api.post(`/api/users/drivers/${id}/deactivate`)
+}

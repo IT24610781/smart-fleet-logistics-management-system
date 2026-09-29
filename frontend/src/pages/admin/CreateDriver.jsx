@@ -1,6 +1,7 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import AppShell from '../../components/layout/AppShell'
+import AppShell from '../../components/layout/AdminShell'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
@@ -67,9 +68,9 @@ export default function CreateDriver() {
   }
 
   return (
-    <AppShell title="Create Driver">
+    <AppShell dirty={Object.values(form).some(value => String(value).trim()) && !created} title="Create Driver">
       <div className="mb-6">
-        <h2 className="font-headline-lg text-headline-lg text-on-surface">Create Driver</h2>
+        <PageHeading eyebrow="People management" title="Create Driver" />
         <p className="font-body-md text-body-md text-on-surface-variant mt-1">
           Set up a new driver account. The driver will receive their login credentials separately.
         </p>
@@ -94,9 +95,10 @@ export default function CreateDriver() {
 
           <div className="flex flex-wrap gap-3 pt-2">
             <Button type="submit" loading={submitting}>{submitting ? 'Creating…' : 'Create driver'}</Button>
+            <Link className="admin-cancel-link" to="/admin/drivers">Cancel</Link>
             {created && (
               <>
-                <Link to="/admin/drivers"><Button variant="secondary" type="button">View Drivers</Button></Link>
+                <Link className="admin-cancel-link" to="/admin/drivers">View Drivers</Link>
                 <Button variant="ghost" type="button" onClick={() => setCreated(false)}>Create Another Driver</Button>
               </>
             )}

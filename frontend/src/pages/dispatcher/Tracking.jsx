@@ -1,3 +1,4 @@
+import PageHeading from '../../components/common/PageHeading'
 import AppShell from '../../components/layout/AppShell'
 import StatusBadge from '../../components/common/StatusBadge'
 import { MOCK_VEHICLES } from '../../utils/mockData'
@@ -16,7 +17,7 @@ export default function Tracking() {
     <AppShell title="Fleet Tracking">
       <div className="page-header">
         <div>
-          <div className="page-header-title">Fleet Tracking</div>
+          <PageHeading eyebrow="Live tracking" title="Fleet Tracking" />
           <p className="page-header-desc">Live vehicle locations. Connects to the Tracking/Telemetry Service once available — positions and timestamps below are demo data.</p>
         </div>
       </div>

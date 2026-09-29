@@ -1,6 +1,7 @@
 // Small dependency-free icon set (no external icon package required by the
 // mandated stack). Add a path here rather than pulling in a new library.
 const PATHS = {
+  info: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 11v6M12 7h.01',
   grid: 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z',
   users: 'M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm8 2a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM2 19c0-3.3 2.7-6 6-6s6 2.7 6 6M14.5 13.2c2.5.4 4.5 2.5 4.5 5.3',
   truck: 'M2 6h11v9H2V6zm11 3h4l3 3v3h-7V9zM6 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm11 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z',

@@ -186,7 +186,7 @@ public class ProfileEndpointTests : IClassFixture<CustomWebApplicationFactory>
     // ============================================================
 
     [Fact]
-    public async Task UpdateProfile_NewPassword_IsRehashedAndOldTokenStillWorks()
+    public async Task UpdateProfile_PasswordChangeWithoutVerification_IsRejected()
     {
         var (username, _, login) = await CreateAndLoginTestDriverAsync();
         var client = CreateAuthenticatedClient(login.Token);
@@ -200,31 +200,12 @@ public class ProfileEndpointTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         var updateResponse = await client.PutAsJsonAsync("/api/users/me", updateRequest);
-        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
-
-        // AC: "I remain logged in with my current session (no forced
-        // re-login required)." Prove the EXISTING token (issued before
-        // the password change) still authenticates afterward.
-        var stillLoggedInResponse = await client.GetAsync("/api/users/me");
-        Assert.Equal(HttpStatusCode.OK, stillLoggedInResponse.StatusCode);
-
-        // Confirm the password was actually changed: old password no
-        // longer logs in, new password does.
+        Assert.Equal(HttpStatusCode.BadRequest, updateResponse.StatusCode);
+        Assert.Contains("verified Change password", await updateResponse.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/users/me")).StatusCode);
         var loginClient = _factory.CreateClient();
-
-        var oldPasswordLogin = await loginClient.PostAsJsonAsync("/api/auth/login", new LoginRequest
-        {
-            Username = username,
-            Password = "ValidPass123" // the original password
-        });
-        Assert.Equal(HttpStatusCode.Unauthorized, oldPasswordLogin.StatusCode);
-
-        var newPasswordLogin = await loginClient.PostAsJsonAsync("/api/auth/login", new LoginRequest
-        {
-            Username = username,
-            Password = "NewValidPass456"
-        });
-        Assert.Equal(HttpStatusCode.OK, newPasswordLogin.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await loginClient.PostAsJsonAsync("/api/auth/login", new LoginRequest { Username = username, Password = "ValidPass123" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await loginClient.PostAsJsonAsync("/api/auth/login", new LoginRequest { Username = username, Password = "NewValidPass456" })).StatusCode);
     }
 
     [Fact]

@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
 import AuthShell from '../../components/layout/AuthShell'
-import { ErrorMessage } from '../../components/common/ErrorMessage'
+import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 
 const HOME_BY_ROLE = {
   Admin: '/admin/dashboard',
@@ -21,6 +21,7 @@ export default function Login() {
   const { login } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -58,6 +59,7 @@ export default function Login() {
         Enter your credentials to access the dispatch console.
       </p>
 
+      <SuccessMessage>{searchParams.get('passwordChanged') === '1' ? 'Password updated. Sign in with your new password.' : null}</SuccessMessage>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
         <ErrorMessage>{error}</ErrorMessage>
 
@@ -91,6 +93,7 @@ export default function Login() {
           }
         />
 
+        <Link to="/forgot-password" className="password-back-link" style={{ alignSelf: 'flex-end' }}>Forgot password?</Link>
         <Button type="submit" block loading={submitting}>
           {submitting ? 'Signing in…' : 'Log in'}
         </Button>

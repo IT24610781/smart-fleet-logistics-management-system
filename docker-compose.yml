@@ -46,6 +46,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Server=trip-db;Port=3306;Database=trip_dispatch_db;User ID=root;Password=rootpassword;"
       FleetService__BaseUrl: "http://fleet-service:8080"
+      AuthService__BaseUrl: "http://auth-service:8080"
       Jwt__Key: "${FLEET_JWT_KEY}"
       Jwt__Issuer: "SmartFleet.AuthUserService"
       Jwt__Audience: "SmartFleet"
@@ -67,6 +68,7 @@ services:
       Jwt__Issuer: "SmartFleet.AuthUserService"
       Jwt__Audience: "SmartFleet"
       Kafka__BootstrapServers: "kafka:9092"
+      AuthService__BaseUrl: "http://auth-service:8080"
     depends_on:
       - fleet-db
       - kafka
@@ -86,6 +88,9 @@ services:
       Jwt__Issuer: "SmartFleet.AuthUserService"
       Jwt__Audience: "SmartFleet"
       Jwt__ExpirationMinutes: "120"
+      PasswordEmail__ApiKey: "${BREVO_API_KEY:-}"
+      PasswordEmail__SenderEmail: "${BREVO_SENDER_EMAIL:-}"
+      TripService__BaseUrl: "http://trip-service:8080"
     depends_on:
       - auth-db
 

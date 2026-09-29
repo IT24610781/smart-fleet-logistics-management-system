@@ -272,13 +272,8 @@ public class UserService
             throw new ArgumentException(
                 "Contact number is required.");
 
-        // Validate password only when supplied
-        if (!string.IsNullOrWhiteSpace(request.Password) &&
-            request.Password.Length < 8)
-        {
-            throw new ArgumentException(
-                "Password must be at least 8 characters.");
-        }
+        if (!string.IsNullOrEmpty(request.Password))
+            throw new ArgumentException("Use the verified Change password flow to update your password.");
 
         // Find current user
         var user =
@@ -297,14 +292,6 @@ public class UserService
 
         user.ContactNumber =
             request.ContactNumber.Trim();
-
-        // Update password only if provided
-        if (!string.IsNullOrWhiteSpace(request.Password))
-        {
-            user.PasswordHash =
-                BCrypt.Net.BCrypt.HashPassword(
-                    request.Password);
-        }
 
         // Update timestamp
         user.UpdatedAt = DateTime.UtcNow;

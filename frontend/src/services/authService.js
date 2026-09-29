@@ -12,3 +12,12 @@ export async function registerDispatcher(payload) {
   const { data } = await api.post('/api/auth/register/dispatcher', payload)
   return data
 }
+
+export async function requestPasswordCode(change, payload) {
+  const { data } = await api.post(`/api/auth/password/${change ? 'change/request' : 'forgot'}`, change ? { currentPassword: payload.currentPassword } : { email: payload.email })
+  return data
+}
+export async function completePasswordChange(change, payload) {
+  const { data } = await api.post(`/api/auth/password/${change ? 'change/confirm' : 'reset'}`, payload)
+  return data
+}

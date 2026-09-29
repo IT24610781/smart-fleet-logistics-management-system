@@ -1,3 +1,4 @@
+import PageHeading from '../../components/common/PageHeading'
 import { Link } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
 import StatCard from '../../components/common/StatCard'
@@ -18,16 +19,13 @@ export default function DriverDashboard() {
 
   return (
     <AppShell title="Dashboard">
-      <div className="stack">
-        <div>
-          <h2 style={{ marginBottom: 2 }}>Welcome back{user?.firstName ? `, ${user.firstName}` : ''}</h2>
-          <p style={{ color: 'var(--ink-500)', fontSize: 13 }}>Here's what's on your schedule.</p>
-        </div>
+      <div className="fleet-dashboard-area stack">
+        <PageHeading eyebrow="Driver operations" title="Your driving overview" description={`Welcome back${user?.firstName ? `, ${user.firstName}` : ''}. Here is what is on your schedule.`} />
 
-        <div className="stat-grid">
-          <StatCard label="Today's Trips" value={today.length} icon="route" />
-          <StatCard label="Completed Trips" value={completed.length} icon="chart" />
-          <StatCard label="Pending Trips" value={pending.length} icon="grid" />
+        <div className="dashboard-stats dashboard-stats-driver">
+          <StatCard label="Today's Trips" value={today.length} icon="route" description="Assigned and active trips" />
+          <StatCard label="Completed Trips" value={completed.length} icon="chart" description="Completed journeys" />
+          <StatCard label="Pending Trips" value={pending.length} icon="grid" description="Assignments awaiting your response" />
         </div>
 
         <div className="card card-pad">

@@ -76,7 +76,7 @@ public class UpdateProfileValidationTests
     }
 
     [Fact]
-    public async Task UpdateProfileAsync_NewPasswordShorterThan8Chars_ThrowsArgumentException()
+    public async Task UpdateProfileAsync_PasswordRequiresVerifiedFlow_ThrowsArgumentException()
     {
         var service = BuildUserService();
         var request = ValidRequest();
@@ -85,7 +85,7 @@ public class UpdateProfileValidationTests
         var ex = await Assert.ThrowsAsync<ArgumentException>(
             () => service.UpdateProfileAsync(Guid.NewGuid(), request));
 
-        Assert.Equal("Password must be at least 8 characters.", ex.Message);
+        Assert.Equal("Use the verified Change password flow to update your password.", ex.Message);
     }
 
     [Fact]

@@ -1,7 +1,8 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import AppShell from '../../components/layout/AppShell'
-import DataTable from '../../components/common/DataTable'
+import { Link, useSearchParams } from 'react-router-dom'
+import AppShell from '../../components/layout/AdminShell'
+import DataTable from '../../components/common/AdminTable'
 import StatusBadge from '../../components/common/StatusBadge'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
@@ -12,8 +13,13 @@ import { listVehicles, deleteVehicle } from '../../services/vehicleService'
 // US-07: Admin removes a vehicle from the registry
 
 export default function Vehicles() {
-  const [query, setQuery] = useState('')
-  const [status, setStatus] = useState('all')
+  const [params, setParams] = useSearchParams()
+  const query = params.get('q') || ''
+  const status = params.get('status') || 'all'
+  const setFilter = (key,value) => setParams(prev => { const next = new window.URLSearchParams(prev); if (value && value !== 'all') next.set(key,value); else next.delete(key); return next }, { replace:true })
+  const setQuery = value => setFilter('q',value)
+  const setStatus = value => setFilter('status',value)
+  const [reload,setReload] = useState(0)
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -40,7 +46,7 @@ export default function Vehicles() {
 
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [reload])
 
   const rows = useMemo(() => {
     return vehicles.filter((v) => {
@@ -92,11 +98,9 @@ export default function Vehicles() {
       align: 'right',
       render: (r) => (
         <div className="flex items-center gap-1 justify-end">
-          <Link to={`/admin/vehicles/${r.id}/edit`} state={{ vehicle: r }} aria-label={`Edit ${r.registrationNo}`}>
-            <Button variant="ghost" type="button">
+          <Link className="admin-cancel-link" to={`/admin/vehicles/${r.id}/edit`} state={{ vehicle: r }} aria-label={`Edit ${r.registrationNo}`}>
                 <Icon name="edit" size={15} className="icon" />
-            </Button>
-                  </Link>
+            </Link>
             <Button
             variant="ghost"
             type="button"
@@ -114,11 +118,11 @@ export default function Vehicles() {
     <AppShell title="Vehicles">
       <div className="page-header">
         <div>
-          <div className="page-header-title">Vehicles</div>
+          <PageHeading eyebrow="Fleet management" title="Vehicles" />
           <p className="page-header-desc">Fleet inventory and current status, live from the Fleet Service.</p>
         </div>
         <div className="page-header-actions">
-          <Link to="/admin/vehicles/create"><Button variant="accent">Add Vehicle</Button></Link>
+          <Link className="admin-cancel-link" to="/admin/vehicles/create">Add Vehicle</Link>
         </div>
       </div>
 
@@ -138,7 +142,7 @@ export default function Vehicles() {
       {loading && <p className="page-status-text">Loading vehicles…</p>}
 
       {!loading && error && (
-        <p className="page-status-text page-status-error">{error}</p>
+        <div role="alert"><p className="page-status-text page-status-error">{error}</p><Button variant="secondary" onClick={() => setReload(x => x+1)}>Retry</Button></div>
       )}
 
       {!loading && !error && vehicles.length === 0 && (

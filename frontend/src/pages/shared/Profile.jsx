@@ -1,9 +1,12 @@
+import { Link } from 'react-router-dom'
+import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../../hooks/useTheme'
 import AppShell from '../../components/layout/AppShell'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
-import Icon from '../../components/common/Icon'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import { useAuth } from '../../context/AuthContext'
 import * as userService from '../../services/userService'
@@ -36,7 +39,14 @@ function formatMonthYear(value) {
 }
 
 export default function Profile() {
-  const { updateUser } = useAuth()
+  const { updateUser, logout } = useAuth()
+  const navigate = useNavigate()
+  function handleLogout() {
+    if (submitting) return
+    if (dirty && !window.confirm('Discard your unsaved changes and log out?')) return
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   const [profile, setProfile] = useState(null) // last saved copy from the server
   const [form, setForm] = useState(formFrom(null))
@@ -92,6 +102,21 @@ export default function Profile() {
     (form.firstName.trim() !== (profile.firstName || '') ||
       form.lastName.trim() !== (profile.lastName || '') ||
       form.contactNumber.trim() !== (profile.contactNumber || ''))
+
+  useEffect(() => {
+    if (!editing || !dirty) return
+    const unload = event => { event.preventDefault(); event.returnValue = '' }
+    const leave = event => {
+      const anchor = event.target.closest('a[href]')
+      if (anchor && !event.defaultPrevented && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0 && !window.confirm('Leave this page and discard your unsaved profile changes?')) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+    window.addEventListener('beforeunload', unload)
+    document.addEventListener('click', leave, true)
+    return () => { window.removeEventListener('beforeunload', unload); document.removeEventListener('click', leave, true) }
+  }, [dirty, editing])
 
   function startEditing() {
     setForm(formFrom(profile))
@@ -184,6 +209,8 @@ export default function Profile() {
             <div className="h-96 animate-pulse rounded-xl bg-surface-container lg:col-span-2" />
           </div>
         </div>
+        <section className="profile-section"><div className="profile-section-heading"><h2>Security</h2></div><div className="profile-settings-card profile-theme-row"><div><strong>Password</strong><p>Update your password with an email verification code.</p></div><Link to="/profile/password" className="password-back-link">Change password</Link></div></section>
+        <ProfilePreferences onLogout={handleLogout} disabled={submitting} />
       </AppShell>
     )
   }
@@ -199,154 +226,40 @@ export default function Profile() {
             </Button>
           </div>
         </div>
+        <section className="profile-section"><div className="profile-section-heading"><h2>Security</h2></div><div className="profile-settings-card profile-theme-row"><div><strong>Password</strong><p>Update your password with an email verification code.</p></div><Link to="/profile/password" className="password-back-link">Change password</Link></div></section>
+        <ProfilePreferences onLogout={handleLogout} disabled={submitting} />
       </AppShell>
     )
   }
 
   const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || profile.username
   const memberSince = formatMonthYear(profile.createdAt)
-  const isActive = profile.isActive !== false
-
-  const details = [
-    { id: 'firstName', label: 'First name', value: profile.firstName },
-    { id: 'lastName', label: 'Last name', value: profile.lastName },
-    { id: 'username', label: 'Username', value: profile.username },
-    { id: 'email', label: 'Email', value: profile.email },
-    { id: 'contactNumber', label: 'Contact number', value: profile.contactNumber },
-    { id: 'role', label: 'Role', value: profile.role },
-  ]
-
+  const personal = [['firstName','First name',profile.firstName],['lastName','Last name',profile.lastName],['contactNumber','Contact number',profile.contactNumber],['email','Email',profile.email]]
+  const account = [['username','Username',profile.username],['role','Role',profile.role],['status','Account status',profile.isActive === false ? 'Inactive' : 'Active'],['memberSince','Member since',memberSince]]
+  const detailGrid = rows => <dl className="profile-detail-grid">{rows.map(([id,label,value]) => <div key={id}><dt>{label}</dt><dd id={`view-${id}`}>{value || 'Not provided'}</dd></div>)}</dl>
   return (
     <AppShell title="Profile">
-      <div className="max-w-6xl">
-        <div className="mb-6">
-          <h2 className="font-headline-lg text-headline-lg text-on-surface">My profile</h2>
-          <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
-            Review and update your personal information.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Identity card */}
-          <aside className="self-start overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
-            <div className="relative h-24 overflow-hidden bg-primary">
-              <div className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-secondary/25 blur-2xl" />
-              <div className="pointer-events-none absolute -bottom-16 -left-8 h-36 w-36 rounded-full bg-tertiary-container/40 blur-2xl" />
-            </div>
-            <div className="-mt-10 flex flex-col items-center px-6 pb-6 text-center">
-              <div
-                className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full bg-secondary font-headline-sm text-headline-sm text-on-secondary ring-4 ring-surface-container-lowest"
-                aria-hidden="true"
-              >
-                {initialsOf(profile)}
-              </div>
-              <h3 id="profile-display-name" className="mt-3 font-headline-sm text-headline-sm text-on-surface">
-                {fullName}
-              </h3>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">@{profile.username}</p>
-
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-primary-fixed px-2.5 py-1 font-label-md text-label-md text-on-primary-fixed">
-                  {profile.role}
-                </span>
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-1 font-label-md text-label-md ${
-                    isActive ? 'bg-secondary-fixed text-on-secondary-fixed' : 'bg-error-container text-on-error-container'
-                  }`}
-                >
-                  <span aria-hidden="true" className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current" />
-                  {isActive ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-
-              {memberSince && (
-                <p className="mt-5 w-full border-t border-outline-variant/60 pt-4 font-body-sm text-body-sm text-on-surface-variant">
-                  Member since {memberSince}
-                </p>
-              )}
-            </div>
-          </aside>
-
-          {/* Details card */}
-          <section className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest lg:col-span-2">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-outline-variant px-6 py-5">
-              <div>
-                <h3 className="font-headline-sm text-headline-sm text-on-surface">Personal information</h3>
-                <p className="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">
-                  {editing ? 'Update your details, then save your changes.' : 'Your details as they appear in Smart Fleet.'}
-                </p>
-              </div>
-              {!editing && (
-                <Button id="edit-profile-button" variant="secondary" onClick={startEditing}>
-                  <Icon name="edit" size={16} />
-                  Edit details
-                </Button>
-              )}
-            </div>
-
-            {!editing ? (
-              <div className="px-6 py-2">
-                {success && (
-                  <div className="py-4">
-                    <SuccessMessage>Profile updated successfully.</SuccessMessage>
-                  </div>
-                )}
-                <dl className="divide-y divide-outline-variant/60">
-                  {details.map((row) => (
-                    <div key={row.id} className="grid grid-cols-1 gap-1 py-4 sm:grid-cols-3 sm:gap-4">
-                      <dt className="font-label-md text-label-md text-on-surface-variant">{row.label}</dt>
-                      <dd id={`view-${row.id}`} className="break-words font-body-md text-body-md text-on-surface sm:col-span-2">
-                        {row.value || '—'}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit}
-                noValidate
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') handleCancel()
-                }}
-              >
-                <div className="flex flex-col gap-5 px-6 py-6">
-                  <ErrorMessage>{formError}</ErrorMessage>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} maxLength={NAME_MAX} autoComplete="given-name" required />
-                    <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} maxLength={NAME_MAX} autoComplete="family-name" required />
-                  </div>
-                  <FormField label="Contact number" name="contactNumber" type="tel" value={form.contactNumber} onChange={update('contactNumber')} error={fieldErrors.contactNumber} maxLength={CONTACT_MAX} autoComplete="tel" required />
-
-                  <div className="border-t border-outline-variant/60 pt-5">
-                    <p className="mb-3 font-label-md text-label-md text-on-surface-variant">
-                      Account details - these can't be changed here
-                    </p>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <FormField label="Username" name="username" value={profile.username || ''} readOnly />
-                      <FormField label="Role" name="role" value={profile.role || ''} readOnly />
-                    </div>
-                    <div className="mt-4">
-                      <FormField label="Email" name="email" value={profile.email || ''} readOnly hint="Email cannot be changed" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col-reverse gap-3 border-t border-outline-variant bg-surface-container-low/60 px-6 py-4 sm:flex-row sm:justify-end">
-                  <Button id="cancel-edit-button" variant="secondary" onClick={handleCancel} disabled={submitting}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" loading={submitting} disabled={!dirty}>
-                    {submitting ? 'Saving…' : 'Save changes'}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </section>
-        </div>
+      <div className="profile-page">
+        <PageHeading eyebrow="Your account" title="Your details" description="Manage your personal information, account preferences and session." />
+        <div className="profile-identity"><span className="profile-avatar" aria-hidden="true">{initialsOf(profile)}</span><div><strong id="profile-display-name">{fullName}</strong><span>@{profile.username}</span></div></div>
+        <SuccessMessage>{success ? 'Profile updated successfully.' : null}</SuccessMessage>
+        <section className="profile-section">
+          <div className="profile-section-heading"><h2>Personal information</h2>{!editing && <Button id="edit-profile-button" variant="secondary" onClick={startEditing}>Edit details</Button>}</div>
+          {!editing ? detailGrid(personal) : <form className="profile-edit-form" onSubmit={handleSubmit} noValidate onKeyDown={event => { if (event.key === 'Escape' && !submitting) handleCancel() }}>
+            <ErrorMessage>{formError}</ErrorMessage>
+            <fieldset disabled={submitting}><div className="form-grid-2">
+              <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} maxLength={NAME_MAX} autoComplete="given-name" required />
+              <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} maxLength={NAME_MAX} autoComplete="family-name" required />
+              <FormField label="Contact number" name="contactNumber" type="tel" value={form.contactNumber} onChange={update('contactNumber')} error={fieldErrors.contactNumber} maxLength={CONTACT_MAX} autoComplete="tel" required />
+              <FormField label="Email" name="email" value={profile.email || ''} readOnly hint="Email cannot be changed here." />
+            </div></fieldset>
+            <div className="profile-edit-actions"><Button id="cancel-edit-button" variant="secondary" onClick={handleCancel} disabled={submitting}>Cancel</Button><Button type="submit" loading={submitting} disabled={!dirty}>Save changes</Button></div>
+          </form>}
+        </section>
+        <section className="profile-section"><div className="profile-section-heading"><h2>Account information</h2></div>{detailGrid(account)}</section>
+        <section className="profile-section"><div className="profile-section-heading"><h2>Security</h2></div><div className="profile-settings-card profile-theme-row"><div><strong>Password</strong><p>Update your password with an email verification code.</p></div><Link to="/profile/password" className="password-back-link">Change password</Link></div></section>
+        <ProfilePreferences onLogout={handleLogout} disabled={submitting} />
       </div>
-
       <ConfirmDialog
         open={confirmDiscard}
         title="Discard your changes?"
@@ -358,4 +271,17 @@ export default function Profile() {
       />
     </AppShell>
   )
+}
+
+function ProfilePreferences({ onLogout, disabled }) {
+  const { theme, setTheme } = useTheme()
+  return <section className="profile-section profile-preferences">
+    <div className="profile-section-heading"><h2>Preferences</h2></div>
+    <div className="profile-settings-card">
+      <div className="profile-theme-row"><div><strong>Appearance</strong><p>Choose a light or dark theme for this browser.</p></div><div className="profile-theme-options" role="group" aria-label="Appearance">
+        {['light','dark'].map(option => <button key={option} type="button" aria-pressed={theme === option} onClick={() => setTheme(option)}><span className={`theme-swatch theme-swatch-${option}`} />{option === 'light' ? 'Light' : 'Dark'}</button>)}
+      </div></div>
+      <div className="profile-session-row"><div><strong>Account session</strong><p>Sign out of Smart Fleet on this browser.</p></div><Button variant="danger" onClick={onLogout} disabled={disabled}>Logout</Button></div>
+    </div>
+  </section>
 }

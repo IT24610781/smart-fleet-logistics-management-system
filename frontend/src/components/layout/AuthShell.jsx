@@ -3,10 +3,10 @@
 // screens can never drift apart visually again.
 export default function AuthShell({ children }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface p-4 sm:p-8">
-      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 rounded-xl shadow-xl overflow-hidden bg-surface-container-lowest">
+    <div className="auth-glass-page min-h-screen flex items-center justify-center bg-surface p-4 sm:p-8">
+      <div className="auth-glass-card w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 rounded-xl shadow-xl overflow-hidden bg-surface-container-lowest">
         {/* Left: brand panel */}
-        <div className="lg:col-span-6 bg-primary p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden text-on-primary">
+        <div className="auth-brand-panel lg:col-span-6 bg-primary p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden text-on-primary">
           <div className="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-secondary/15 blur-3xl pointer-events-none" />
           <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-tertiary-container/30 blur-2xl pointer-events-none" />
 
@@ -59,7 +59,7 @@ export default function AuthShell({ children }) {
         </div>
 
         {/* Right: form */}
-        <div className="lg:col-span-6 p-8 sm:p-12 flex flex-col justify-center">
+        <div className="auth-glass-form lg:col-span-6 p-8 sm:p-12 flex flex-col justify-center">
           {children}
         </div>
       </div>

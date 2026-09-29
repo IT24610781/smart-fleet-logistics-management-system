@@ -1,3 +1,4 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useState } from 'react'
 import AppShell from '../../components/layout/AppShell'
 import DataTable from '../../components/common/DataTable'
@@ -99,7 +100,7 @@ export default function MyTrips() {
     <AppShell title="My Trips">
       <div className="page-header">
         <div>
-          <div className="page-header-title">My Trips</div>
+          <PageHeading eyebrow="Driver operations" title="My Trips" />
           <p className="page-header-desc">Trips assigned to you — accept or reject new assignments and track your history.</p>
         </div>
       </div>

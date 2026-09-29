@@ -1,6 +1,7 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import AppShell from '../../components/layout/AppShell'
+import AppShell from '../../components/layout/AdminShell'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
@@ -14,7 +15,10 @@ export default function EditVehicle() {
   const { id } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const vehicle = location.state?.vehicle
+  const [vehicle, setVehicle] = useState(location.state?.vehicle || null)
+  const [loadingVehicle,setLoadingVehicle] = useState(true)
+  const [loadError,setLoadError] = useState('')
+  const [retry,setRetry] = useState(0)
 
   // While a vehicle is On Trip, a Dispatcher has already picked it based on
   // exactly these details (reg. no, type, capacity) and it is in active use.
@@ -32,6 +36,22 @@ export default function EditVehicle() {
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoadingVehicle(true)
+    setLoadError('')
+    vehicleService.listVehicles().then(rows => {
+      if (cancelled) return
+      const found = rows.find(row => row.id === id)
+      setVehicle(found || null)
+      if (found) setForm({ registrationNo:found.registrationNo, type:found.type, capacity:String(found.capacity), status:found.status })
+      else setLoadError('This vehicle was not found in the registry.')
+    }).catch(error => {
+      if (!cancelled) { setVehicle(null); setLoadError(error.message || 'Unable to load this vehicle.') }
+    }).finally(() => { if (!cancelled) setLoadingVehicle(false) })
+    return () => { cancelled = true }
+  }, [id,retry])
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
@@ -84,30 +104,33 @@ export default function EditVehicle() {
     }
   }
 
+  if (loadingVehicle) return <AppShell title="Edit Vehicle" dirty={!!vehicle && !saved && !isLocked && Object.entries(form).some(([key,value]) => String(value) !== String(vehicle[key]))}><p role="status">Loading vehicle details...</p></AppShell>
+
   if (!vehicle) {
     return (
-      <AppShell title="Edit Vehicle">
+      <AppShell title="Edit Vehicle" dirty={!!vehicle && !saved && !isLocked && Object.entries(form).some(([key,value]) => String(value) !== String(vehicle[key]))}>
         <div className="page-header">
           <div>
-            <div className="page-header-title">Edit Vehicle</div>
-            <p className="page-header-desc">We couldn't find that vehicle's details.</p>
+            <PageHeading eyebrow="Fleet management" title="Edit Vehicle" />
+            <p className="page-header-desc">{loadError || 'Vehicle details are unavailable.'}</p>
           </div>
         </div>
         <div className="card card-pad" style={{ maxWidth: 560 }}>
           <p className="page-status-text">
             Please go back to the Vehicles list and use the edit button on the vehicle you want to update.
           </p>
-          <Link to="/admin/vehicles"><Button variant="secondary" type="button">Back to Vehicles</Button></Link>
+          <Button variant="secondary" onClick={() => setRetry(x => x+1)}>Retry</Button>
+          <Link className="admin-cancel-link" to="/admin/vehicles">Back to Vehicles</Link>
         </div>
       </AppShell>
     )
   }
 
   return (
-    <AppShell title="Edit Vehicle">
+    <AppShell title="Edit Vehicle" dirty={!!vehicle && !saved && !isLocked && Object.entries(form).some(([key,value]) => String(value) !== String(vehicle[key]))}>
       <div className="page-header">
         <div>
-          <div className="page-header-title">Edit Vehicle</div>
+          <PageHeading eyebrow="Fleet management" title="Edit Vehicle" />
           <p className="page-header-desc">Update details and status for {vehicle.registrationNo}.</p>
         </div>
       </div>
@@ -154,7 +177,7 @@ export default function EditVehicle() {
             {!isLocked && (
               <Button type="submit" loading={submitting} disabled={saved}>{submitting ? 'Saving…' : 'Save changes'}</Button>
             )}
-            <Button variant="secondary" type="button" onClick={() => navigate('/admin/vehicles')}>
+            <Button variant="secondary" type="button" onClick={() => { if (saved || isLocked || !Object.entries(form).some(([key,value]) => String(value) !== String(vehicle[key])) || window.confirm('Discard your unsaved changes?')) navigate('/admin/vehicles') }}>
               {isLocked ? 'Back to Vehicles' : 'Cancel'}
             </Button>
           </div>

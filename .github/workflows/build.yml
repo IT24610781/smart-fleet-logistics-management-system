@@ -55,6 +55,8 @@ jobs:
           ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_vehicle_db_test;Uid=root;Pwd=test_root_password;"
         run: dotnet test tests/FleetVehicleService.Tests --no-build
       - name: Test remaining projects
+        env:
+          TEST_TRIP_GUARD_CONNECTION: "Server=127.0.0.1;Port=3306;Uid=root;Pwd=test_root_password;"
         run: |
           dotnet test tests/TrackingTelemetryService.Tests --no-build
           dotnet test tests/TripDispatchService.Tests --no-build

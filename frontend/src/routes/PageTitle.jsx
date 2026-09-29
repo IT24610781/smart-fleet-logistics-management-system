@@ -5,6 +5,8 @@ import { useLocation } from 'react-router-dom'
 // accessibility, history and bookmarks). Add new routes to this map.
 const TITLES = {
   '/login': 'Sign in',
+  '/forgot-password': 'Reset password',
+  '/profile/password': 'Change password',
   '/register/dispatcher': 'Create account',
   '/403': 'Access denied',
   '/admin/dashboard': 'Admin dashboard',

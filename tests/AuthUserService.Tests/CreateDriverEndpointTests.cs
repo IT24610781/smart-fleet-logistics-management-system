@@ -150,9 +150,19 @@ public class CreateDriverEndpointTests : IClassFixture<CustomWebApplicationFacto
     public async Task CreateDriver_NonAdminToken_Returns403()
     {
         var client = _factory.CreateClient();
-        var token = TestJwt.CreateToken("Driver");
+        // A valid Driver now needs an active account, not just a signed role claim.
+        var admin = _factory.CreateClient();
+        admin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwt.CreateToken("Admin"));
+        var existing = ValidDriverRequest();
+        var created = await admin.PostAsJsonAsync("/api/users/drivers", existing);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest
+        {
+            Username = existing.Username, Password = existing.Password
+        });
+        var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
+            new AuthenticationHeaderValue("Bearer", login!.Token);
 
         var request = ValidDriverRequest();
         var response = await client.PostAsJsonAsync("/api/users/drivers", request);

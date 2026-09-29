@@ -1,3 +1,4 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
@@ -144,7 +145,7 @@ export default function Trips() {
     <AppShell title="Trips">
       <div className="page-header">
         <div>
-          <div className="page-header-title">Trips</div>
+          <PageHeading eyebrow="Dispatch operations" title="Trips" />
           <p className="page-header-desc">Create trip requests and monitor them through their lifecycle.</p>
         </div>
         <div className="page-header-actions">

@@ -3,7 +3,7 @@ using MySqlConnector;
 
 namespace AuthUserService.Data;
 
-public class UserRepository
+public class UserRepository : IUserAccountRepository
 {
     private readonly DatabaseConnection _databaseConnection;
 
@@ -262,7 +262,6 @@ public class UserRepository
                 first_name = @first_name,
                 last_name = @last_name,
                 contact_number = @contact_number,
-                password_hash = @password_hash,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = @id;
             """;
@@ -291,10 +290,6 @@ public class UserRepository
             "@contact_number",
             user.ContactNumber);
 
-        command.Parameters.AddWithValue(
-            "@password_hash",
-            user.PasswordHash);
-
         await command.ExecuteNonQueryAsync();
     }
 
@@ -302,6 +297,16 @@ public class UserRepository
     // ============================================================
     // Map database row -> User model
     // ============================================================
+
+    public async Task DeactivateDriverAsync(Guid id)
+    {
+        await using var connection = _databaseConnection.CreateConnection();
+        await connection.OpenAsync();
+        await using var command = new MySqlCommand(
+            "UPDATE users SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = @id AND role = 'Driver' AND is_active = TRUE;", connection);
+        command.Parameters.AddWithValue("@id", id.ToString());
+        await command.ExecuteNonQueryAsync();
+    }
 
     private static User MapUser(MySqlDataReader reader)
     {

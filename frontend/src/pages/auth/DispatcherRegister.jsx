@@ -4,7 +4,6 @@ import * as authService from '../../services/authService'
 import { useToast } from '../../context/ToastContext'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
-import AuthShell from '../../components/layout/AuthShell'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import { isRequired, isValidEmail, isValidPassword, isValidUsername, isValidContactNumber } from '../../utils/validation'
 
@@ -55,6 +54,7 @@ export default function DispatcherRegister() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (submitting || success) return
     setFormError(null)
     setSuccess(false)
 
@@ -85,42 +85,38 @@ export default function DispatcherRegister() {
   }
 
   return (
-    <AuthShell>
-      <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Create your account</h2>
-      <p className="font-body-md text-body-md text-on-surface-variant mb-6">
-        Register as a Dispatcher to create trips and assign vehicles.
-      </p>
-
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+    <div className="registration-page">
+      <Link className="registration-brand" to="/login"><img src="/fleet-mark.svg" alt="" />Smart Fleet</Link>
+      <section className="registration-card">
+        <h1>Fill in your details</h1>
+        <p className="registration-intro">Create your Dispatcher account.</p>
         <ErrorMessage>{formError}</ErrorMessage>
-        <SuccessMessage>{success ? 'Account created successfully. Redirecting you to the login page…' : null}</SuccessMessage>
-
-        <div className="form-grid-2">
-          <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} required autoComplete="given-name" />
-          <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} required autoComplete="family-name" />
-        </div>
-        <FormField label="Username" name="username" value={form.username} onChange={update('username')} error={fieldErrors.username} hint="3-20 characters, starts with a letter" required autoComplete="username" />
-        <FormField label="Email" name="email" type="email" value={form.email} onChange={update('email')} error={fieldErrors.email} required autoComplete="email" />
-        <div className="form-grid-2">
-          <FormField label="Password" name="password" type="password" value={form.password} onChange={update('password')} error={fieldErrors.password} hint="At least 8 characters" required autoComplete="new-password" />
-          <FormField label="Confirm password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={update('confirmPassword')} error={fieldErrors.confirmPassword} required autoComplete="new-password" />
-        </div>
-        <div className="form-grid-2">
-          <FormField label="Contact number" name="contactNumber" type="tel" value={form.contactNumber} onChange={update('contactNumber')} error={fieldErrors.contactNumber} required autoComplete="tel" />
-          <FormField label="Role" name="role" value="Dispatcher" readOnly />
-        </div>
-
-        <Button type="submit" block loading={submitting}>
-          {submitting ? 'Creating account…' : 'Create account'}
-        </Button>
-      </form>
-
-      <div className="mt-6 text-center font-body-sm text-body-sm text-on-surface-variant">
-        Already have an account?{' '}
-        <Link to="/login" className="text-primary font-semibold hover:underline">
-          Log in
-        </Link>
-      </div>
-    </AuthShell>
+        {success && <SuccessMessage>Account created successfully. Redirecting to login...</SuccessMessage>}
+        <form onSubmit={handleSubmit} className="registration-form" noValidate>
+          <fieldset disabled={submitting || success}>
+            <legend>Personal information</legend>
+            <div className="form-grid-2">
+              <FormField label="First name" name="firstName" value={form.firstName} onChange={update('firstName')} error={fieldErrors.firstName} required maxLength={100} autoComplete="given-name" />
+              <FormField label="Last name" name="lastName" value={form.lastName} onChange={update('lastName')} error={fieldErrors.lastName} required maxLength={100} autoComplete="family-name" />
+            </div>
+            <FormField label="Contact number" name="contactNumber" type="tel" value={form.contactNumber} onChange={update('contactNumber')} error={fieldErrors.contactNumber} required maxLength={20} autoComplete="tel" />
+          </fieldset>
+          <fieldset disabled={submitting || success}>
+            <legend>Account details</legend>
+            <div className="form-grid-2">
+              <FormField label="Username" name="username" value={form.username} onChange={update('username')} error={fieldErrors.username} hint="3-20 characters, starts with a letter" required maxLength={20} autoComplete="username" />
+              <FormField label="Email" name="email" type="email" value={form.email} onChange={update('email')} error={fieldErrors.email} required autoComplete="email" />
+            </div>
+            <div className="form-grid-2">
+              <FormField label="Password" name="password" type="password" value={form.password} onChange={update('password')} error={fieldErrors.password} hint="At least 8 characters" required autoComplete="new-password" />
+              <FormField label="Confirm password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={update('confirmPassword')} error={fieldErrors.confirmPassword} required autoComplete="new-password" />
+            </div>
+            <FormField label="Role" name="role" value="Dispatcher" readOnly />
+          </fieldset>
+          <Button type="submit" loading={submitting} disabled={success} className="registration-submit">{submitting ? 'Creating account...' : 'Create account'}</Button>
+        </form>
+        <p className="registration-login">Already have an account? <Link to="/login">Log in</Link></p>
+      </section>
+    </div>
   )
 }

@@ -1,0 +1,6 @@
+-- Safe additive migration for existing Trip databases. Does not modify trips.
+CREATE TABLE IF NOT EXISTS driver_account_guards (
+    driver_id CHAR(36) NOT NULL PRIMARY KEY,
+    assignment_blocked BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

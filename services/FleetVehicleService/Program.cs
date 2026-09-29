@@ -28,6 +28,7 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = AccountTokenEvents.Create();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -46,6 +47,14 @@ builder.Services
             ClockSkew = TimeSpan.Zero
         };
     });
+
+builder.Services.AddHttpClient("AuthAccountStatus", client =>
+{
+    var baseUrl = builder.Configuration["AuthService:BaseUrl"]
+        ?? (builder.Environment.IsDevelopment() ? "http://localhost:5100/" : null);
+    if (baseUrl != null) client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 
 // Authorization
 builder.Services.AddAuthorization();

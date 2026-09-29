@@ -1,0 +1,4 @@
+# Local credentials for generated QA users and generated measurements.
+perf-fixtures*.json
+*.jtl
+results/

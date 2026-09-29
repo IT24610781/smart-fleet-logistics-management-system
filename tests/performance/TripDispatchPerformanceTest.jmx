@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Sprint 3 QA baseline">
+      <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="Variables">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="US08">
+        <stringProp name="ThreadGroup.num_threads">${__P(qa.threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(qa.ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
+          <stringProp name="LoopController.loops">${__P(qa.loops,5)}</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Real Auth login outside timing" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+if (!vars.getObject(&apos;fixture&apos;)) {
+ def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
+ vars.putObject(&apos;fixture&apos;,f)
+ def login={String name -&gt;
+  def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  def b=new JsonSlurper().parse(c.inputStream)
+  c.disconnect();return b.token
+ }
+ vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="US08" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+def f=vars.getObject(&apos;fixture&apos;);def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def codes=[]
+def call={int port,String path,String method,Map body,String token -&gt;
+ def c=new URL((port==5100?f.authUrl:port==5041?f.fleetUrl:f.tripUrl)+path).openConnection()
+ c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;)
+ if(token)c.setRequestProperty(&apos;Authorization&apos;,&apos;Bearer &apos;+token)
+ if(body!=null){c.doOutput=true;c.outputStream.withCloseable{it.write(JsonOutput.toJson(body).getBytes(&apos;UTF-8&apos;))}}
+ int status=c.responseCode;codes.add(status)
+ def stream=status&lt;400?c.inputStream:c.errorStream
+ def text=stream!=null?stream.getText(&apos;UTF-8&apos;):&apos;&apos;
+ def data=text?new JsonSlurper().parseText(text):[:];c.disconnect()
+ if(status&gt;=400)throw new IllegalStateException(&apos;HTTP &apos;+status+&apos; for &apos;+path)
+ return data
+}
+def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
+def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+try {
+ assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
+ assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
+def name=&apos;qap&apos;+UUID.randomUUID().toString().replace(&apos;-&apos;,&apos;&apos;).substring(0,12)
+call(5100,&apos;/api/auth/register/dispatcher&apos;,&apos;POST&apos;,[username:name,email:name+&apos;@example.com&apos;,password:f.password,firstName:&apos;QA&apos;,lastName:&apos;Load&apos;,contactNumber:&apos;0771234567&apos;],null)
+def b=call(5100,&apos;/api/auth/login&apos;,&apos;POST&apos;,[username:name,password:f.password],null);assert b.user.role==&apos;Dispatcher&apos;
+ SampleResult.setSuccessful(true);SampleResult.setResponseCode(&apos;200&apos;);SampleResult.setResponseMessage(&apos;Workflow assertions passed&apos;)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes]),&apos;UTF-8&apos;)
+} catch(Throwable e) {
+ SampleResult.setSuccessful(false);SampleResult.setResponseCode(&apos;500&apos;);SampleResult.setResponseMessage(e.message?:e.class.simpleName)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes,error:e.message]),&apos;UTF-8&apos;)
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="US09" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${__P(qa.threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(qa.ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
+          <stringProp name="LoopController.loops">${__P(qa.loops,5)}</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Real Auth login outside timing" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+if (!vars.getObject(&apos;fixture&apos;)) {
+ def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
+ vars.putObject(&apos;fixture&apos;,f)
+ def login={String name -&gt;
+  def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  def b=new JsonSlurper().parse(c.inputStream)
+  c.disconnect();return b.token
+ }
+ vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="US09" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+def f=vars.getObject(&apos;fixture&apos;);def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def codes=[]
+def call={int port,String path,String method,Map body,String token -&gt;
+ def c=new URL((port==5100?f.authUrl:port==5041?f.fleetUrl:f.tripUrl)+path).openConnection()
+ c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;)
+ if(token)c.setRequestProperty(&apos;Authorization&apos;,&apos;Bearer &apos;+token)
+ if(body!=null){c.doOutput=true;c.outputStream.withCloseable{it.write(JsonOutput.toJson(body).getBytes(&apos;UTF-8&apos;))}}
+ int status=c.responseCode;codes.add(status)
+ def stream=status&lt;400?c.inputStream:c.errorStream
+ def text=stream!=null?stream.getText(&apos;UTF-8&apos;):&apos;&apos;
+ def data=text?new JsonSlurper().parseText(text):[:];c.disconnect()
+ if(status&gt;=400)throw new IllegalStateException(&apos;HTTP &apos;+status+&apos; for &apos;+path)
+ return data
+}
+def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
+def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+try {
+ assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
+ assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
+def b=call(5051,&apos;/api/trips&apos;,&apos;POST&apos;,tripBody(&apos;QA load create &apos;+UUID.randomUUID()),dt);assert b.status==&apos;Requested&apos;
+ SampleResult.setSuccessful(true);SampleResult.setResponseCode(&apos;200&apos;);SampleResult.setResponseMessage(&apos;Workflow assertions passed&apos;)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes]),&apos;UTF-8&apos;)
+} catch(Throwable e) {
+ SampleResult.setSuccessful(false);SampleResult.setResponseCode(&apos;500&apos;);SampleResult.setResponseMessage(e.message?:e.class.simpleName)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes,error:e.message]),&apos;UTF-8&apos;)
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="US10" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${__P(qa.threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(qa.ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
+          <stringProp name="LoopController.loops">${__P(qa.loops,5)}</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Real Auth login outside timing" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+if (!vars.getObject(&apos;fixture&apos;)) {
+ def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
+ vars.putObject(&apos;fixture&apos;,f)
+ def login={String name -&gt;
+  def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  def b=new JsonSlurper().parse(c.inputStream)
+  c.disconnect();return b.token
+ }
+ vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="US10" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+def f=vars.getObject(&apos;fixture&apos;);def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def codes=[]
+def call={int port,String path,String method,Map body,String token -&gt;
+ def c=new URL((port==5100?f.authUrl:port==5041?f.fleetUrl:f.tripUrl)+path).openConnection()
+ c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;)
+ if(token)c.setRequestProperty(&apos;Authorization&apos;,&apos;Bearer &apos;+token)
+ if(body!=null){c.doOutput=true;c.outputStream.withCloseable{it.write(JsonOutput.toJson(body).getBytes(&apos;UTF-8&apos;))}}
+ int status=c.responseCode;codes.add(status)
+ def stream=status&lt;400?c.inputStream:c.errorStream
+ def text=stream!=null?stream.getText(&apos;UTF-8&apos;):&apos;&apos;
+ def data=text?new JsonSlurper().parseText(text):[:];c.disconnect()
+ if(status&gt;=400)throw new IllegalStateException(&apos;HTTP &apos;+status+&apos; for &apos;+path)
+ return data
+}
+def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
+def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+try {
+ assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
+ assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
+def b=call(5051,&apos;/api/trips/&apos;+f.suggest+&apos;/suggestions&apos;,&apos;GET&apos;,null,dt);assert b instanceof List
+ SampleResult.setSuccessful(true);SampleResult.setResponseCode(&apos;200&apos;);SampleResult.setResponseMessage(&apos;Workflow assertions passed&apos;)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes]),&apos;UTF-8&apos;)
+} catch(Throwable e) {
+ SampleResult.setSuccessful(false);SampleResult.setResponseCode(&apos;500&apos;);SampleResult.setResponseMessage(e.message?:e.class.simpleName)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes,error:e.message]),&apos;UTF-8&apos;)
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="US11" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${__P(qa.threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(qa.ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
+          <stringProp name="LoopController.loops">${__P(qa.loops,5)}</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Real Auth login outside timing" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+if (!vars.getObject(&apos;fixture&apos;)) {
+ def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
+ vars.putObject(&apos;fixture&apos;,f)
+ def login={String name -&gt;
+  def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  def b=new JsonSlurper().parse(c.inputStream)
+  c.disconnect();return b.token
+ }
+ vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="US11" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+def f=vars.getObject(&apos;fixture&apos;);def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def codes=[]
+def call={int port,String path,String method,Map body,String token -&gt;
+ def c=new URL((port==5100?f.authUrl:port==5041?f.fleetUrl:f.tripUrl)+path).openConnection()
+ c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;)
+ if(token)c.setRequestProperty(&apos;Authorization&apos;,&apos;Bearer &apos;+token)
+ if(body!=null){c.doOutput=true;c.outputStream.withCloseable{it.write(JsonOutput.toJson(body).getBytes(&apos;UTF-8&apos;))}}
+ int status=c.responseCode;codes.add(status)
+ def stream=status&lt;400?c.inputStream:c.errorStream
+ def text=stream!=null?stream.getText(&apos;UTF-8&apos;):&apos;&apos;
+ def data=text?new JsonSlurper().parseText(text):[:];c.disconnect()
+ if(status&gt;=400)throw new IllegalStateException(&apos;HTTP &apos;+status+&apos; for &apos;+path)
+ return data
+}
+def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
+def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+try {
+ assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
+ assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
+def e=f.assign[idx];def b=call(5051,&apos;/api/trips/&apos;+e.tripId+&apos;/assign&apos;,&apos;POST&apos;,[vehicleId:e.vehicleId,driverId:e.driverId],dt);assert b.status==&apos;Assigned&apos;
+ SampleResult.setSuccessful(true);SampleResult.setResponseCode(&apos;200&apos;);SampleResult.setResponseMessage(&apos;Workflow assertions passed&apos;)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes]),&apos;UTF-8&apos;)
+} catch(Throwable e) {
+ SampleResult.setSuccessful(false);SampleResult.setResponseCode(&apos;500&apos;);SampleResult.setResponseMessage(e.message?:e.class.simpleName)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes,error:e.message]),&apos;UTF-8&apos;)
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="US12" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${__P(qa.threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(qa.ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
+          <stringProp name="LoopController.loops">${__P(qa.loops,5)}</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Real Auth login outside timing" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+if (!vars.getObject(&apos;fixture&apos;)) {
+ def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
+ vars.putObject(&apos;fixture&apos;,f)
+ def login={String name -&gt;
+  def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  def b=new JsonSlurper().parse(c.inputStream)
+  c.disconnect();return b.token
+ }
+ vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="US12" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+def f=vars.getObject(&apos;fixture&apos;);def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def codes=[]
+def call={int port,String path,String method,Map body,String token -&gt;
+ def c=new URL((port==5100?f.authUrl:port==5041?f.fleetUrl:f.tripUrl)+path).openConnection()
+ c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;)
+ if(token)c.setRequestProperty(&apos;Authorization&apos;,&apos;Bearer &apos;+token)
+ if(body!=null){c.doOutput=true;c.outputStream.withCloseable{it.write(JsonOutput.toJson(body).getBytes(&apos;UTF-8&apos;))}}
+ int status=c.responseCode;codes.add(status)
+ def stream=status&lt;400?c.inputStream:c.errorStream
+ def text=stream!=null?stream.getText(&apos;UTF-8&apos;):&apos;&apos;
+ def data=text?new JsonSlurper().parseText(text):[:];c.disconnect()
+ if(status&gt;=400)throw new IllegalStateException(&apos;HTTP &apos;+status+&apos; for &apos;+path)
+ return data
+}
+def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
+def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+try {
+ assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
+ assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
+def e=f.respond[idx];def decision=idx%2==0?&apos;accept&apos;:&apos;reject&apos;;def b=call(5051,&apos;/api/trips/&apos;+e.tripId+&apos;/respond&apos;,&apos;POST&apos;,[decision:decision],drt);assert b.status==(decision==&apos;accept&apos;?&apos;In-Progress&apos;:&apos;Requested&apos;)
+ SampleResult.setSuccessful(true);SampleResult.setResponseCode(&apos;200&apos;);SampleResult.setResponseMessage(&apos;Workflow assertions passed&apos;)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes]),&apos;UTF-8&apos;)
+} catch(Throwable e) {
+ SampleResult.setSuccessful(false);SampleResult.setResponseCode(&apos;500&apos;);SampleResult.setResponseMessage(e.message?:e.class.simpleName)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes,error:e.message]),&apos;UTF-8&apos;)
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="US13" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${__P(qa.threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(qa.ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
+          <stringProp name="LoopController.loops">${__P(qa.loops,5)}</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Real Auth login outside timing" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+if (!vars.getObject(&apos;fixture&apos;)) {
+ def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
+ vars.putObject(&apos;fixture&apos;,f)
+ def login={String name -&gt;
+  def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  def b=new JsonSlurper().parse(c.inputStream)
+  c.disconnect();return b.token
+ }
+ vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="US13" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+def f=vars.getObject(&apos;fixture&apos;);def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def codes=[]
+def call={int port,String path,String method,Map body,String token -&gt;
+ def c=new URL((port==5100?f.authUrl:port==5041?f.fleetUrl:f.tripUrl)+path).openConnection()
+ c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;)
+ if(token)c.setRequestProperty(&apos;Authorization&apos;,&apos;Bearer &apos;+token)
+ if(body!=null){c.doOutput=true;c.outputStream.withCloseable{it.write(JsonOutput.toJson(body).getBytes(&apos;UTF-8&apos;))}}
+ int status=c.responseCode;codes.add(status)
+ def stream=status&lt;400?c.inputStream:c.errorStream
+ def text=stream!=null?stream.getText(&apos;UTF-8&apos;):&apos;&apos;
+ def data=text?new JsonSlurper().parseText(text):[:];c.disconnect()
+ if(status&gt;=400)throw new IllegalStateException(&apos;HTTP &apos;+status+&apos; for &apos;+path)
+ return data
+}
+def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
+def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+try {
+ assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
+ assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
+def e=f.lifecycle[idx];call(5051,&apos;/api/trips/&apos;+e.tripId+&apos;/respond&apos;,&apos;POST&apos;,[decision:&apos;accept&apos;],drt);def b=call(5051,&apos;/api/trips/&apos;+e.tripId,&apos;GET&apos;,null,dt);assert b.status==&apos;In-Progress&apos; &amp;&amp; b.updatedAt
+ SampleResult.setSuccessful(true);SampleResult.setResponseCode(&apos;200&apos;);SampleResult.setResponseMessage(&apos;Workflow assertions passed&apos;)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes]),&apos;UTF-8&apos;)
+} catch(Throwable e) {
+ SampleResult.setSuccessful(false);SampleResult.setResponseCode(&apos;500&apos;);SampleResult.setResponseMessage(e.message?:e.class.simpleName)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes,error:e.message]),&apos;UTF-8&apos;)
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="SCRUM115" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${__P(qa.threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(qa.ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
+          <stringProp name="LoopController.loops">${__P(qa.loops,5)}</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Real Auth login outside timing" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+if (!vars.getObject(&apos;fixture&apos;)) {
+ def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
+ vars.putObject(&apos;fixture&apos;,f)
+ def login={String name -&gt;
+  def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  def b=new JsonSlurper().parse(c.inputStream)
+  c.disconnect();return b.token
+ }
+ vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="SCRUM115" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+def f=vars.getObject(&apos;fixture&apos;);def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def codes=[]
+def call={int port,String path,String method,Map body,String token -&gt;
+ def c=new URL((port==5100?f.authUrl:port==5041?f.fleetUrl:f.tripUrl)+path).openConnection()
+ c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;)
+ if(token)c.setRequestProperty(&apos;Authorization&apos;,&apos;Bearer &apos;+token)
+ if(body!=null){c.doOutput=true;c.outputStream.withCloseable{it.write(JsonOutput.toJson(body).getBytes(&apos;UTF-8&apos;))}}
+ int status=c.responseCode;codes.add(status)
+ def stream=status&lt;400?c.inputStream:c.errorStream
+ def text=stream!=null?stream.getText(&apos;UTF-8&apos;):&apos;&apos;
+ def data=text?new JsonSlurper().parseText(text):[:];c.disconnect()
+ if(status&gt;=400)throw new IllegalStateException(&apos;HTTP &apos;+status+&apos; for &apos;+path)
+ return data
+}
+def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
+def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+try {
+ assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
+ assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
+def b=call(5051,&apos;/api/trips/&apos;+f.suggest+&apos;/suggestions&apos;,&apos;GET&apos;,null,dt);assert b instanceof List
+ SampleResult.setSuccessful(true);SampleResult.setResponseCode(&apos;200&apos;);SampleResult.setResponseMessage(&apos;Workflow assertions passed&apos;)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes]),&apos;UTF-8&apos;)
+} catch(Throwable e) {
+ SampleResult.setSuccessful(false);SampleResult.setResponseCode(&apos;500&apos;);SampleResult.setResponseMessage(e.message?:e.class.simpleName)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes,error:e.message]),&apos;UTF-8&apos;)
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="MIXED" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${__P(qa.threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(qa.ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
+          <stringProp name="LoopController.loops">${__P(qa.loops,5)}</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Real Auth login outside timing" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+if (!vars.getObject(&apos;fixture&apos;)) {
+ def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
+ vars.putObject(&apos;fixture&apos;,f)
+ def login={String name -&gt;
+  def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  def b=new JsonSlurper().parse(c.inputStream)
+  c.disconnect();return b.token
+ }
+ vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="MIXED" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+def f=vars.getObject(&apos;fixture&apos;);def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def codes=[]
+def call={int port,String path,String method,Map body,String token -&gt;
+ def c=new URL((port==5100?f.authUrl:port==5041?f.fleetUrl:f.tripUrl)+path).openConnection()
+ c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;)
+ if(token)c.setRequestProperty(&apos;Authorization&apos;,&apos;Bearer &apos;+token)
+ if(body!=null){c.doOutput=true;c.outputStream.withCloseable{it.write(JsonOutput.toJson(body).getBytes(&apos;UTF-8&apos;))}}
+ int status=c.responseCode;codes.add(status)
+ def stream=status&lt;400?c.inputStream:c.errorStream
+ def text=stream!=null?stream.getText(&apos;UTF-8&apos;):&apos;&apos;
+ def data=text?new JsonSlurper().parseText(text):[:];c.disconnect()
+ if(status&gt;=400)throw new IllegalStateException(&apos;HTTP &apos;+status+&apos; for &apos;+path)
+ return data
+}
+def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
+def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+try {
+ assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
+ assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
+def e=f.mixed[idx];def t=call(5051,&apos;/api/trips&apos;,&apos;POST&apos;,tripBody(&apos;QA load mixed &apos;+UUID.randomUUID()),dt)
+def s=call(5051,&apos;/api/trips/&apos;+t.id+&apos;/suggestions&apos;,&apos;GET&apos;,null,dt);assert s.any{it.vehicleId==e.vehicleId}
+call(5051,&apos;/api/trips/&apos;+t.id+&apos;/assign&apos;,&apos;POST&apos;,[vehicleId:e.vehicleId,driverId:e.driverId],dt)
+call(5051,&apos;/api/trips/&apos;+t.id+&apos;/respond&apos;,&apos;POST&apos;,[decision:&apos;accept&apos;],drt)
+def b=call(5051,&apos;/api/trips/&apos;+t.id,&apos;GET&apos;,null,dt);assert b.status==&apos;In-Progress&apos;
+ SampleResult.setSuccessful(true);SampleResult.setResponseCode(&apos;200&apos;);SampleResult.setResponseMessage(&apos;Workflow assertions passed&apos;)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes]),&apos;UTF-8&apos;)
+} catch(Throwable e) {
+ SampleResult.setSuccessful(false);SampleResult.setResponseCode(&apos;500&apos;);SampleResult.setResponseMessage(e.message?:e.class.simpleName)
+ SampleResult.setResponseData(JsonOutput.toJson([httpCodes:codes,error:e.message]),&apos;UTF-8&apos;)
+}
+</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>false</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <sentBytes>true</sentBytes>
+            <url>true</url>
+            <threadCounts>true</threadCounts>
+            <idleTime>true</idleTime>
+            <connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename">C:\Users\User\Downloads\SmartFleet-QA-20260929\JMeter-20260929-140605\performance.jtl</stringProp>
+      </ResultCollector>
+      <hashTree/>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

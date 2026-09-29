@@ -27,19 +27,20 @@
 }
 .map-pin-dot {
   width: 12px; height: 12px; border-radius: 50%;
-  border: 2px solid #fff;
+  border: 2px solid rgb(var(--sf-surface-container-lowest));
   box-shadow: 0 1px 4px rgba(0,0,0,0.25);
 }
 .map-pin-label {
   font-size: 10.5px; font-weight: 600;
-  background: var(--ink-900); color: #fff;
+  background: rgb(var(--sf-primary)); color: rgb(var(--sf-on-primary));
   padding: 1px 6px; border-radius: 3px;
   white-space: nowrap;
 }
 .map-note {
   position: absolute; bottom: var(--space-3); left: var(--space-3);
   font-size: 11px; color: var(--ink-500);
-  background: rgba(255,255,255,0.85);
+  background: rgb(var(--sf-surface-container-lowest) / .9);
+  backdrop-filter: blur(8px);
   padding: 4px 8px; border-radius: var(--radius-sm);
 }
 

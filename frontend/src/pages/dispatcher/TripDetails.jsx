@@ -1,3 +1,4 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
@@ -81,7 +82,7 @@ export default function TripDetails() {
       try {
         const data = await userService.listDrivers()
         if (cancelled) return
-        setDriverList(data)
+        setDriverList(data.filter(driver => driver.isActive))
         setDriversById(Object.fromEntries(data.map((d) => [d.id, d])))
       } catch {
         // Non-fatal: details still show, just without driver names/phones.
@@ -151,7 +152,7 @@ export default function TripDetails() {
     <AppShell title="Trip Details">
       <div className="page-header">
         <div>
-          <div className="page-header-title">Trip Details</div>
+          <PageHeading eyebrow="Dispatch operations" title="Trip Details" />
           <p className="page-header-desc">Full information for this trip, and vehicle assignment if it still needs one.</p>
         </div>
         <div className="page-header-actions">
@@ -277,14 +278,14 @@ export default function TripDetails() {
                           gap: 'var(--space-4)',
                           padding: 'var(--space-4)',
                           borderRadius: 'var(--radius-lg)',
-                          border: index === 0 ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+                          border: index === 0 ? '2px solid rgb(var(--sf-secondary))' : '1px solid var(--color-border)',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                           <Icon name="truck" size={20} />
                           <div>
                             <div style={{ fontWeight: 600 }}>
-                              {s.registrationNo} {index === 0 && <span style={{ color: 'var(--color-accent)' }}>· Best fit</span>}
+                              {s.registrationNo} {index === 0 && <span style={{ color: 'rgb(var(--sf-secondary))' }}>· Best fit</span>}
                             </div>
                             <div className="page-header-desc">{s.type} · {s.capacity} capacity</div>
                           </div>

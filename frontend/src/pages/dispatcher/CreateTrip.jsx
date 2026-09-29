@@ -1,3 +1,4 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
@@ -170,7 +171,7 @@ export default function CreateTrip() {
     <AppShell title="Create Trip">
       <div className="page-header">
         <div>
-          <div className="page-header-title">Create Trip</div>
+          <PageHeading eyebrow="Dispatch operations" title="Create Trip" />
           <p className="page-header-desc">
             Fill in the trip. As soon as the capacity looks valid, matching vehicles appear below - pick one and a
             driver if you want to assign it right away, then press Create Trip.
@@ -269,8 +270,8 @@ export default function CreateTrip() {
                         gap: 'var(--space-3)',
                         padding: 'var(--space-3)',
                         borderRadius: 'var(--radius-lg)',
-                        border: isSelected ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
-                        background: isSelected ? 'var(--color-accent-container, #eef6f6)' : 'transparent',
+                        border: isSelected ? '2px solid rgb(var(--sf-secondary))' : '1px solid var(--color-border)',
+                        background: isSelected ? 'rgb(var(--sf-secondary) / .12)' : 'transparent',
                         cursor: 'pointer',
                         textAlign: 'left',
                       }}
@@ -279,7 +280,7 @@ export default function CreateTrip() {
                         <Icon name={isSelected ? 'check' : 'truck'} size={18} />
                         <div>
                           <div style={{ fontWeight: 600 }}>
-                            {s.registrationNo} {index === 0 && <span style={{ color: 'var(--color-accent)' }}>· Best fit</span>}
+                            {s.registrationNo} {index === 0 && <span style={{ color: 'rgb(var(--sf-secondary))' }}>· Best fit</span>}
                           </div>
                           <div className="page-header-desc">{s.type} · {s.capacity} capacity</div>
                         </div>

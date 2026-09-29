@@ -12,9 +12,12 @@ public class UsersController : ControllerBase
 {
     private readonly UserService _userService;
 
-    public UsersController(UserService userService)
+    private readonly DriverDeactivationService _deactivation;
+
+    public UsersController(UserService userService, DriverDeactivationService deactivation)
     {
         _userService = userService;
+        _deactivation = deactivation;
     }
 
     // ============================================================
@@ -62,6 +65,23 @@ public class UsersController : ControllerBase
     {
         var drivers = await _userService.GetDriversAsync();
         return Ok(drivers);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("drivers/{id:guid}/deactivate")]
+    public async Task<IActionResult> DeactivateDriver(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _deactivation.DeactivateAsync(id, Request.Headers.Authorization.ToString(), cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        catch (DriverDependencyException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
     }
 
     // US-04: View own profile

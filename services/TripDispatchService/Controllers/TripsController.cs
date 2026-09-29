@@ -12,9 +12,14 @@ public class TripsController : ControllerBase
 {
     private readonly TripService _tripService;
 
-    public TripsController(TripService tripService)
+    private readonly DriverEligibilityClient _drivers;
+    private readonly DriverAssignmentGuard _driverGuard;
+
+    public TripsController(TripService tripService, DriverEligibilityClient drivers, DriverAssignmentGuard driverGuard)
     {
         _tripService = tripService;
+        _drivers = drivers;
+        _driverGuard = driverGuard;
     }
 
     //Trip Details page fetch one trip's full information
@@ -83,8 +88,20 @@ public class TripsController : ControllerBase
         try
         {
             var authorizationHeader = Request.Headers.Authorization.ToString();
+            await using var lease = request.DriverId.HasValue
+                ? await _driverGuard.BeginAssignmentAsync(request.DriverId.Value, HttpContext.RequestAborted) : null;
+            if (request.DriverId.HasValue)
+                await _drivers.EnsureActiveAsync(request.DriverId.Value, authorizationHeader, HttpContext.RequestAborted);
             var trip = await _tripService.AssignVehicleAsync(id, request.VehicleId, request.DriverId, authorizationHeader);
             return Ok(trip);
+        }
+        catch (Exception ex) when (ex is MySqlConnector.MySqlException or DriverCoordinationUnavailableException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Driver assignment could not be verified. Try again shortly." });
+        }
+        catch (DriverEligibilityUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
         }
         catch (ValidationException ex)
         {
@@ -101,6 +118,23 @@ public class TripsController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
+        }
+    }
+
+    // Auth calls this with the Admin token before making the account inactive.
+    [Authorize(Roles = "Admin")]
+    [HttpPost("drivers/{driverId:guid}/deactivation-check")]
+    public async Task<IActionResult> PrepareDriverDeactivation(Guid driverId, CancellationToken token)
+    {
+        try
+        {
+            await _driverGuard.BlockForDeactivationAsync(driverId, token);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        catch (Exception ex) when (ex is MySqlConnector.MySqlException or DriverCoordinationUnavailableException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Driver trip eligibility could not be verified. Try again shortly." });
         }
     }
 

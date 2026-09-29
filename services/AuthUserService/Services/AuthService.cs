@@ -5,11 +5,11 @@ namespace AuthUserService.Services;
 
 public class AuthService
 {
-    private readonly UserRepository _userRepository;
+    private readonly IUserAccountRepository _userRepository;
     private readonly JwtService _jwtService;
 
     public AuthService(
-        UserRepository userRepository,
+        IUserAccountRepository userRepository,
         JwtService jwtService)
     {
         _userRepository = userRepository;

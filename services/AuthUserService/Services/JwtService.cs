@@ -42,6 +42,7 @@ public class JwtService
 
             new(JwtRegisteredClaimNames.Email, user.Email),
 
+            new("pwdv", PasswordSecurity.Stamp(user.PasswordHash, key)),
             new(ClaimTypes.Role, user.Role)
         };
 

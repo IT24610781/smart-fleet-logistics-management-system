@@ -48,6 +48,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             }
 
             services.AddSingleton<IVehicleEventPublisher>(EventPublisher);
+            // Fleet tests isolate Auth as a controlled active-account dependency.
+            // Revocation and unavailable Auth responses are tested separately.
+            services.AddHttpClient("AuthAccountStatus", client => client.BaseAddress = new Uri("http://auth-test/"))
+                .ConfigurePrimaryHttpMessageHandler(() => new ActiveDriverAuthHandler());
         });
     }
 }
@@ -63,5 +67,18 @@ public class FakeVehicleEventPublisher : IVehicleEventPublisher
     {
         Published.Add((vehicle.Id, previousStatus, newStatus));
         return Task.CompletedTask;
+    }
+}
+public sealed class ActiveDriverAuthHandler : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
+    {
+        var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
+            .ReadJwtToken(request.Headers.Authorization!.Parameter);
+        var subject = jwt.Subject;
+        return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = System.Net.Http.Json.JsonContent.Create(new { id = subject, role = jwt.Claims.First(c => c.Type == System.Security.Claims.ClaimTypes.Role || c.Type == "role").Value, isActive = true })
+        });
     }
 }

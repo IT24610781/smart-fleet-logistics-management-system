@@ -3,6 +3,8 @@ import { useAuth } from './context/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
 import PageTitle from './routes/PageTitle'
 
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ChangePassword from './pages/shared/ChangePassword'
 import Login from './pages/auth/Login'
 import DispatcherRegister from './pages/auth/DispatcherRegister'
 
@@ -47,6 +49,7 @@ export default function App() {
 
         {/* Public */}
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/register/dispatcher" element={<DispatcherRegister />} />
         <Route path="/403" element={<Forbidden />} />
 
@@ -72,6 +75,7 @@ export default function App() {
         <Route path="/driver/trips" element={<ProtectedRoute allowedRoles={['Driver']}><MyTrips /></ProtectedRoute>} />
 
         {/* Shared across all authenticated roles */}
+        <Route path="/profile/password" element={<ProtectedRoute allowedRoles={['Admin', 'Dispatcher', 'Driver']}><ChangePassword /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute allowedRoles={['Admin', 'Dispatcher', 'Driver']}><Profile /></ProtectedRoute>} />
 
         <Route path="*" element={<RootRedirect />} />

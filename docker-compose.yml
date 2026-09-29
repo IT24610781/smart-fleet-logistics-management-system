@@ -71,6 +71,24 @@ services:
       - fleet-db
       - kafka
 
+  auth-service:
+    build:
+      context: ./services/AuthUserService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5100:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: "Server=auth-db;Port=3306;Database=fleet_identity_db;User ID=root;Password=rootpassword;"
+      Jwt__Key: "${FLEET_JWT_KEY}"
+      Jwt__Issuer: "SmartFleet.AuthUserService"
+      Jwt__Audience: "SmartFleet"
+      Jwt__ExpirationMinutes: "120"
+    depends_on:
+      - auth-db
+
   kafka:
     image: apache/kafka:3.7.0
     restart: always

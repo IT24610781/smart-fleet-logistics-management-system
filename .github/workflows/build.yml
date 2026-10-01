@@ -160,7 +160,7 @@ jobs:
           app-name: smart-fleet-vehicle-container
           images: smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }}
 
-  trip-deploy:
+    trip-deploy:
     name: Deploy Trip Dispatch Service to Azure
     needs: [build-test, frontend-check, docker-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
@@ -175,8 +175,17 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_TRIP_CREDENTIALS }}
 
+      - name: Login to Azure Container Registry
+        run: az acr login --name smartfleettripacr
+
+      - name: Build Trip Dispatch Docker Image
+        run: docker build -t smartfleettripacr.azurecr.io/trip-service:${{ github.sha }} ./services/TripDispatchService
+
+      - name: Push Trip Dispatch Docker Image
+        run: docker push smartfleettripacr.azurecr.io/trip-service:${{ github.sha }}
+
       - name: Deploy Trip Dispatch Container
         uses: azure/webapps-deploy@v3
         with:
           app-name: smart-fleet-trip-service-chamodi
-          images: mcr.microsoft.com/appsvc/staticsite:latest
+          images: smartfleettripacr.azurecr.io/trip-service:${{ github.sha }}

@@ -20,7 +20,7 @@ public class TripService
 
     //US-09 Dispatcher creates a trip request
 
-    public async Task<TripResponse> CreateTripAsync(CreateTripRequest request)
+    public async Task<TripResponse> CreateTripAsync(CreateTripRequest request, Guid dispatcherId)
     {
         var errors = new Dictionary<string, string>();
 
@@ -103,6 +103,7 @@ public class TripService
             DropoffLat = request.DropoffLat,
             DropoffLng = request.DropoffLng,
             RequiredCapacity = capacity,
+            CreatedByDispatcherId = dispatcherId,
             Status = TripStatus.Requested,
             AssignedVehicleId = null,
             CreatedAt = now,

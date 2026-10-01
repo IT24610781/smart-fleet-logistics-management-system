@@ -1,3 +1,5 @@
+import Icon from '../common/Icon'
+
 export default function FormField({
   label,
   name,
@@ -12,6 +14,7 @@ export default function FormField({
   autoComplete,
   maxLength,
   rightSlot,
+  success = false,
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -47,7 +50,13 @@ export default function FormField({
         </span>
       )}
       {!error && hint && (
-        <span id={`${name}-hint`} className="font-body-sm text-body-sm text-on-surface-variant">
+      
+        <span
+          id={`${name}-hint`}
+          className={`font-body-sm text-body-sm flex items-center gap-1 ${success ? '' : 'text-on-surface-variant'}`}
+          style={success ? { color: 'var(--success)' } : undefined}
+        >
+          {success && <Icon name="check" size={14} className="shrink-0" />}
           {hint}
         </span>
       )}

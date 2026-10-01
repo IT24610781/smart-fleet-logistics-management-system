@@ -13,10 +13,10 @@ CREATE TABLE trips (
     dropoff_lng DECIMAL(9,6) NULL,
 
     required_capacity VARCHAR(50) NOT NULL,
+    created_by_dispatcher_id CHAR(36) NULL,
 
     status VARCHAR(50) NOT NULL DEFAULT 'Requested'
         CHECK (status IN ('Requested', 'Assigned', 'In-Progress', 'Completed', 'Cancelled')),
-
 
     assigned_vehicle_id CHAR(36) NULL,
     assigned_driver_id CHAR(36) NULL,
@@ -34,7 +34,7 @@ CREATE TABLE trips (
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4;
--- Safe additive migration for existing Trip databases. Does not modify trips.
+
 CREATE TABLE IF NOT EXISTS driver_account_guards (
     driver_id CHAR(36) NOT NULL PRIMARY KEY,
     assignment_blocked BOOLEAN NOT NULL DEFAULT FALSE,

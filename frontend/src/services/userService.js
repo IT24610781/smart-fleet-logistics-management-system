@@ -11,6 +11,11 @@ export async function listDrivers() {
   return data
 }
 
+export async function getUser(id) {
+  const { data } = await api.get(`/api/users/${id}`)
+  return data
+}
+
 // NOT YET IMPLEMENTED BY THE BACKEND — endpoint name is a placeholder.
 export async function getProfile() {
   const { data } = await api.get('/api/users/me')

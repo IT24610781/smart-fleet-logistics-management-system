@@ -33,7 +33,7 @@ public class DispatchWorkflowTests
             case "coordinates": request.PickupLat = 91; break;
         }
 
-        await Assert.ThrowsAsync<ValidationException>(() => service.CreateTripAsync(request));
+        await Assert.ThrowsAsync<ValidationException>(() => service.CreateTripAsync(request, Guid.NewGuid()));
 
         Assert.Equal(0, repository.Writes);
         Assert.Null(repository.Trip);

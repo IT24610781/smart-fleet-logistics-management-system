@@ -1,12 +1,13 @@
-import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useState } from 'react'
 import AppShell from '../../components/layout/AppShell'
 import DataTable from '../../components/common/DataTable'
 import StatusBadge from '../../components/common/StatusBadge'
 import Button from '../../components/common/Button'
+import Icon from '../../components/common/Icon'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import * as tripService from '../../services/tripService'
+import * as userService from '../../services/userService'
 
 function formatDateTime(value) {
   if (!value) return '—'
@@ -14,14 +15,52 @@ function formatDateTime(value) {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
 }
 
-//US-12 a driver's own trips, wired to the real Trip Dispatch Service.
+function userLabel(user) {
+  if (!user) return null
+  const name = [user.firstName, user.lastName].filter(Boolean).join(' ')
+  return name || user.username
+}
+
+// A map link that works whether or not this location has precise GPS
+// coordinates: with coordinates it points straight at the exact point; a
+// plain typed address falls back to a text search instead.
+function mapLinkFor(address, lat, lng) {
+  if (lat != null && lng != null) {
+    return `https://www.google.com/maps?q=${lat},${lng}`
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+}
+
+function LocationCell({ address, lat, lng }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span>{address}</span>
+      <a
+        href={mapLinkFor(address, lat, lng)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="text-primary hover:text-primary/80 shrink-0"
+        title="Open in map"
+        aria-label={`Open ${address} in map`}
+      >
+        <Icon name="pin" size={15} />
+      </a>
+    </div>
+  )
+}
+
+// US-12: a driver's own trips, wired to the real Trip Dispatch Service.
 // Accept/reject is only offered while a trip is Assigned; anything else is
-// read-only history.
+// read-only history. Once a trip is active, the Dispatcher's contact details
+// are resolved and shown so the Driver knows who to call.
 export default function MyTrips() {
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+
+  const [dispatchersById, setDispatchersById] = useState({})
 
   const [dialog, setDialog] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -38,6 +77,18 @@ export default function MyTrips() {
         const data = await tripService.getMyTrips()
         if (cancelled) return
         setTrips(data)
+
+        // Resolve each distinct Dispatcher referenced by these trips, once -
+        // a lookup-by-id endpoint, not a bulk list, so dedupe first.
+        const dispatcherIds = [...new Set(data.map((t) => t.createdByDispatcherId).filter(Boolean))]
+        const results = await Promise.all(
+          dispatcherIds.map((id) => userService.getUser(id).catch(() => null))
+        )
+        if (!cancelled) {
+          setDispatchersById(Object.fromEntries(
+            dispatcherIds.map((id, i) => [id, results[i]]).filter(([, u]) => u)
+          ))
+        }
       } catch (err) {
         if (!cancelled) setLoadError(err.message || 'Unable to load your trips.')
       } finally {
@@ -86,11 +137,24 @@ export default function MyTrips() {
     return null
   }
 
+  function dispatcherCell(row) {
+    if (!row.createdByDispatcherId) return <span className="page-header-desc">—</span>
+    const dispatcher = dispatchersById[row.createdByDispatcherId]
+    if (!dispatcher) return <span className="page-header-desc">—</span>
+    return (
+      <div>
+        <div>{userLabel(dispatcher)}</div>
+        {dispatcher.contactNumber && <div className="page-header-desc">{dispatcher.contactNumber}</div>}
+      </div>
+    )
+  }
+
   const columns = [
     { key: 'id', header: 'Trip ID', render: (r) => <span className="cell-id">{r.id.slice(0, 8)}</span> },
-    { key: 'pickupLocation', header: 'Pickup' },
-    { key: 'dropoffLocation', header: 'Drop-off' },
+    { key: 'pickupLocation', header: 'Pickup', render: (r) => <LocationCell address={r.pickupLocation} lat={r.pickupLat} lng={r.pickupLng} /> },
+    { key: 'dropoffLocation', header: 'Drop-off', render: (r) => <LocationCell address={r.dropoffLocation} lat={r.dropoffLat} lng={r.dropoffLng} /> },
     { key: 'requiredCapacity', header: 'Capacity' },
+    { key: 'dispatcher', header: 'Dispatcher', render: dispatcherCell },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
     { key: 'updatedAt', header: 'Updated', render: (r) => formatDateTime(r.updatedAt) },
     { key: 'action', header: '', render: actionsFor },
@@ -100,7 +164,7 @@ export default function MyTrips() {
     <AppShell title="My Trips">
       <div className="page-header">
         <div>
-          <PageHeading eyebrow="Driver operations" title="My Trips" />
+          <div className="page-header-title">My Trips</div>
           <p className="page-header-desc">Trips assigned to you — accept or reject new assignments and track your history.</p>
         </div>
       </div>

@@ -17,6 +17,7 @@ public class Trip
     public decimal? DropoffLng { get; set; }
 
     public string RequiredCapacity { get; set; } = string.Empty;
+    public Guid? CreatedByDispatcherId { get; set; }
 
     public string Status { get; set; } = TripStatus.Requested;
 

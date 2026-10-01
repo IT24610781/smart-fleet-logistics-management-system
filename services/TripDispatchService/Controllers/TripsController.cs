@@ -225,8 +225,9 @@ public class TripsController : ControllerBase
     {
         try
         {
+        var dispatcherId = GetCurrentUserId();
             var trip =
-                await _tripService.CreateTripAsync(request);
+                await _tripService.CreateTripAsync(request, dispatcherId);
 
             return CreatedAtAction(
                 nameof(CreateTrip),

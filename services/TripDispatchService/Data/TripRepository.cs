@@ -27,6 +27,7 @@ public class TripRepository : ITripRepository
                 dropoff_lat,
                 dropoff_lng,
                 required_capacity,
+                created_by_dispatcher_id,
                 status,
                 assigned_vehicle_id
             )
@@ -40,6 +41,7 @@ public class TripRepository : ITripRepository
                 @dropoff_lat,
                 @dropoff_lng,
                 @required_capacity,
+                @created_by_dispatcher_id,
                 @status,
                 @assigned_vehicle_id
             );
@@ -61,6 +63,7 @@ public class TripRepository : ITripRepository
         command.Parameters.AddWithValue("@dropoff_lat", (object?)trip.DropoffLat ?? DBNull.Value);
         command.Parameters.AddWithValue("@dropoff_lng", (object?)trip.DropoffLng ?? DBNull.Value);
         command.Parameters.AddWithValue("@required_capacity", trip.RequiredCapacity);
+        command.Parameters.AddWithValue("@created_by_dispatcher_id",trip.CreatedByDispatcherId?.ToString() ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@status", trip.Status);
         command.Parameters.AddWithValue(
             "@assigned_vehicle_id",
@@ -81,6 +84,7 @@ public class TripRepository : ITripRepository
                 dropoff_lat,
                 dropoff_lng,
                 required_capacity,
+                created_by_dispatcher_id,
                 status,
                 assigned_vehicle_id,
                 assigned_driver_id,
@@ -136,6 +140,7 @@ public class TripRepository : ITripRepository
                 dropoff_lat,
                 dropoff_lng,
                 required_capacity,
+                created_by_dispatcher_id,
                 status,
                 assigned_vehicle_id,
                 assigned_driver_id,
@@ -219,6 +224,7 @@ public class TripRepository : ITripRepository
                 dropoff_lat,
                 dropoff_lng,
                 required_capacity,
+                created_by_dispatcher_id,
                 status,
                 assigned_vehicle_id,
                 assigned_driver_id,
@@ -270,6 +276,9 @@ public class TripRepository : ITripRepository
             DropoffLat = reader.IsDBNull(reader.GetOrdinal("dropoff_lat")) ? null : reader.GetDecimal("dropoff_lat"),
             DropoffLng = reader.IsDBNull(reader.GetOrdinal("dropoff_lng")) ? null : reader.GetDecimal("dropoff_lng"),
             RequiredCapacity = reader.GetString("required_capacity"),
+            CreatedByDispatcherId = reader.IsDBNull(reader.GetOrdinal("created_by_dispatcher_id"))
+                ? null
+                : reader.GetGuid(reader.GetOrdinal("created_by_dispatcher_id")),
             Status = reader.GetString("status"),
             AssignedVehicleId = reader.IsDBNull(assignedVehicleOrdinal)
                 ? null

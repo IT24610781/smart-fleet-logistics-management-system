@@ -20,9 +20,9 @@ public class UsersController : ControllerBase
         _deactivation = deactivation;
     }
 
-    // ============================================================
+
     // US-01: Admin creates Driver account
-    // ============================================================
+
 
     [Authorize(Roles = "Admin")]
     [HttpPost("drivers")]
@@ -106,6 +106,22 @@ public class UsersController : ControllerBase
             {
                 message = ex.Message
             });
+        }
+    }
+
+
+    [Authorize]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUserById(Guid id)
+    {
+        try
+        {
+            var user = await _userService.GetProfileAsync(id);
+            return Ok(user);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
     }
 

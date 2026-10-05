@@ -24,13 +24,18 @@ public class TripsController : ControllerBase
 
     //Trip Details page fetch one trip's full information
 
-    [Authorize(Roles = "Dispatcher,Admin")]
+    [Authorize(Roles = "Dispatcher,Admin,Driver")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTrip(Guid id)
     {
         try
         {
-            var trip = await _tripService.GetTripByIdAsync(id);
+            // A Driver may only fetch their OWN trip this way - Dispatcher/
+            // Admin can fetch any trip. Tracking forwards the Driver's own
+            // token here to verify ownership/status before accepting a
+            // location update.
+            Guid? callerDriverId = User.IsInRole("Driver") ? GetCurrentUserId() : null;
+            var trip = await _tripService.GetTripByIdAsync(id, callerDriverId);
             return Ok(trip);
         }
         catch (NotFoundException ex)

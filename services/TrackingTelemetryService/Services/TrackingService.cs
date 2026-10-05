@@ -1,0 +1,116 @@
+using TrackingTelemetryService.Data;
+using TrackingTelemetryService.DTOs;
+using TrackingTelemetryService.Models;
+
+namespace TrackingTelemetryService.Services;
+
+public class TrackingService(ITrackingRepository repository, ITripDispatchClient tripClient)
+{
+    private static readonly TimeSpan MaxFutureSkew = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan MaxPastAge = TimeSpan.FromHours(24);
+
+    public async Task<LocationUpdateResponse> SubmitLocationAsync(
+        Guid driverId,
+        SubmitLocationRequest request,
+        string? authorizationHeader,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string>();
+
+        if (request.TripId is null)
+        {
+            errors["tripId"] = "Trip id is required.";
+        }
+
+        if (request.Latitude is null)
+        {
+            errors["latitude"] = "Latitude is required.";
+        }
+        else if (request.Latitude is < -90 or > 90)
+        {
+            errors["latitude"] = "Latitude must be between -90 and 90.";
+        }
+
+        if (request.Longitude is null)
+        {
+            errors["longitude"] = "Longitude is required.";
+        }
+        else if (request.Longitude is < -180 or > 180)
+        {
+            errors["longitude"] = "Longitude must be between -180 and 180.";
+        }
+
+        if (request.ObservedAt is null)
+        {
+            errors["observedAt"] = "Observation time is required.";
+        }
+        else
+        {
+            var now = DateTime.UtcNow;
+            if (request.ObservedAt > now.Add(MaxFutureSkew))
+            {
+                errors["observedAt"] = "Observation time cannot be in the future.";
+            }
+            else if (request.ObservedAt < now.Subtract(MaxPastAge))
+            {
+                errors["observedAt"] = "Observation time is too far in the past.";
+            }
+        }
+
+        // Nothing is saved unless every field is valid.
+        if (errors.Count > 0)
+        {
+            throw new ValidationException(errors);
+        }
+
+        var trip = await tripClient.GetTripAsync(request.TripId!.Value, authorizationHeader, cancellationToken);
+
+        // Scenario 3: a trip that isn't this driver's gets the exact same
+        // response as a trip that doesn't exist at all - a driver should
+        // never be able to tell the difference by probing trip ids.
+        if (trip is null || trip.AssignedDriverId != driverId)
+        {
+            throw new NotFoundException($"No trip found with id '{request.TripId}'.");
+        }
+
+        // The "agreed eligible lifecycle state" from the Definition of
+        // Done: only an active, In-Progress trip can receive updates.
+        if (trip.Status != "In-Progress")
+        {
+            throw new InvalidOperationException(
+                $"Location updates can only be submitted for an In-Progress trip (this trip is '{trip.Status}').");
+        }
+
+        if (trip.AssignedVehicleId is null)
+        {
+            // Should not happen for a genuinely In-Progress trip (a vehicle
+            // is always assigned before that status is reached), but guards
+            // against inconsistent data rather than crashing outright.
+            throw new InvalidOperationException("This trip has no assigned vehicle.");
+        }
+
+        var update = new TripLocationUpdate
+        {
+            Id = Guid.CreateVersion7(),
+            TripId = trip.Id,
+            DriverId = driverId,
+            VehicleId = trip.AssignedVehicleId.Value,
+            Latitude = request.Latitude!.Value,
+            Longitude = request.Longitude!.Value,
+            ObservedAt = request.ObservedAt!.Value,
+            ReceivedAt = DateTime.UtcNow,
+        };
+
+        await repository.CreateAsync(update);
+
+        return new LocationUpdateResponse
+        {
+            Id = update.Id,
+            TripId = update.TripId,
+            Latitude = update.Latitude,
+            Longitude = update.Longitude,
+            ObservedAt = update.ObservedAt,
+            ReceivedAt = update.ReceivedAt,
+        };
+    }
+}

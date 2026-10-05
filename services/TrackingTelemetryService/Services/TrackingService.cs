@@ -113,4 +113,50 @@ public class TrackingService(ITrackingRepository repository, ITripDispatchClient
             ReceivedAt = update.ReceivedAt,
         };
     }
+
+    // SCRUM-134: Authorized location-history retrieval for one trip.
+
+    private const int DefaultLimit = 500;
+    private const int MaxLimit = 1000;
+
+    public async Task<List<LocationUpdateResponse>> GetHistoryAsync(
+        Guid tripId,
+        Guid? restrictToDriverId,
+        int? limit,
+        string? authorizationHeader,
+        CancellationToken cancellationToken)
+    {
+        var effectiveLimit = limit ?? DefaultLimit;
+
+        if (effectiveLimit <= 0 || effectiveLimit > MaxLimit)
+        {
+            throw new ValidationException(new Dictionary<string, string>
+            {
+                ["limit"] = $"Limit must be between 1 and {MaxLimit}."
+            });
+        }
+
+        var trip = await tripClient.GetTripAsync(tripId, authorizationHeader, cancellationToken);
+
+        // Same identical-message pattern as SubmitLocationAsync: a trip
+        // that isn't this driver's looks exactly like a trip that doesn't
+        // exist, for a Driver caller. Dispatcher/Admin (restrictToDriverId
+        // is null) can see any trip.
+        if (trip is null || (restrictToDriverId is not null && trip.AssignedDriverId != restrictToDriverId))
+        {
+            throw new NotFoundException($"No trip found with id '{tripId}'.");
+        }
+
+        var records = await repository.GetByTripIdAsync(tripId, effectiveLimit);
+
+        return records.Select(r => new LocationUpdateResponse
+        {
+            Id = r.Id,
+            TripId = r.TripId,
+            Latitude = r.Latitude,
+            Longitude = r.Longitude,
+            ObservedAt = r.ObservedAt,
+            ReceivedAt = r.ReceivedAt,
+        }).ToList();
+    }
 }

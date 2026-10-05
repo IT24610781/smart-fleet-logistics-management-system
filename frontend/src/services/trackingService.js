@@ -1,7 +1,15 @@
-// Tracking / Telemetry Service — not yet implemented by the backend.
-import api from './api'
+import { createApiClient } from './api'
 
-export async function getFleetLocations() {
-  const { data } = await api.get('/api/tracking/vehicles')
+const trackingApi = createApiClient(
+  import.meta.env.VITE_TRACKING_API_URL || 'http://localhost:5000'
+)
+
+export async function submitLocation({ tripId, latitude, longitude, observedAt }) {
+  const { data } = await trackingApi.post('/api/tracking/locations', {
+    tripId,
+    latitude,
+    longitude,
+    observedAt,
+  })
   return data
 }

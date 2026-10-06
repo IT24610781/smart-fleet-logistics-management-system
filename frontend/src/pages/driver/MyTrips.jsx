@@ -8,6 +8,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
 import * as tripService from '../../services/tripService'
 import * as userService from '../../services/userService'
+import * as trackingService from '../../services/trackingService'
 
 function formatDateTime(value) {
   if (!value) return '—'
@@ -67,6 +68,8 @@ export default function MyTrips() {
   const [respondError, setRespondError] = useState(null)
   const [lastAction, setLastAction] = useState(null)
 
+  const [sendingLocationFor, setSendingLocationFor] = useState(null)
+
   useEffect(() => {
     let cancelled = false
 
@@ -125,6 +128,37 @@ export default function MyTrips() {
     }
   }
 
+  async function handleSendLocation(tripId) {
+    if (!window.navigator.geolocation) {
+      setRespondError('Your browser does not support location services.')
+      return
+    }
+    setSendingLocationFor(tripId)
+    setRespondError(null)
+    window.navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          await trackingService.submitLocation({
+            tripId,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            observedAt: new Date().toISOString(),
+          })
+          setLastAction('Location sent.')
+        } catch (err) {
+          setRespondError(err.message || 'Unable to send your location. Please try again.')
+        } finally {
+          setSendingLocationFor(null)
+        }
+      },
+      () => {
+        setRespondError('Could not get your current location. Check your browser\u2019s location permission.')
+        setSendingLocationFor(null)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
+
   function actionsFor(row) {
     if (row.status === 'Assigned') {
       return (
@@ -132,6 +166,18 @@ export default function MyTrips() {
           <Button size="sm" variant="secondary" onClick={() => setDialog({ tripId: row.id, decision: 'accept' })}>Accept</Button>
           <Button size="sm" variant="danger" onClick={() => setDialog({ tripId: row.id, decision: 'reject' })}>Reject</Button>
         </div>
+      )
+    }
+    if (row.status === 'In-Progress') {
+      return (
+        <Button
+          size="sm"
+          variant="secondary"
+          loading={sendingLocationFor === row.id}
+          onClick={() => handleSendLocation(row.id)}
+        >
+          Send location
+        </Button>
       )
     }
     return null

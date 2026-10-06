@@ -133,10 +133,18 @@ public class TripService
     }
 
     // Trip Details page: fetch one trip's full information.
-    public async Task<TripResponse> GetTripByIdAsync(Guid tripId)
+    public async Task<TripResponse> GetTripByIdAsync(Guid tripId, Guid? restrictToDriverId = null)
     {
         var trip = await _tripRepository.GetByIdAsync(tripId)
             ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
+
+        // Called on behalf of a Driver: they may only see their own trip -
+        // same "looks identical to not found" pattern used in RespondAsync,
+        // so a Driver can't probe for other drivers' trip ids.
+        if (restrictToDriverId is not null && trip.AssignedDriverId != restrictToDriverId)
+        {
+            throw new NotFoundException($"No trip found with id '{tripId}'.");
+        }
 
         return ToResponse(trip);
     }

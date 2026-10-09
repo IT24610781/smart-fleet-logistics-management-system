@@ -98,6 +98,25 @@ public class TrackingController(TrackingService trackingService) : ControllerBas
         }
     }
 
+    
+    //SCRUM-128: Latest fleet-wide location for the Dispatcher map
+
+    [Authorize(Roles = "Dispatcher,Admin")]
+    [HttpGet("fleet/latest")]
+    public async Task<IActionResult> GetFleetLatest(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var authorizationHeader = Request.Headers.Authorization.ToString();
+            var locations = await trackingService.GetFleetLatestAsync(authorizationHeader, cancellationToken);
+            return Ok(locations);
+        }
+        catch (TripServiceUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+    }
+
     // Same claim-reading pattern as the other services.
     private Guid GetCurrentUserId()
     {

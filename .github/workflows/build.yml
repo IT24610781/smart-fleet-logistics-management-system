@@ -112,6 +112,9 @@ jobs:
       - name: Build Trip Dispatch Service Docker Image
         run: docker build -t trip-service:ci ./services/TripDispatchService
 
+      - name: Build Tracking Telemetry Service Docker Image
+        run: docker build -t tracking-service:ci ./services/TrackingTelemetryService
+
   deploy:
     name: Deploy to Azure (Auth Service)
     needs: [build-test, frontend-check, docker-build]

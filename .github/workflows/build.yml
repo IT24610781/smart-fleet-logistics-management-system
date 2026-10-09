@@ -5,7 +5,7 @@ on:
     branches:
       - dev
       - main
-      - feature/*
+      - 'feature/*'
   pull_request:
     branches:
       - dev
@@ -27,33 +27,42 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
       - name: Load Auth test schema into MySQL
         run: |
           sed 's/fleet_identity_db/fleet_identity_db_test/g' database/auth-user/schema.sql > /tmp/auth-schema.test.sql
           mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/auth-schema.test.sql
+
       - name: Load Fleet test schema into MySQL
         run: |
           sed 's/fleet_vehicle_db/fleet_vehicle_db_test/g' database/fleet-vehicle/schema.sql > /tmp/fleet-schema.test.sql
           mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/fleet-schema.test.sql
+
       - name: Restore
         run: dotnet restore SmartFleet.slnx
+
       - name: Build
         run: dotnet build SmartFleet.slnx --no-restore
+
       - name: Test AuthUserService
         env:
           ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=test_root_password;"
         run: dotnet test tests/AuthUserService.Tests --no-build
+
       - name: Test FleetVehicleService
         env:
           ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_vehicle_db_test;Uid=root;Pwd=test_root_password;"
         run: dotnet test tests/FleetVehicleService.Tests --no-build
+
       - name: Test remaining projects
         env:
           TEST_TRIP_GUARD_CONNECTION: "Server=127.0.0.1;Port=3306;Uid=root;Pwd=test_root_password;"
@@ -72,7 +81,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Frontend Dependencies
@@ -93,17 +102,20 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Build Auth Service Docker Image
         run: docker build -t auth-service:ci ./services/AuthUserService
+
       - name: Build Fleet Service Docker Image
         run: docker build -t fleet-service:ci ./services/FleetVehicleService
+
       - name: Build Trip Dispatch Service Docker Image
         run: docker build -t trip-service:ci ./services/TripDispatchService
 
   deploy:
     name: Deploy to Azure (Auth Service)
     needs: [build-test, frontend-check, docker-build]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -129,7 +141,6 @@ jobs:
     needs: [build-test, frontend-check, docker-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
       id-token: write
@@ -146,7 +157,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Login to Azure Container Registry
-        run: az acr login --name smartfleetacr 
+        run: az acr login --name smartfleetacr
 
       - name: Build Fleet Docker Image
         run: docker build -t smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }} ./services/FleetVehicleService
@@ -160,7 +171,7 @@ jobs:
           app-name: smart-fleet-vehicle-container
           images: smartfleetacr-fxgpf2gudpaag4bb.azurecr.io/fleet-service:${{ github.sha }}
 
-    trip-deploy:
+  trip-deploy:
     name: Deploy Trip Dispatch Service to Azure
     needs: [build-test, frontend-check, docker-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'

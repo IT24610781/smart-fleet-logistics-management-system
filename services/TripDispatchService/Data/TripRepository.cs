@@ -258,7 +258,9 @@ public class TripRepository : ITripRepository
         return trips;
     }
 
-    //SCRUM-143 (US-18) Every trip created within a period, any status
+    // SCRUM-148 (US-19): trips created within a reporting period, for the
+    // Driver Performance Report.
+
     public async Task<List<Trip>> GetByCreatedDateRangeAsync(DateTime start, DateTime end)
     {
         const string sql = """
@@ -279,7 +281,7 @@ public class TripRepository : ITripRepository
                 created_at,
                 updated_at
             FROM trips
-            WHERE created_at >= @start AND created_at <= @end
+            WHERE created_at >= @start AND created_at < @end
             ORDER BY created_at DESC;
             """;
 
@@ -337,7 +339,12 @@ public class TripRepository : ITripRepository
             RejectedByDriverId = reader.IsDBNull(rejectedByDriverOrdinal)
                 ? null
                 : reader.GetGuid(rejectedByDriverOrdinal),
-
+            // MySqlConnector returns DATETIME columns with Kind=Unspecified,
+            // which System.Text.Json then serializes with no "Z"/offset. The
+            // browser then reads it as local time instead of converting from
+            // UTC (these columns are always written as UTC). SpecifyKind
+            // corrects the Kind without changing the clock value - same fix
+            // as TrackingRepository.cs in TrackingTelemetryService.
             CreatedAt = DateTime.SpecifyKind(reader.GetDateTime("created_at"), DateTimeKind.Utc),
             UpdatedAt = DateTime.SpecifyKind(reader.GetDateTime("updated_at"), DateTimeKind.Utc)
         };

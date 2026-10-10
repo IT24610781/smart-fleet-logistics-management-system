@@ -1,22 +1,44 @@
 import PageHeading from '../../components/common/PageHeading'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import AppShell from '../../components/layout/AppShell'
 import StatusBadge from '../../components/common/StatusBadge'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { ErrorMessage } from '../../components/common/ErrorMessage'
 import EmptyState from '../../components/common/EmptyState'
 import Button from '../../components/common/Button'
+import DataTable from '../../components/common/DataTable'
+import AdminDetails from '../../components/common/AdminDetails'
 import { getFleetUtilizationReport, getTripCompletionReport } from '../../services/reportService'
-import { getDriverPerformanceReport } from '../../services/tripService'
+import { getDriverPerformanceReport, listTrips } from '../../services/tripService'
+import { listDrivers, getUser } from '../../services/userService'
 import { FLEET_OVERVIEW } from '../../utils/mockData'
 import './Reports.css'
+// AdminDetails.jsx's own markup (.admin-detail-dialog etc.) and the plain
+// "view trip" link style (.admin-text-button) are only defined in
+// AdminDashboard.css - pulled in here too so the Trip Details modal below
+// is styled correctly even when a Dispatcher opens this same page without
+// ever having visited /admin/dashboard.
+import '../admin/AdminDashboard.css'
 
 const RANGE_DAYS = { '7d': 7, '30d': 30, '90d': 90 }
 const RANGE_LABEL = { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days' }
+const TRIP_STATUSES = ['All', 'Requested', 'Assigned', 'In-Progress', 'Completed', 'Cancelled']
 
 function formatPeriod(start, end) {
   const fmt = (d) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
   return `${fmt(start)} – ${fmt(end)}`
+}
+
+function formatDateTime(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+}
+
+function personName(person) {
+  if (!person) return null
+  const name = [person.firstName, person.lastName].filter(Boolean).join(' ')
+  return name || person.username
 }
 
 export default function Reports() {
@@ -37,6 +59,16 @@ export default function Reports() {
   const [driverError, setDriverError] = useState('')
   const [driverReloadKey, setDriverReloadKey] = useState(0)
   const [selectedDriverId, setSelectedDriverId] = useState('')
+
+
+  const [allTrips, setAllTrips] = useState([])
+  const [driversById, setDriversById] = useState({})
+  const [dispatchersById, setDispatchersById] = useState({})
+  const [tripsLoading, setTripsLoading] = useState(true)
+  const [tripsError, setTripsError] = useState('')
+  const [tripsReloadKey, setTripsReloadKey] = useState(0)
+  const [tripStatusFilter, setTripStatusFilter] = useState('All')
+  const [selectedTrip, setSelectedTrip] = useState(null)
 
   const mountedRef = useRef(true)
 
@@ -121,6 +153,76 @@ export default function Reports() {
       mountedRef.current = false
     }
   }, [range, driverReloadKey])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      setTripsLoading(true)
+      try {
+        const [trips, drivers] = await Promise.all([listTrips(), listDrivers()])
+        if (cancelled) return
+        setAllTrips(trips)
+        setDriversById(Object.fromEntries(drivers.map((d) => [d.id, d])))
+        setTripsError('')
+
+        // Resolve each distinct Dispatcher referenced by these trips, once -
+        // a lookup-by-id endpoint, not a bulk list, so dedupe first.
+        const dispatcherIds = [...new Set(trips.map((t) => t.createdByDispatcherId).filter(Boolean))]
+        const results = await Promise.all(
+          dispatcherIds.map((id) => getUser(id).catch(() => null))
+        )
+        if (!cancelled) {
+          setDispatchersById(Object.fromEntries(
+            dispatcherIds.map((id, i) => [id, results[i]]).filter(([, u]) => u)
+          ))
+        }
+      } catch (err) {
+        if (!cancelled) setTripsError(err?.message || 'Could not load trip details.')
+      } finally {
+        if (!cancelled) setTripsLoading(false)
+      }
+    }
+
+    run()
+
+    return () => {
+      cancelled = true
+    }
+  }, [tripsReloadKey])
+
+  const visibleTrips = useMemo(() => {
+    const end = new Date()
+    const start = new Date(end.getTime() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000)
+    return allTrips
+      .filter((t) => {
+        const created = new Date(t.createdAt)
+        if (Number.isNaN(created.getTime()) || created < start || created > end) return false
+        return tripStatusFilter === 'All' || t.status === tripStatusFilter
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  }, [allTrips, range, tripStatusFilter])
+
+  const tripColumns = [
+    {
+      key: 'id',
+      header: 'Trip',
+      render: (r) => (
+        <button className="admin-text-button" onClick={() => setSelectedTrip(r)} aria-label={`View trip ${r.id}`}>
+          {r.id.slice(0, 8)}
+        </button>
+      ),
+    },
+    {
+      key: 'route',
+      header: 'Route',
+      render: (r) => <div><strong>{r.pickupLocation}</strong><span className="utilization-vehicle-type"> → {r.dropoffLocation}</span></div>,
+    },
+    { key: 'driver', header: 'Driver', render: (r) => personName(driversById[r.assignedDriverId]) || 'Not assigned' },
+    { key: 'dispatcher', header: 'Dispatcher', render: (r) => personName(dispatchersById[r.createdByDispatcherId]) || '—' },
+    { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
+    { key: 'createdAt', header: 'Created', render: (r) => formatDateTime(r.createdAt) },
+  ]
 
   const visibleDrivers = driverReport?.drivers.filter(
     (d) => !selectedDriverId || d.driverId === selectedDriverId
@@ -350,7 +452,71 @@ export default function Reports() {
             </>
           )}
         </div>
+
+        <div className="card card-pad report-grid-full">
+          <div className="report-card-header">
+            <h3 className="section-title">Trip Details</h3>
+            {!tripsLoading && !tripsError && (
+              <Button variant="ghost" size="sm" onClick={() => setTripsReloadKey((k) => k + 1)}>Refresh</Button>
+            )}
+          </div>
+          <p className="report-demo-note">{RANGE_LABEL[range]}. Every trip created in the selected period, regardless of status.</p>
+
+          {tripsLoading && <LoadingSpinner label="Loading trips…" center />}
+
+          {!tripsLoading && tripsError && (
+            <>
+              <ErrorMessage>{tripsError}</ErrorMessage>
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <Button variant="secondary" size="sm" onClick={() => setTripsReloadKey((k) => k + 1)}>Try again</Button>
+              </div>
+            </>
+          )}
+
+          {!tripsLoading && !tripsError && (
+            <>
+              <div style={{ marginBottom: 'var(--space-3)' }}>
+                <select
+                  className="select-input"
+                  value={tripStatusFilter}
+                  onChange={(e) => setTripStatusFilter(e.target.value)}
+                >
+                  {TRIP_STATUSES.map((s) => (
+                    <option key={s} value={s}>{s === 'All' ? 'All statuses' : s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <DataTable
+                columns={tripColumns}
+                rows={visibleTrips}
+                loading={false}
+                rowKey="id"
+                emptyTitle="No trips in this period"
+                emptyDescription="Try a different date range or status."
+              />
+            </>
+          )}
+        </div>
       </div>
+
+      {selectedTrip && (
+        <AdminDetails
+          title="Trip details"
+          onClose={() => setSelectedTrip(null)}
+          fields={[
+            ['Trip ID', selectedTrip.id],
+            ['Pickup', selectedTrip.pickupLocation],
+            ['Drop-off', selectedTrip.dropoffLocation],
+            ['Capacity', selectedTrip.requiredCapacity],
+            ['Status', selectedTrip.status],
+            ['Driver', personName(driversById[selectedTrip.assignedDriverId]) || 'Not assigned'],
+            ['Dispatcher', personName(dispatchersById[selectedTrip.createdByDispatcherId]) || 'Unknown'],
+            ['Created', formatDateTime(selectedTrip.createdAt)],
+            ['Updated', formatDateTime(selectedTrip.updatedAt)],
+          ]}
+        />
+      )}
     </AppShell>
   )
 }

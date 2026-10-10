@@ -1,10 +1,3 @@
-// Status pill. Every tone below has a text/background contrast of at least
-// 7:1 (WCAG AA needs 4.5:1), and each badge carries a small dot so the status
-// is never conveyed by colour alone.
-//
-// Groups:  positive = ready / done      info   = assigned, waiting on someone
-//          active   = moving right now  warning = needs attention
-//          danger   = stopped / failed  neutral = idle, unknown
 const TONES = {
   positive: 'bg-secondary-fixed text-on-secondary-fixed',
   info: 'bg-primary-fixed text-on-primary-fixed',
@@ -39,6 +32,10 @@ const STATUS_TONE = {
   deactivated: 'danger',
   offline: 'neutral',
   idle: 'neutral',
+  // fleet-map location freshness (SCRUM-128/129)
+  fresh: 'positive',
+  stale: 'warning',
+  unavailable: 'neutral',
 }
 
 function normalise(status) {

@@ -254,6 +254,11 @@ public class TrackingWorkflowTests
             return Task.FromResult(result);
         }
 
+        // SCRUM-128: not exercised by these US-14/SCRUM-134 tests - see
+        // FleetLocationTests.cs for coverage of this method.
+        public Task<Dictionary<Guid, TripLocationUpdate>> GetLatestPerTripAsync(List<Guid> tripIds) =>
+            throw new NotSupportedException("Not exercised by TrackingWorkflowTests.");
+
         public void Seed(Guid tripId, Guid driverId, Guid vehicleId, DateTime observedAt) =>
             Rows.Add(new TripLocationUpdate
             {
@@ -274,5 +279,8 @@ public class TrackingWorkflowTests
             if (Exception is not null) throw Exception;
             return Task.FromResult(Result);
         }
+
+        public Task<List<FleetTripSnapshot>> GetInProgressTripsAsync(string? authorizationHeader, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Not exercised by TrackingWorkflowTests.");
     }
 }

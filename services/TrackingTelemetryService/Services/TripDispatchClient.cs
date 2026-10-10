@@ -37,4 +37,31 @@ public class TripDispatchClient(IHttpClientFactory clients) : ITripDispatchClien
                 "Trip status could not be verified. No location update was recorded.", ex);
         }
     }
+
+    
+    public async Task<List<FleetTripSnapshot>> GetInProgressTripsAsync(
+        string? authorizationHeader, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var client = clients.CreateClient("TripDispatch");
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/trips?status=In-Progress");
+            if (!string.IsNullOrEmpty(authorizationHeader))
+            {
+                request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorizationHeader);
+            }
+
+            using var response = await client.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var trips = await response.Content.ReadFromJsonAsync<List<FleetTripSnapshot>>(cancellationToken);
+            return trips ?? [];
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or FormatException ||
+            (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
+        {
+            throw new TripServiceUnavailableException(
+                "Fleet location data could not be retrieved.", ex);
+        }
+    }
 }

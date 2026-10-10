@@ -159,4 +159,47 @@ public class TrackingService(ITrackingRepository repository, ITripDispatchClient
             ReceivedAt = r.ReceivedAt,
         }).ToList();
     }
+
+    // SCRUM-128: Latest known location for every currently In-Progress
+    private static readonly TimeSpan StaleThreshold = TimeSpan.FromMinutes(5);
+
+    public async Task<List<FleetLocationResponse>> GetFleetLatestAsync(
+        string? authorizationHeader, CancellationToken cancellationToken)
+    {
+        var trips = await tripClient.GetInProgressTripsAsync(authorizationHeader, cancellationToken);
+
+        if (trips.Count == 0)
+        {
+            return [];
+        }
+
+        var latestByTrip = await repository.GetLatestPerTripAsync(trips.Select(t => t.Id).ToList());
+        var now = DateTime.UtcNow;
+
+        return trips.Select(trip =>
+        {
+            var response = new FleetLocationResponse
+            {
+                TripId = trip.Id,
+                VehicleId = trip.AssignedVehicleId,
+                DriverId = trip.AssignedDriverId,
+                PickupLocation = trip.PickupLocation,
+                DropoffLocation = trip.DropoffLocation,
+            };
+
+            if (latestByTrip.TryGetValue(trip.Id, out var location))
+            {
+                response.Latitude = location.Latitude;
+                response.Longitude = location.Longitude;
+                response.ObservedAt = location.ObservedAt;
+                response.Freshness = (now - location.ObservedAt) > StaleThreshold ? "stale" : "fresh";
+            }
+            else
+            {
+                response.Freshness = "unavailable";
+            }
+
+            return response;
+        }).ToList();
+    }
 }

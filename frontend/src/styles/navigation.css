@@ -1,4 +1,3 @@
-
 .fleet-sidebar { background:rgb(var(--sf-glass) / var(--sf-glass-opacity)); backdrop-filter:blur(24px) saturate(140%); -webkit-backdrop-filter:blur(24px) saturate(140%); border-right:1px solid rgb(var(--sf-outline-variant) / .6); box-shadow:8px 0 32px #0000000d; }
 .fleet-brand { background:rgb(var(--sf-brand-glass) / .55); text-decoration:none; }
 .fleet-brand-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:21px; font-weight:700; letter-spacing:-.04em; color:rgb(var(--sf-secondary)); }
@@ -35,6 +34,8 @@
 .fleet-search-results a:hover { background:rgb(var(--sf-surface-container-low)); }
 .fleet-search-results p { padding:14px; font-size:13px; }
 @media(max-width:600px) { .fleet-topbar { padding:12px 16px; } }
+
+@media(max-width:1023px) { .fleet-topbar { justify-content:flex-start; } }
 
 @media(min-width:1024px) {
   .fleet-nav-item::after { content:''; position:absolute; left:100%; top:0; width:18px; height:100%; }

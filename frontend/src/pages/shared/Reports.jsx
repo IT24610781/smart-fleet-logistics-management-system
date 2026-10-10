@@ -7,16 +7,18 @@ import { ErrorMessage } from '../../components/common/ErrorMessage'
 import EmptyState from '../../components/common/EmptyState'
 import Button from '../../components/common/Button'
 import { getFleetUtilizationReport, getTripCompletionReport } from '../../services/reportService'
-import { FLEET_OVERVIEW, DRIVER_OVERVIEW, TOP_DRIVERS_BY_TRIPS } from '../../utils/mockData'
+import { getDriverPerformanceReport } from '../../services/tripService'
+import { FLEET_OVERVIEW } from '../../utils/mockData'
 import './Reports.css'
 
 const RANGE_DAYS = { '7d': 7, '30d': 30, '90d': 90 }
+const RANGE_LABEL = { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days' }
 
-// Shared by Admin and Dispatcher (both are authorized per the SRS) — one
-// implementation instead of duplicating the page under each role folder.
-// Vehicle Status / Driver Activity are still demo data — US-19 has no
-// backend yet. Fleet Utilization (SCRUM-138/139, US-17) and Trip Completion
-// (SCRUM-142/143, US-18) are both live.
+function formatPeriod(start, end) {
+  const fmt = (d) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  return `${fmt(start)} – ${fmt(end)}`
+}
+
 export default function Reports() {
   const [range, setRange] = useState('7d')
 
@@ -29,6 +31,12 @@ export default function Reports() {
   const [completionLoading, setCompletionLoading] = useState(true)
   const [completionError, setCompletionError] = useState('')
   const [completionReloadKey, setCompletionReloadKey] = useState(0)
+
+  const [driverReport, setDriverReport] = useState(null)
+  const [driverLoading, setDriverLoading] = useState(true)
+  const [driverError, setDriverError] = useState('')
+  const [driverReloadKey, setDriverReloadKey] = useState(0)
+  const [selectedDriverId, setSelectedDriverId] = useState('')
 
   const mountedRef = useRef(true)
 
@@ -83,6 +91,40 @@ export default function Reports() {
       mountedRef.current = false
     }
   }, [range, completionReloadKey])
+
+  // SCRUM-149 (US-19): same shape as the two effects above. The Driver
+  // dropdown below filters the already-fetched rows client-side, since the
+  // API returns every driver's metrics for the period in one call.
+  useEffect(() => {
+    mountedRef.current = true
+
+    async function run() {
+      try {
+        const end = new Date()
+        const start = new Date(end.getTime() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000)
+        const report = await getDriverPerformanceReport({ start, end })
+        if (!mountedRef.current) return
+        setDriverReport(report)
+        setSelectedDriverId('')
+        setDriverError('')
+      } catch (err) {
+        if (!mountedRef.current) return
+        setDriverError(err?.message || 'Could not load the driver performance report.')
+      } finally {
+        if (mountedRef.current) setDriverLoading(false)
+      }
+    }
+
+    run()
+
+    return () => {
+      mountedRef.current = false
+    }
+  }, [range, driverReloadKey])
+
+  const visibleDrivers = driverReport?.drivers.filter(
+    (d) => !selectedDriverId || d.driverId === selectedDriverId
+  ) ?? []
 
   return (
     <AppShell title="Reports">
@@ -221,17 +263,92 @@ export default function Reports() {
         </div>
 
         <div className="card card-pad">
-          <h3 className="section-title">Driver Activity</h3>
-          <p className="report-demo-note">Demo data until US-19 is implemented.</p>
-          <div style={{ marginBottom: 'var(--space-3)' }}>
-            <div className="report-metric-row"><span>Total drivers</span><span>{DRIVER_OVERVIEW.total}</span></div>
-            <div className="report-metric-row"><StatusBadge status="Active" /><span>{DRIVER_OVERVIEW.active}</span></div>
-            <div className="report-metric-row"><StatusBadge status="Inactive" /><span>{DRIVER_OVERVIEW.inactive}</span></div>
+          <div className="report-card-header">
+            <h3 className="section-title">Driver Performance Report</h3>
+            {!driverLoading && !driverError && (
+              <Button variant="ghost" size="sm" onClick={() => setDriverReloadKey((k) => k + 1)}>Refresh</Button>
+            )}
           </div>
-          <h3 className="section-title" style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>Top drivers by completed trips</h3>
-          {TOP_DRIVERS_BY_TRIPS.map((d) => (
-            <div className="report-metric-row" key={d.name}><span>{d.name}</span><span>{d.trips}</span></div>
-          ))}
+
+          {driverLoading && <LoadingSpinner label="Calculating driver performance…" center />}
+
+          {!driverLoading && driverError && (
+            <>
+              <ErrorMessage>{driverError}</ErrorMessage>
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <Button variant="secondary" size="sm" onClick={() => setDriverReloadKey((k) => k + 1)}>Try again</Button>
+              </div>
+            </>
+          )}
+
+          {!driverLoading && !driverError && driverReport && (
+            <>
+              <p className="report-demo-note">
+                {formatPeriod(new Date(driverReport.periodStart), new Date(driverReport.periodEnd))} ({RANGE_LABEL[range]}).{' '}
+                Accepted and Completed are counted from a driver's own assignments; Rejected reflects the most recent
+                rejection recorded against a trip, even after it was reassigned. No combined score or ranking is shown.
+              </p>
+
+              {driverReport.drivers.length > 0 && (
+                <div style={{ marginBottom: 'var(--space-3)' }}>
+                  <select
+                    className="select-input"
+                    value={selectedDriverId}
+                    onChange={(e) => setSelectedDriverId(e.target.value)}
+                  >
+                    <option value="">All drivers</option>
+                    {driverReport.drivers.map((d) => (
+                      <option key={d.driverId} value={d.driverId}>{d.firstName} {d.lastName}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {driverReport.drivers.length === 0 && (
+                <EmptyState
+                  icon="user"
+                  title="No driver accounts"
+                  description="There are no Driver accounts to report on."
+                />
+              )}
+
+              {driverReport.drivers.length > 0 && visibleDrivers.length === 0 && (
+                <EmptyState
+                  icon="user"
+                  title="No matching driver"
+                  description="The selected driver could not be found in this report."
+                />
+              )}
+
+              {visibleDrivers.length > 0 && (
+                <table className="utilization-table">
+                  <thead>
+                    <tr>
+                      <th>Driver</th>
+                      <th>Accepted</th>
+                      <th>Completed</th>
+                      <th>Rejected</th>
+                      <th>Activity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleDrivers.map((d) => (
+                      <tr key={d.driverId}>
+                        <td>
+                          {d.firstName} {d.lastName}{' '}
+                          <StatusBadge status={d.isActive ? 'Active' : 'Inactive'} />
+                        </td>
+                        <td>{d.acceptedCount}</td>
+                        <td>{d.completedCount}</td>
+                        <td>{d.rejectedCount}</td>
+                        <td>{!d.hasActivity && <StatusBadge status="No activity" />}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          )}
         </div>
       </div>
     </AppShell>

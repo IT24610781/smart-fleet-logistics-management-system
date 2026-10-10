@@ -1,4 +1,7 @@
-param([string]$ResourceGroup = 'csp-project')
+param(
+    [string]$ResourceGroup = 'csp-project',
+    [string]$ServerOverride = ''
+)
 
 $ErrorActionPreference = 'Stop'
 $previousMysqlPassword = [Environment]::GetEnvironmentVariable('MYSQL_PWD', 'Process')
@@ -13,7 +16,7 @@ if (-not (Get-Command mysql -ErrorAction SilentlyContinue)) {
 $checks = @(
     @{ App = 'smartfleet-auth-demo'; Secret = 'auth-db'; Database = 'fleet_identity_db'; Tables = @('users', 'password_challenges', 'password_security') },
     @{ App = 'smartfleet-fleet-demo'; Secret = 'fleet-db'; Database = 'fleet_vehicle_db'; Tables = @('vehicles') },
-    @{ App = 'smartfleet-trip-demo'; Secret = 'trip-db'; Database = 'trip_dispatch_db'; Tables = @('trips', 'driver_account_guards') },
+    @{ App = 'smartfleet-trip-demo'; Secret = 'trip-db'; Database = 'trip_dispatch_db'; Tables = @('trips', 'driver_account_guards'); Columns = @(@{ Table = 'trips'; Name = 'created_by_dispatcher_id' }) },
     @{ App = 'smartfleet-tracking-demo'; Secret = 'tracking-db'; Database = 'tracking_telemetry_db'; Tables = @('trip_location_updates') }
 )
 
@@ -32,7 +35,11 @@ foreach ($check in $checks) {
         # PowerShell's assignment to this property can create a dictionary entry
         # named ConnectionString instead of invoking the .NET property setter.
         [System.Data.Common.DbConnectionStringBuilder].GetProperty('ConnectionString').SetValue($builder, [string]$secret.value)
-        $hostName = [string]$builder['Server']
+        $hostName = if ([string]::IsNullOrWhiteSpace($ServerOverride)) {
+            [string]$builder['Server']
+        } else {
+            $ServerOverride
+        }
         $database = [string]$builder['Database']
         $userName = [string]$builder['User ID']
         $password = [string]$builder['Password']
@@ -47,7 +54,14 @@ foreach ($check in $checks) {
         if ($LASTEXITCODE -ne 0) { throw "Database query failed for $($check.App)." }
         $missing = @($check.Tables | Where-Object { $_ -notin $tables })
         if ($missing.Count -gt 0) { throw "Missing tables in ${database}: $($missing -join ', ')." }
-        Write-Output "$($check.App): $database reachable over TLS; expected tables present."
+        foreach ($column in $check.Columns) {
+            $sql = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$($column.Table)' AND COLUMN_NAME = '$($column.Name)'"
+            $found = @(mysql --host=$hostName --port=$port --user=$userName --ssl-mode=REQUIRED --database=$database --batch --skip-column-names --execute=$sql)
+            if ($LASTEXITCODE -ne 0 -or $column.Name -notin $found) {
+                throw "Missing migration column $($column.Table).$($column.Name) in $database."
+            }
+        }
+        Write-Output "$($check.App): $database reachable over TLS on $hostName; expected tables present."
     }
     finally {
         if ($null -eq $previousMysqlPassword) {
@@ -56,6 +70,6 @@ foreach ($check in $checks) {
         else {
             $env:MYSQL_PWD = $previousMysqlPassword
         }
-        Remove-Variable secretJson, secret, builder, hostName, database, userName, password, port, tables, missing -ErrorAction SilentlyContinue
+        Remove-Variable secretJson, secret, builder, hostName, database, userName, password, port, tables, missing, sql, found -ErrorAction SilentlyContinue
     }
 }

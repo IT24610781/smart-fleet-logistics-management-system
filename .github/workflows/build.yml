@@ -103,14 +103,107 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Build Auth Service Docker Image
-        run: docker build -t auth-service:ci ./services/AuthUserService
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
 
-      - name: Build Fleet Service Docker Image
-        run: docker build -t fleet-service:ci ./services/FleetVehicleService
+      - name: Build release images
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet restore SmartFleet.slnx
+          for spec in 'AuthUserService auth-service' 'FleetVehicleService fleet-service' 'TripDispatchService trip-service' 'TrackingTelemetryService tracking-service'; do
+            read -r project image <<< "$spec"
+            dotnet publish "services/$project/$project.csproj" -c Release --no-restore -o "release/$image"
+            docker build -f scripts/Dockerfile.published --build-arg "SERVICE_DLL=$project.dll" -t "$image:ci" "release/$image"
+          done
 
-      - name: Build Trip Dispatch Service Docker Image
-        run: docker build -t trip-service:ci ./services/TripDispatchService
+  deploy-current-azure:
+    name: Deploy current Azure apps
+    needs: [build-test, frontend-check, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: smartfleet-production
+      cancel-in-progress: false
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Build Tracking Telemetry Service Docker Image
-        run: docker build -t tracking-service:ci ./services/TrackingTelemetryService
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Container Apps CLI
+        run: az extension add --name containerapp --upgrade --only-show-errors
+
+      - name: Publish four API images
+        shell: bash
+        run: |
+          set -euo pipefail
+          registry=smartfleetacr-fxgpf2gudpaag4bb.azurecr.io
+          az acr login --name smartfleetacr
+          dotnet restore SmartFleet.slnx
+          for spec in 'AuthUserService auth-service' 'FleetVehicleService fleet-service' 'TripDispatchService trip-service' 'TrackingTelemetryService tracking-service'; do
+            read -r project image <<< "$spec"
+            dotnet publish "services/$project/$project.csproj" -c Release --no-restore -o "release/$image"
+            docker build -f scripts/Dockerfile.published --build-arg "SERVICE_DLL=$project.dll" -t "$registry/$image:$GITHUB_SHA" "release/$image"
+            docker push "$registry/$image:$GITHUB_SHA"
+          done
+
+      - name: Update Container Apps and verify revisions
+        shell: bash
+        run: |
+          set -euo pipefail
+          registry=smartfleetacr-fxgpf2gudpaag4bb.azurecr.io
+          for spec in 'smartfleet-auth-demo auth-service' 'smartfleet-fleet-demo fleet-service' 'smartfleet-trip-demo trip-service' 'smartfleet-tracking-demo tracking-service'; do
+            read -r app image <<< "$spec"
+            previous=$(az containerapp show -n "$app" -g csp-project --query 'properties.template.containers[0].image' -o tsv)
+            echo "$app previous image: $previous" >> "$GITHUB_STEP_SUMMARY"
+            az containerapp update -n "$app" -g csp-project --image "$registry/$image:$GITHUB_SHA" -o none
+            revision=$(az containerapp show -n "$app" -g csp-project --query properties.latestRevisionName -o tsv)
+            healthy=false
+            for attempt in {1..12}; do
+              state=$(az containerapp revision show -n "$app" -g csp-project --revision "$revision" --query properties.runningState -o tsv)
+              if [[ "$state" == Running* ]]; then healthy=true; break; fi
+              if [[ "$state" == Failed ]]; then break; fi
+              sleep 10
+            done
+            if [[ "$healthy" != true ]]; then echo "$app revision $revision is $state" >&2; exit 1; fi
+            echo "$app deployed revision: $revision" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Build and deploy frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npm ci
+          npm run build
+          mkdir -p ../release/frontend
+          cp -r dist server.cjs package.json ../release/frontend/
+          cd ../release/frontend
+          zip -qr ../frontend.zip .
+          az webapp deploy -g csp-project -n smartfleet-frontend-it24610781 --src-path ../frontend.zip --type zip --only-show-errors
+
+      - name: Smoke test hosted frontend
+        run: curl --fail --silent --show-error https://smartfleet-frontend-it24610781.azurewebsites.net/login > /dev/null

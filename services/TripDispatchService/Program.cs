@@ -17,6 +17,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton<DatabaseConnection>();
 builder.Services.AddScoped<ITripRepository, TripRepository>();
 builder.Services.AddScoped<TripService>();
+builder.Services.AddScoped<TripCompletionService>();
 builder.Services.AddScoped<DriverEligibilityClient>();
 builder.Services.AddScoped<DriverAssignmentGuard>();
 

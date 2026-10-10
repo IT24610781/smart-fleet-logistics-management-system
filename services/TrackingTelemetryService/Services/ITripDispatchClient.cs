@@ -1,8 +1,4 @@
 namespace TrackingTelemetryService.Services;
-
-// Just the fields this service actually needs from Trip's GET /api/trips/{id}
-// response - extra fields (pickup location, capacity, etc.) are ignored
-// automatically by System.Text.Json's deserialization.
 public record TripSnapshot(Guid Id, string Status, Guid? AssignedDriverId, Guid? AssignedVehicleId);
 public record FleetTripSnapshot(
     Guid Id, string Status, Guid? AssignedVehicleId, Guid? AssignedDriverId,

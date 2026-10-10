@@ -12,9 +12,7 @@ public class VehicleRepository
         _databaseConnection = databaseConnection;
     }
 
-    // ============================================================
     // US-04: Create vehicle
-    // ============================================================
 
     public async Task CreateVehicleAsync(Vehicle vehicle)
     {
@@ -54,10 +52,7 @@ public class VehicleRepository
         await command.ExecuteNonQueryAsync();
     }
 
-
-    // ============================================================
     // US-04: Find vehicle by registration number (duplicate check)
-    // ============================================================
 
     public async Task<Vehicle?> GetByRegistrationNoAsync(string registrationNo)
     {
@@ -96,10 +91,7 @@ public class VehicleRepository
         return null;
     }
 
-
-    // ============================================================
     // US-06: Find vehicle by id (lookup before update)
-    // ============================================================
 
     public async Task<Vehicle?> GetByIdAsync(Guid id)
     {
@@ -138,10 +130,7 @@ public class VehicleRepository
         return null;
     }
 
-
-    // ============================================================
     // US-06: Update vehicle details/status
-    // ============================================================
 
     public async Task UpdateVehicleAsync(Vehicle vehicle)
     {
@@ -172,9 +161,7 @@ public class VehicleRepository
     await command.ExecuteNonQueryAsync();
     }
 
-    // ============================================================
     // US-05: Get all vehicles
-    // ============================================================
 
     public async Task<List<Vehicle>> GetAllAsync()
     {
@@ -212,10 +199,7 @@ public class VehicleRepository
         return vehicles;
     }
 
-
-    // ============================================================
     // US-07: Delete vehicle
-    // ============================================================
 
     public async Task DeleteVehicleAsync(Guid id)
     {
@@ -237,10 +221,7 @@ public class VehicleRepository
         await command.ExecuteNonQueryAsync();
     }
 
-
-    // ============================================================
     // Map database row -> Vehicle model
-    // ============================================================
 
     private static Vehicle MapVehicle(MySqlDataReader reader)
     {
@@ -256,9 +237,9 @@ public class VehicleRepository
 
             Status = reader.GetString("status"),
 
-            CreatedAt = reader.GetDateTime("created_at"),
+            CreatedAt = DateTime.SpecifyKind(reader.GetDateTime("created_at"), DateTimeKind.Utc),
 
-            UpdatedAt = reader.GetDateTime("updated_at")
+            UpdatedAt = DateTime.SpecifyKind(reader.GetDateTime("updated_at"), DateTimeKind.Utc)
         };
     }
 }

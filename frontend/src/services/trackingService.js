@@ -13,3 +13,8 @@ export async function submitLocation({ tripId, latitude, longitude, observedAt }
   })
   return data
 }
+
+export async function getFleetLocations() {
+  const { data } = await trackingApi.get('/api/tracking/fleet/latest')
+  return data
+}

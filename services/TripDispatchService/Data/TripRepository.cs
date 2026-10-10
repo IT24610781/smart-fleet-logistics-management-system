@@ -289,8 +289,9 @@ public class TripRepository : ITripRepository
             RejectedByDriverId = reader.IsDBNull(rejectedByDriverOrdinal)
                 ? null
                 : reader.GetGuid(rejectedByDriverOrdinal),
-            CreatedAt = reader.GetDateTime("created_at"),
-            UpdatedAt = reader.GetDateTime("updated_at")
+
+            CreatedAt = DateTime.SpecifyKind(reader.GetDateTime("created_at"), DateTimeKind.Utc),
+            UpdatedAt = DateTime.SpecifyKind(reader.GetDateTime("updated_at"), DateTimeKind.Utc)
         };
     }
 }

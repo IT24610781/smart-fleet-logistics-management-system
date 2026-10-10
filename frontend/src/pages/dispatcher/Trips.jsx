@@ -105,17 +105,22 @@ export default function Trips() {
     if (row.assignedDriverId) {
       const driver = driversById[row.assignedDriverId]
       const name = driverName(driver) || 'Assigned driver'
-      if (row.status === 'In-Progress') {
-        return (
-          <div>
-            <div>{name}</div>
-            {driver?.contactNumber && (
-              <div className="page-header-desc">{driver.contactNumber}</div>
-            )}
-          </div>
-        )
+      // "awaiting response" only makes sense while the trip is sitting with
+      // the Driver, unactioned (status === 'Assigned'). Completed/Cancelled
+      // trips keep their assignedDriverId as a historical record - without
+      // this check they'd wrongly say "awaiting response" forever, since
+      // that branch used to catch every non-In-Progress status.
+      if (row.status === 'Assigned') {
+        return <span>{name} · awaiting response</span>
       }
-      return <span>{name} · awaiting response</span>
+      return (
+        <div>
+          <div>{name}</div>
+          {driver?.contactNumber && (
+            <div className="page-header-desc">{driver.contactNumber}</div>
+          )}
+        </div>
+      )
     }
 
     return null

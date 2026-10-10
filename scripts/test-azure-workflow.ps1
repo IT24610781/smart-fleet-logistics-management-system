@@ -113,4 +113,5 @@ $record = [ordered]@{
     locationId = $location.id
     historyCount = @($history).Count
 }
+New-Item -ItemType Directory -Path 'outputs' -Force | Out-Null
 $record | ConvertTo-Json | Set-Content -Path 'outputs/azure-e2e.json'

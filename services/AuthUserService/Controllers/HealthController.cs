@@ -1,50 +1,35 @@
 using AuthUserService.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 
 namespace AuthUserService.Controllers;
 
 [ApiController]
-[Route("api/health")]
-public class HealthController : ControllerBase
+[AllowAnonymous]
+[Route("health")]
+public sealed class HealthController(DatabaseConnection database) : ControllerBase
 {
-    private readonly DatabaseConnection _databaseConnection;
+    [HttpGet("live")]
+    public IActionResult Live() => Ok(new { status = "alive" });
 
-    public HealthController(DatabaseConnection databaseConnection)
-    {
-        _databaseConnection = databaseConnection;
-    }
-
-    [HttpGet("database")]
-    public async Task<IActionResult> CheckDatabase()
+    [HttpGet("ready")]
+    [HttpGet("/api/health/database")]
+    public async Task<IActionResult> Ready(CancellationToken cancellationToken)
     {
         try
         {
-            await using var connection = _databaseConnection.CreateConnection();
-
-            await connection.OpenAsync();
-
-            await using var command = new MySqlCommand(
-                "SELECT 1",
-                connection);
-
-            var result = await command.ExecuteScalarAsync();
-
-            return Ok(new
-            {
-                database = "fleet_identity_db",
-                connected = true,
-                result
-            });
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(3));
+            await using var connection = database.CreateConnection();
+            await connection.OpenAsync(timeout.Token);
+            await using var command = new MySqlCommand("SELECT 1", connection);
+            await command.ExecuteScalarAsync(timeout.Token);
+            return Ok(new { status = "ready" });
         }
-        catch (Exception ex)
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
-            return StatusCode(500, new
-            {
-                database = "fleet_identity_db",
-                connected = false,
-                error = ex.Message
-            });
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { status = "not ready" });
         }
     }
 }

@@ -17,7 +17,8 @@ export const NAV_BY_ROLE = {
   ],
   Driver: [
     { label: 'Dashboard', to: '/driver/dashboard', icon: 'grid' },
-    { label: 'My Trips', to: '/driver/trips', icon: 'route' },
+    { label: 'My Trips', to: '/driver/trips', icon: 'route', end: true },
+    { label: 'Completed Trips', to: '/driver/trips/completed', icon: 'check' },
     { label: 'Profile', to: '/profile', icon: 'user' },
   ],
 }

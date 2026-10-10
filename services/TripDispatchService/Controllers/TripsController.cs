@@ -82,6 +82,10 @@ public class TripsController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
+        catch (FleetVehicleUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
     }
 
     //US-11/US-12 Dispatcher assigns a vehicle AND driver to a trip
@@ -105,6 +109,10 @@ public class TripsController : ControllerBase
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Driver assignment could not be verified. Try again shortly." });
         }
         catch (DriverEligibilityUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (FleetVehicleUnavailableException ex)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
         }
@@ -178,6 +186,10 @@ public class TripsController : ControllerBase
         catch (NotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (FleetVehicleUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {

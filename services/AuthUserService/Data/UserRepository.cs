@@ -12,9 +12,7 @@ public class UserRepository : IUserAccountRepository
         _databaseConnection = databaseConnection;
     }
 
-    // ============================================================
     // US-01: Create user
-    // ============================================================
 
     public async Task CreateUserAsync(User user)
     {
@@ -66,10 +64,7 @@ public class UserRepository : IUserAccountRepository
         await command.ExecuteNonQueryAsync();
     }
 
-
-    // ============================================================
     // US-01: List driver users
-    // ============================================================
 
     public async Task<List<User>> GetDriversAsync()
     {
@@ -111,10 +106,7 @@ public class UserRepository : IUserAccountRepository
         return users;
     }
 
-
-    // ============================================================
     // US-02: Find user by username
-    // ============================================================
 
     public async Task<User?> GetByUsernameAsync(string username)
     {
@@ -157,10 +149,7 @@ public class UserRepository : IUserAccountRepository
         return null;
     }
 
-
-    // ============================================================
     // US-01: Find user by email
-    // ============================================================
 
     public async Task<User?> GetByEmailAsync(string email)
     {
@@ -203,10 +192,7 @@ public class UserRepository : IUserAccountRepository
         return null;
     }
 
-
-    // ============================================================
     // US-04: Get currently logged-in user's profile
-    // ============================================================
 
     public async Task<User?> GetByIdAsync(Guid id)
     {
@@ -249,10 +235,7 @@ public class UserRepository : IUserAccountRepository
         return null;
     }
 
-
-    // ============================================================
     // US-04: Update currently logged-in user's profile
-    // ============================================================
 
     public async Task UpdateProfileAsync(User user)
     {
@@ -293,10 +276,7 @@ public class UserRepository : IUserAccountRepository
         await command.ExecuteNonQueryAsync();
     }
 
-
-    // ============================================================
     // Map database row -> User model
-    // ============================================================
 
     public async Task DeactivateDriverAsync(Guid id)
     {
@@ -330,9 +310,9 @@ public class UserRepository : IUserAccountRepository
 
             IsActive = reader.GetBoolean("is_active"),
 
-            CreatedAt = reader.GetDateTime("created_at"),
+            CreatedAt = DateTime.SpecifyKind(reader.GetDateTime("created_at"), DateTimeKind.Utc),
 
-            UpdatedAt = reader.GetDateTime("updated_at")
+            UpdatedAt = DateTime.SpecifyKind(reader.GetDateTime("updated_at"), DateTimeKind.Utc)
         };
     }
 }

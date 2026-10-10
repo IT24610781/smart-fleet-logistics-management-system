@@ -254,7 +254,13 @@ public class TripService
         trip.AssignedVehicleId = vehicleId;
         trip.AssignedDriverId = driverId;
         trip.Status = TripStatus.Assigned;
-        trip.RejectedByDriverId = null;
+        // SCRUM-148 (US-19): RejectedByDriverId is deliberately NOT cleared
+        // here anymore. It used to be wiped on every reassignment, which
+        // silently destroyed the only record of a driver's rejection the
+        // moment the trip moved on - the Driver Performance Report needs
+        // that value to survive reassignment to attribute rejections
+        // correctly. It's still overwritten by a later rejection (single
+        // column, not a full history) - documented limitation.
         trip.UpdatedAt = DateTime.UtcNow;
 
         await _tripRepository.UpdateAsync(trip);
@@ -294,10 +300,16 @@ public class TripService
                 $"This trip cannot be responded to because its status is '{trip.Status}' (expected '{TripStatus.Assigned}').");
         }
 
-                if (normalizedDecision == "accept")
+        if (normalizedDecision == "accept")
         {
             trip.Status = TripStatus.InProgress;
-            trip.RejectedByDriverId = null;
+            // SCRUM-148 (US-19): same reasoning as AssignVehicleAsync - do
+            // NOT clear RejectedByDriverId here. The documented limitation
+            // is that it's a single column, overwritten only by a LATER
+            // REJECTION; clearing it on acceptance would erase a prior
+            // driver's rejection the moment the reassigned trip is finally
+            // accepted, which is the single most common case the Driver
+            // Performance Report needs to get right.
         }
         else
         {

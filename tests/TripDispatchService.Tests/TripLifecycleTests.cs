@@ -134,6 +134,9 @@ public class TripLifecycleTests
                     ? new List<Trip> { _trip }
                     : new List<Trip>());
         }
+
+        public Task<List<Trip>> GetByCreatedDateRangeAsync(DateTime start, DateTime end) =>
+            throw new NotSupportedException("Not exercised by TripLifecycleTests.");
     }
 
     private sealed class FakeFleetVehicleClient : IFleetVehicleClient

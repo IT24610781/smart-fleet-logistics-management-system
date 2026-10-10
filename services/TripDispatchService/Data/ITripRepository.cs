@@ -18,4 +18,8 @@ public interface ITripRepository
 
 //US-12 a driver's own trips, newest first.
     Task<List<Trip>> GetByDriverIdAsync(Guid driverId);
+
+//SCRUM-143 (US-18): every trip created within [start, end], any status -
+// the eligible set for the trip-completion report.
+    Task<List<Trip>> GetByCreatedDateRangeAsync(DateTime start, DateTime end);
 }

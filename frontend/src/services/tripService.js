@@ -63,3 +63,15 @@ export async function getMyTrips() {
   const { data } = await tripApi.get('/api/trips/mine')
   return data
 }
+
+// SCRUM-148/149 (US-19): Driver Performance Report. Lives on the Trip
+// Dispatch API (not reportService.js's Tracking API base URL) because the
+export async function getDriverPerformanceReport(params) {
+  const { data } = await tripApi.get('/api/reports/driver-performance', {
+    params: {
+      start: params?.start instanceof Date ? params.start.toISOString() : params?.start,
+      end: params?.end instanceof Date ? params.end.toISOString() : params?.end,
+    },
+  })
+  return data
+}

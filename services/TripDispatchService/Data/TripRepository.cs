@@ -258,6 +258,56 @@ public class TripRepository : ITripRepository
         return trips;
     }
 
+    // SCRUM-148 (US-19): trips created within a reporting period, for the
+    // Driver Performance Report.
+
+    public async Task<List<Trip>> GetByCreatedDateRangeAsync(DateTime start, DateTime end)
+    {
+        const string sql = """
+            SELECT
+                id,
+                pickup_location,
+                pickup_lat,
+                pickup_lng,
+                dropoff_location,
+                dropoff_lat,
+                dropoff_lng,
+                required_capacity,
+                created_by_dispatcher_id,
+                status,
+                assigned_vehicle_id,
+                assigned_driver_id,
+                rejected_by_driver_id,
+                created_at,
+                updated_at
+            FROM trips
+            WHERE created_at >= @start AND created_at < @end
+            ORDER BY created_at DESC;
+            """;
+
+        await using var connection =
+            _databaseConnection.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("@start", start);
+        command.Parameters.AddWithValue("@end", end);
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        var trips = new List<Trip>();
+
+        while (await reader.ReadAsync())
+        {
+            trips.Add(MapTrip(reader));
+        }
+
+        return trips;
+    }
+
     // Map database row to Trip model
 
     private static Trip MapTrip(MySqlDataReader reader)
@@ -289,8 +339,14 @@ public class TripRepository : ITripRepository
             RejectedByDriverId = reader.IsDBNull(rejectedByDriverOrdinal)
                 ? null
                 : reader.GetGuid(rejectedByDriverOrdinal),
-            CreatedAt = reader.GetDateTime("created_at"),
-            UpdatedAt = reader.GetDateTime("updated_at")
+            // MySqlConnector returns DATETIME columns with Kind=Unspecified,
+            // which System.Text.Json then serializes with no "Z"/offset. The
+            // browser then reads it as local time instead of converting from
+            // UTC (these columns are always written as UTC). SpecifyKind
+            // corrects the Kind without changing the clock value - same fix
+            // as TrackingRepository.cs in TrackingTelemetryService.
+            CreatedAt = DateTime.SpecifyKind(reader.GetDateTime("created_at"), DateTimeKind.Utc),
+            UpdatedAt = DateTime.SpecifyKind(reader.GetDateTime("updated_at"), DateTimeKind.Utc)
         };
     }
 }

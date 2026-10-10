@@ -132,6 +132,8 @@ public class DispatchWorkflowTests
         public Task<List<Trip>> GetAllAsync(string? status) =>
             Task.FromResult(Trip is null ? new List<Trip>() : new List<Trip> { Trip });
         public Task<List<Trip>> GetByDriverIdAsync(Guid id) => Task.FromResult(new List<Trip>());
+        public Task<List<Trip>> GetByCreatedDateRangeAsync(DateTime start, DateTime end) =>
+            throw new NotSupportedException("Not exercised by DispatchWorkflowTests.");
     }
 
     private sealed class FakeFleetClient : IFleetVehicleClient

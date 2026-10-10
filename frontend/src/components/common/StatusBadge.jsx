@@ -36,9 +36,10 @@ const STATUS_TONE = {
   fresh: 'positive',
   stale: 'warning',
   unavailable: 'neutral',
-  
   // fleet utilization report (SCRUM-138/139)
   'limited data': 'warning',
+  // driver performance report (SCRUM-148/149)
+  'no activity': 'neutral',
 }
 
 function normalise(status) {

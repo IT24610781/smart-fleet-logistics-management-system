@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 import Icon from '../common/Icon'
 import { NAV_BY_ROLE } from './navConfig'
 import { useAuth } from '../../context/AuthContext'
-const descriptions = { Dashboard:'Your fleet overview and daily operations.', Drivers:'View Driver accounts and manage their availability.', Vehicles:'Manage your vehicle registry and fleet availability.', Trips:'Create requests and manage assignments.', 'My Trips':'View assigned trips and respond to requests.', Tracking:'Open the fleet tracking page.', Reports:'Open the reporting page.' }
+const descriptions = { Dashboard:'Your fleet overview and daily operations.', Drivers:'View Driver accounts and manage their availability.', Vehicles:'Manage your vehicle registry and fleet availability.', Trips:'Create requests and manage assignments.', 'My Trips':'View assigned trips and respond to requests.', 'Completed Trips':'Your finished trip history.', Tracking:'Open the fleet tracking page.', Reports:'Open the reporting page.' }
 export default function Sidebar({ mobileOpen, onCloseMobile }) {
   const { user } = useAuth()
   const [dismissed, setDismissed] = useState(null)
@@ -19,7 +19,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
         </Link>
         <nav className="flex flex-col gap-2 px-3 py-5" aria-label="Primary">
           {items.map((item,index) => <div className={`fleet-nav-item ${dismissed === index ? 'is-dismissed' : ''}`} key={item.to} onMouseEnter={() => setDismissed(null)} onFocus={() => setDismissed(null)} onKeyDown={event => { if (event.key === 'Escape') setDismissed(index) }}>
-            <NavLink to={item.to} onClick={onCloseMobile} aria-describedby={`nav-tip-${index}`} className={({ isActive }) => `fleet-nav-link ${isActive ? 'is-active' : ''}`}>
+            <NavLink to={item.to} end={item.end} onClick={onCloseMobile} aria-describedby={`nav-tip-${index}`} className={({ isActive }) => `fleet-nav-link ${isActive ? 'is-active' : ''}`}>
               <span className={`fleet-nav-icon fleet-nav-color-${index % 5}`}><Icon name={item.icon} size={20} /></span>
               <span>{item.label}</span><Icon name="chevronRight" size={14} className="fleet-nav-arrow" />
             </NavLink>

@@ -10,6 +10,17 @@ export default [
   js.configs.recommended,
 
   {
+    files: ['server.cjs'],
+    languageOptions: {
+      globals: {
+        __dirname: 'readonly',
+        URL: 'readonly',
+        process: 'readonly',
+      },
+    },
+  },
+
+  {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 'latest',

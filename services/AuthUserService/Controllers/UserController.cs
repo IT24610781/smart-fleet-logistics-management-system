@@ -34,10 +34,7 @@ public class UsersController : ControllerBase
             var user =
                 await _userService.CreateUserAsync(request);
 
-            return CreatedAtAction(
-                nameof(CreateDriver),
-                new { id = user.Id },
-                user);
+            return Created($"/api/users/{user.Id}", user);
         }
         catch (ArgumentException ex)
         {

@@ -26,6 +26,15 @@ public class KafkaVehicleEventPublisher : IVehicleEventPublisher, IDisposable
             BootstrapServers = bootstrapServers
         };
 
+        var eventHubsConnectionString = configuration["Kafka:ConnectionString"];
+        if (!string.IsNullOrWhiteSpace(eventHubsConnectionString))
+        {
+            config.SecurityProtocol = SecurityProtocol.SaslSsl;
+            config.SaslMechanism = SaslMechanism.Plain;
+            config.SaslUsername = "$ConnectionString";
+            config.SaslPassword = eventHubsConnectionString;
+        }
+
         _producer = new ProducerBuilder<Null, string>(config).Build();
     }
 

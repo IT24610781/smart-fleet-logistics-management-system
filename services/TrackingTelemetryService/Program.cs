@@ -74,12 +74,25 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+var frontendOrigins = new List<string>
+{
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5501"
+};
+
+var deployedFrontendOrigin = builder.Configuration["Frontend:Origin"];
+if (!string.IsNullOrWhiteSpace(deployedFrontendOrigin))
+{
+    frontendOrigins.Add(deployedFrontendOrigin.TrimEnd('/'));
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5501")
+            .WithOrigins(frontendOrigins.ToArray())
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

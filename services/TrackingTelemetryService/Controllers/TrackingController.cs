@@ -25,7 +25,7 @@ public class TrackingController(TrackingService trackingService) : ControllerBas
             var result = await trackingService.SubmitLocationAsync(
                 driverId, request, authorizationHeader, cancellationToken);
 
-            return CreatedAtAction(nameof(SubmitLocation), new { id = result.Id }, result);
+            return StatusCode(StatusCodes.Status201Created, result);
         }
         catch (ValidationException ex)
         {

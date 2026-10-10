@@ -23,17 +23,25 @@ public class FleetVehicleClient : IFleetVehicleClient
             request.Headers.Authorization = auth;
         }
 
-        using var response = await _httpClient.SendAsync(request);
+        using var response = await SendAsync(request);
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException(
+            throw new FleetVehicleUnavailableException(
                 $"Fleet service returned {(int)response.StatusCode} while listing vehicles.");
         }
 
-        var vehicles = await response.Content.ReadFromJsonAsync<List<FleetVehicleDto>>();
+        List<FleetVehicleDto>? vehicles;
+        try
+        {
+            vehicles = await response.Content.ReadFromJsonAsync<List<FleetVehicleDto>>();
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            throw new FleetVehicleUnavailableException("Fleet service returned an invalid vehicle list.", ex);
+        }
 
-        return vehicles ?? new List<FleetVehicleDto>();
+        return vehicles ?? throw new FleetVehicleUnavailableException("Fleet service returned an empty vehicle list response.");
     }
 
     public async Task SetVehicleStatusAsync(Guid vehicleId, string status, string? authorizationHeader)
@@ -49,7 +57,7 @@ public class FleetVehicleClient : IFleetVehicleClient
             request.Headers.Authorization = auth;
         }
 
-        using var response = await _httpClient.SendAsync(request);
+        using var response = await SendAsync(request);
 
         if (response.IsSuccessStatusCode)
         {
@@ -69,8 +77,20 @@ public class FleetVehicleClient : IFleetVehicleClient
                 ExtractMessage(body) ?? $"Vehicle '{vehicleId}' is not available for this status change.");
         }
 
-        throw new InvalidOperationException(
+        throw new FleetVehicleUnavailableException(
             $"Fleet service returned {(int)response.StatusCode} while updating vehicle status.");
+    }
+
+    private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
+    {
+        try
+        {
+            return await _httpClient.SendAsync(request);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            throw new FleetVehicleUnavailableException("Fleet service is unavailable. Try again shortly.", ex);
+        }
     }
 
     private static string? ExtractMessage(string jsonBody)

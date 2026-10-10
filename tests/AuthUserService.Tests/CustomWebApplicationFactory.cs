@@ -47,6 +47,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Jwt__Issuer", JwtTestIssuer);
         Environment.SetEnvironmentVariable("Jwt__Audience", JwtTestAudience);
         Environment.SetEnvironmentVariable("Jwt__ExpirationMinutes", "60");
+        Environment.SetEnvironmentVariable("BootstrapAdmin__Password", "TestOnlyAdmin123!");
         Environment.SetEnvironmentVariable(
             "ConnectionStrings__DefaultConnection",
             EffectiveConnectionString);

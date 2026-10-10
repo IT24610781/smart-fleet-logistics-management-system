@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AppShell from '../../components/layout/AppShell'
 import DataTable from '../../components/common/DataTable'
 import StatusBadge from '../../components/common/StatusBadge'
@@ -12,6 +12,32 @@ function formatDateTime(value) {
   if (!value) return '—'
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+}
+
+const PERIODS = [
+  { key: 'all', label: 'All time' },
+  { key: 'today', label: 'Today' },
+  { key: 'week', label: 'This Week' },
+  { key: 'month', label: 'This Month' },
+]
+
+function withinPeriod(value, period) {
+  if (period === 'all') return true
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return false
+
+  const now = new Date()
+  if (period === 'today') {
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    return date >= startOfToday
+  }
+  if (period === 'week') {
+    return date >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  }
+  if (period === 'month') {
+    return date >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  }
+  return true
 }
 
 function userLabel(user) {
@@ -54,6 +80,7 @@ export default function CompletedTrips() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [period, setPeriod] = useState('all')
 
   const [dispatchersById, setDispatchersById] = useState({})
 
@@ -92,6 +119,11 @@ export default function CompletedTrips() {
       cancelled = true
     }
   }, [reloadKey])
+
+  const visibleTrips = useMemo(
+    () => trips.filter((t) => withinPeriod(t.updatedAt, period)),
+    [trips, period]
+  )
 
   function dispatcherCell(row) {
     if (!row.createdByDispatcherId) return <span className="page-header-desc">—</span>
@@ -134,6 +166,18 @@ export default function CompletedTrips() {
         </div>
       </div>
 
+      <div className="trip-tabs">
+        {PERIODS.map((p) => (
+          <button
+            key={p.key}
+            className={`trip-tab${period === p.key ? ' active' : ''}`}
+            onClick={() => setPeriod(p.key)}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
       {loadError ? (
         <div className="card card-pad" style={{ marginTop: 'var(--space-3)' }}>
           <ErrorMessage>{loadError}</ErrorMessage>
@@ -145,11 +189,11 @@ export default function CompletedTrips() {
         <div style={{ marginTop: 'var(--space-3)' }}>
           <DataTable
             columns={columns}
-            rows={trips}
+            rows={visibleTrips}
             loading={loading}
             rowKey="id"
-            emptyTitle="No completed trips yet"
-            emptyDescription="Trips you finish will show up here."
+            emptyTitle={period === 'all' ? 'No completed trips yet' : 'No completed trips in this period'}
+            emptyDescription={period === 'all' ? 'Trips you finish will show up here.' : 'Try a different time range.'}
           />
         </div>
       )}

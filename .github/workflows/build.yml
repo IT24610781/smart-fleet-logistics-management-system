@@ -15,6 +15,9 @@ concurrency:
   group: smartfleet-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   build-test:
     name: Build & Test (.NET)
@@ -122,6 +125,32 @@ jobs:
             dotnet publish "services/$project/$project.csproj" -c Release --no-restore -o "release/$image"
             docker build -f scripts/Dockerfile.published --build-arg "SERVICE_DLL=$project.dll" -t "$image:ci" "release/$image"
           done
+
+      # Report findings first; make this a required gate after the team reviews the baseline.
+      - name: Scan Auth image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: auth-service:ci
+          fail-build: false
+          output-format: table
+      - name: Scan Fleet image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: fleet-service:ci
+          fail-build: false
+          output-format: table
+      - name: Scan Trip image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: trip-service:ci
+          fail-build: false
+          output-format: table
+      - name: Scan Tracking image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: tracking-service:ci
+          fail-build: false
+          output-format: table
 
   deploy-auth:
     name: Deploy Auth
@@ -244,3 +273,33 @@ jobs:
 
       - name: Smoke test hosted frontend
         run: curl --fail --silent --show-error https://smartfleet-frontend-it24610781.azurewebsites.net/login > /dev/null
+
+  smoke-azure:
+    name: Post-deployment workflow smoke
+    needs: deploy-frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify all four readiness endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          for app in smartfleet-auth-demo smartfleet-fleet-demo smartfleet-trip-demo smartfleet-tracking-demo; do
+            curl --fail --silent --show-error --retry 6 --retry-delay 5 "https://$app.icystone-b3019ce0.malaysiawest.azurecontainerapps.io/health/ready" > /dev/null
+          done
+
+      - name: Verify authenticated cross-service workflow
+        shell: pwsh
+        run: ./scripts/test-azure-workflow.ps1

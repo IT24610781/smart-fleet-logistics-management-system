@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY . .
+ARG SERVICE_DLL
+ENV SERVICE_DLL=${SERVICE_DLL}
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec dotnet \"$SERVICE_DLL\""]

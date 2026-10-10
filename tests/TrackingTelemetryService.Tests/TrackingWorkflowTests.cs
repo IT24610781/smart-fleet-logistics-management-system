@@ -274,5 +274,14 @@ public class TrackingWorkflowTests
             if (Exception is not null) throw Exception;
             return Task.FromResult(Result);
         }
+<<<<<<< Updated upstream
+=======
+
+        public Task<List<FleetTripSnapshot>> GetInProgressTripsAsync(string? authorizationHeader, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Not exercised by TrackingWorkflowTests.");
+            
+        public Task<List<CompletedTripSnapshot>> GetCompletedTripsAsync(string? authorizationHeader, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Not exercised by TrackingWorkflowTests.");
+>>>>>>> Stashed changes
     }
 }

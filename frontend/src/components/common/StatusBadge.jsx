@@ -39,6 +39,16 @@ const STATUS_TONE = {
   deactivated: 'danger',
   offline: 'neutral',
   idle: 'neutral',
+<<<<<<< Updated upstream
+=======
+  // fleet-map location freshness (SCRUM-128/129)
+  fresh: 'positive',
+  stale: 'warning',
+  unavailable: 'neutral',
+
+  // fleet utilization report (SCRUM-138/139)
+  'limited data': 'warning',
+>>>>>>> Stashed changes
 }
 
 function normalise(status) {

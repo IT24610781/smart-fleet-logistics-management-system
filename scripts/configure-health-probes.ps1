@@ -17,8 +17,8 @@ foreach ($app in $apps) {
     if ($LASTEXITCODE -ne 0) { throw "Could not read $app" }
     $template = $current.properties.template
     if ($template.containers.Count -ne 1) { throw "$app has unexpected container count" }
-    $template.containers[0].resources.Remove('ephemeralStorage')
-    $template.containers[0].Remove('imageType')
+    [void]$template.containers[0].resources.Remove('ephemeralStorage')
+    [void]$template.containers[0].Remove('imageType')
     $template.containers[0].probes = $probes
     $body = @{ properties = @{ template = $template } } | ConvertTo-Json -Depth 30
     $path = Join-Path $env:TEMP "smartfleet-probes-$app.json"
@@ -32,5 +32,14 @@ foreach ($app in $apps) {
 
     $saved = az containerapp show -n $app -g $ResourceGroup --query 'properties.template.containers[0].probes' -o json | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0 -or $saved.Count -ne 3) { throw "Probe verification failed for $app" }
-    Write-Output "$app has HTTP startup, liveness, and readiness probes."
+    $revision = az containerapp show -n $app -g $ResourceGroup --query 'properties.latestRevisionName' -o tsv
+    $running = $false
+    for ($attempt = 0; $attempt -lt 24; $attempt++) {
+        $state = az containerapp revision show -n $app -g $ResourceGroup --revision $revision --query 'properties.runningState' -o tsv
+        if ($state -like 'Running*') { $running = $true; break }
+        if ($state -eq 'Failed') { break }
+        Start-Sleep -Seconds 5
+    }
+    if (-not $running) { throw "$app revision $revision did not become healthy: $state" }
+    Write-Output "$app revision $revision has HTTP startup, liveness, and readiness probes."
 }

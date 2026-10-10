@@ -1,4 +1,7 @@
-param([string]$ResourceGroup = 'csp-project')
+param(
+    [string]$ResourceGroup = 'csp-project',
+    [string]$ServerOverride = ''
+)
 
 $ErrorActionPreference = 'Stop'
 $previousMysqlPassword = [Environment]::GetEnvironmentVariable('MYSQL_PWD', 'Process')
@@ -32,7 +35,11 @@ foreach ($check in $checks) {
         # PowerShell's assignment to this property can create a dictionary entry
         # named ConnectionString instead of invoking the .NET property setter.
         [System.Data.Common.DbConnectionStringBuilder].GetProperty('ConnectionString').SetValue($builder, [string]$secret.value)
-        $hostName = [string]$builder['Server']
+        $hostName = if ([string]::IsNullOrWhiteSpace($ServerOverride)) {
+            [string]$builder['Server']
+        } else {
+            $ServerOverride
+        }
         $database = [string]$builder['Database']
         $userName = [string]$builder['User ID']
         $password = [string]$builder['Password']
@@ -47,7 +54,7 @@ foreach ($check in $checks) {
         if ($LASTEXITCODE -ne 0) { throw "Database query failed for $($check.App)." }
         $missing = @($check.Tables | Where-Object { $_ -notin $tables })
         if ($missing.Count -gt 0) { throw "Missing tables in ${database}: $($missing -join ', ')." }
-        Write-Output "$($check.App): $database reachable over TLS; expected tables present."
+        Write-Output "$($check.App): $database reachable over TLS on $hostName; expected tables present."
     }
     finally {
         if ($null -eq $previousMysqlPassword) {

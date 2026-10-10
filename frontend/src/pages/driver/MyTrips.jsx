@@ -51,6 +51,7 @@ function LocationCell({ address, lat, lng }) {
   )
 }
 
+// US-12: a driver's own trips, wired to the real Trip Dispatch Service.
 export default function MyTrips() {
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
@@ -66,6 +67,12 @@ export default function MyTrips() {
 
   const [locationSharing, setLocationSharing] = useState(false)
   const [locationError, setLocationError] = useState(null)
+
+  useEffect(() => {
+    if (!lastAction) return undefined
+    const timer = window.setTimeout(() => setLastAction(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [lastAction])
 
   useEffect(() => {
     let cancelled = false
@@ -102,6 +109,7 @@ export default function MyTrips() {
     }
   }, [reloadKey])
 
+  // Automatic location sharing: as soon as a trip is In-Progress.
   const activeTripId = trips.find((t) => t.status === 'In-Progress')?.id ?? null
 
   useEffect(() => {
@@ -239,7 +247,7 @@ export default function MyTrips() {
       <div className="page-header">
         <div>
           <div className="page-header-title">My Trips</div>
-          <p className="page-header-desc">Trips assigned to you. You can accept or reject new assignments and track your history.</p>
+          <p className="page-header-desc">Trips assigned to you — accept or reject new assignments and track your history.</p>
         </div>
       </div>
 

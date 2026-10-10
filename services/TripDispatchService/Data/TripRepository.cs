@@ -258,6 +258,54 @@ public class TripRepository : ITripRepository
         return trips;
     }
 
+    //SCRUM-143 (US-18) Every trip created within a period, any status
+    public async Task<List<Trip>> GetByCreatedDateRangeAsync(DateTime start, DateTime end)
+    {
+        const string sql = """
+            SELECT
+                id,
+                pickup_location,
+                pickup_lat,
+                pickup_lng,
+                dropoff_location,
+                dropoff_lat,
+                dropoff_lng,
+                required_capacity,
+                created_by_dispatcher_id,
+                status,
+                assigned_vehicle_id,
+                assigned_driver_id,
+                rejected_by_driver_id,
+                created_at,
+                updated_at
+            FROM trips
+            WHERE created_at >= @start AND created_at <= @end
+            ORDER BY created_at DESC;
+            """;
+
+        await using var connection =
+            _databaseConnection.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            new MySqlCommand(sql, connection);
+
+        command.Parameters.AddWithValue("@start", start);
+        command.Parameters.AddWithValue("@end", end);
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        var trips = new List<Trip>();
+
+        while (await reader.ReadAsync())
+        {
+            trips.Add(MapTrip(reader));
+        }
+
+        return trips;
+    }
+
     // Map database row to Trip model
 
     private static Trip MapTrip(MySqlDataReader reader)

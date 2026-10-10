@@ -64,6 +64,12 @@ export async function getMyTrips() {
   return data
 }
 
+// US-12 follow-up: driver marks their own In-Progress trip as Completed.
+export async function completeTrip(tripId) {
+  const { data } = await tripApi.post(`/api/trips/${tripId}/complete`)
+  return data
+}
+
 // SCRUM-148/149 (US-19): Driver Performance Report. Lives on the Trip
 // Dispatch API (not reportService.js's Tracking API base URL) because the
 export async function getDriverPerformanceReport(params) {

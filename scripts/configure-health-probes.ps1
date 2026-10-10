@@ -17,6 +17,20 @@ foreach ($app in $apps) {
     if ($LASTEXITCODE -ne 0) { throw "Could not read $app" }
     $template = $current.properties.template
     if ($template.containers.Count -ne 1) { throw "$app has unexpected container count" }
+    $existing = @($template.containers[0].probes)
+    if ($existing.Count -eq 3 -and
+        @($existing | Where-Object { $_.type -eq 'Startup' -and $_.httpGet.path -eq '/health/live' }).Count -eq 1 -and
+        @($existing | Where-Object { $_.type -eq 'Liveness' -and $_.httpGet.path -eq '/health/live' }).Count -eq 1 -and
+        @($existing | Where-Object { $_.type -eq 'Readiness' -and $_.httpGet.path -eq '/health/ready' }).Count -eq 1) {
+        Write-Output "$app already has the expected HTTP probes."
+        continue
+    }
+    foreach ($key in @($template.Keys)) {
+        if ($null -eq $template[$key]) { [void]$template.Remove($key) }
+    }
+    foreach ($key in @($template.scale.Keys)) {
+        if ($null -eq $template.scale[$key]) { [void]$template.scale.Remove($key) }
+    }
     [void]$template.containers[0].resources.Remove('ephemeralStorage')
     [void]$template.containers[0].Remove('imageType')
     $template.containers[0].probes = $probes
@@ -30,8 +44,13 @@ foreach ($app in $apps) {
     }
     finally { Remove-Item -LiteralPath $path -ErrorAction SilentlyContinue }
 
-    $saved = az containerapp show -n $app -g $ResourceGroup --query 'properties.template.containers[0].probes' -o json | ConvertFrom-Json
-    if ($LASTEXITCODE -ne 0 -or $saved.Count -ne 3) { throw "Probe verification failed for $app" }
+    $saved = $null
+    for ($attempt = 0; $attempt -lt 12; $attempt++) {
+        $saved = @(az containerapp show -n $app -g $ResourceGroup --query 'properties.template.containers[0].probes' -o json | ConvertFrom-Json)
+        if ($LASTEXITCODE -eq 0 -and $saved.Count -eq 3) { break }
+        Start-Sleep -Seconds 5
+    }
+    if ($saved.Count -ne 3) { throw "Probe verification failed for $app" }
     $revision = az containerapp show -n $app -g $ResourceGroup --query 'properties.latestRevisionName' -o tsv
     $running = $false
     for ($attempt = 0; $attempt -lt 24; $attempt++) {

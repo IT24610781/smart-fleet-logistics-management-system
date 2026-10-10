@@ -23,6 +23,7 @@ import Tracking from './pages/dispatcher/Tracking'
 
 import DriverDashboard from './pages/driver/DriverDashboard'
 import MyTrips from './pages/driver/MyTrips'
+import CompletedTrips from './pages/driver/CompletedTrips'
 
 import Reports from './pages/shared/Reports'
 import Profile from './pages/shared/Profile'
@@ -73,6 +74,7 @@ export default function App() {
         {/* Driver */}
         <Route path="/driver/dashboard" element={<ProtectedRoute allowedRoles={['Driver']}><DriverDashboard /></ProtectedRoute>} />
         <Route path="/driver/trips" element={<ProtectedRoute allowedRoles={['Driver']}><MyTrips /></ProtectedRoute>} />
+        <Route path="/driver/trips/completed" element={<ProtectedRoute allowedRoles={['Driver']}><CompletedTrips /></ProtectedRoute>} />
 
         {/* Shared across all authenticated roles */}
         <Route path="/profile/password" element={<ProtectedRoute allowedRoles={['Admin', 'Dispatcher', 'Driver']}><ChangePassword /></ProtectedRoute>} />

@@ -30,10 +30,6 @@ public class TripsController : ControllerBase
     {
         try
         {
-            // A Driver may only fetch their OWN trip this way - Dispatcher/
-            // Admin can fetch any trip. Tracking forwards the Driver's own
-            // token here to verify ownership/status before accepting a
-            // location update.
             Guid? callerDriverId = User.IsInRole("Driver") ? GetCurrentUserId() : null;
             var trip = await _tripService.GetTripByIdAsync(id, callerDriverId);
             return Ok(trip);
@@ -182,6 +178,33 @@ public class TripsController : ControllerBase
                 message = "Validation failed.",
                 errors = ex.Errors
             });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (FleetVehicleUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    //US-12 Driver marks an In-Progress trip they own as Completed
+
+    [Authorize(Roles = "Driver")]
+    [HttpPost("{id}/complete")]
+    public async Task<IActionResult> Complete(Guid id)
+    {
+        try
+        {
+            var driverId = GetCurrentUserId();
+            var authorizationHeader = Request.Headers.Authorization.ToString();
+            var trip = await _tripService.CompleteTripAsync(id, driverId, authorizationHeader);
+            return Ok(trip);
         }
         catch (NotFoundException ex)
         {

@@ -52,9 +52,6 @@ function LocationCell({ address, lat, lng }) {
 }
 
 // US-12: a driver's own trips, wired to the real Trip Dispatch Service.
-// Accept/reject is only offered while a trip is Assigned; anything else is
-// read-only history. Once a trip is active, the Dispatcher's contact details
-// are resolved and shown so the Driver knows who to call.
 export default function MyTrips() {
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
@@ -68,7 +65,14 @@ export default function MyTrips() {
   const [respondError, setRespondError] = useState(null)
   const [lastAction, setLastAction] = useState(null)
 
-  const [sendingLocationFor, setSendingLocationFor] = useState(null)
+  const [locationSharing, setLocationSharing] = useState(false)
+  const [locationError, setLocationError] = useState(null)
+
+  useEffect(() => {
+    if (!lastAction) return undefined
+    const timer = window.setTimeout(() => setLastAction(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [lastAction])
 
   useEffect(() => {
     let cancelled = false
@@ -105,20 +109,78 @@ export default function MyTrips() {
     }
   }, [reloadKey])
 
+  // Automatic location sharing: as soon as a trip is In-Progress.
+  const activeTripId = trips.find((t) => t.status === 'In-Progress')?.id ?? null
+
+  useEffect(() => {
+    if (!activeTripId || !window.navigator.geolocation) {
+      // Nothing to start - the cleanup from the PREVIOUS run (if any) already
+      // reset locationSharing/locationError, so no synchronous setState here.
+      return undefined
+    }
+
+    let cancelled = false
+
+    function sendOnce() {
+      window.navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          if (cancelled) return
+          try {
+            await trackingService.submitLocation({
+              tripId: activeTripId,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              observedAt: new Date().toISOString(),
+            })
+            if (!cancelled) {
+              setLocationSharing(true)
+              setLocationError(null)
+            }
+          } catch (err) {
+            if (!cancelled) setLocationError(err.message || 'Unable to share your location.')
+          }
+        },
+        () => {
+          if (!cancelled) setLocationError('Could not get your current location. Check your browser\u2019s location permission.')
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
+    }
+
+    sendOnce()
+    const interval = window.setInterval(sendOnce, 30000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      setLocationSharing(false)
+    }
+  }, [activeTripId])
+
+  // Derived at render time, not stored in state - avoids a setState call
+  // inside the effect above just to report "this browser can't do it".
+  const geolocationUnsupported = Boolean(activeTripId) && !window.navigator.geolocation
+
   async function confirmDecision() {
     if (!dialog) return
     setBusy(true)
     setRespondError(null)
     try {
-      await tripService.respondToTrip(dialog.tripId, dialog.decision)
-      setDialog(null)
-      setLastAction(dialog.decision === 'accept' ? 'Trip accepted.' : 'Trip rejected and returned to Dispatch.')
+      if (dialog.decision === 'complete') {
+        await tripService.completeTrip(dialog.tripId)
+        setDialog(null)
+        setLastAction('Trip marked as completed.')
+      } else {
+        await tripService.respondToTrip(dialog.tripId, dialog.decision)
+        setDialog(null)
+        setLastAction(dialog.decision === 'accept' ? 'Trip accepted.' : 'Trip rejected and returned to Dispatch.')
+      }
       setReloadKey((k) => k + 1)
     } catch (err) {
       setDialog(null)
       setRespondError(
         err.status === 409
-          ? (err.message || 'This trip has already been responded to, or is no longer assigned to you.')
+          ? (err.message || 'This trip has already changed status, or is no longer assigned to you.')
           : err.status === 404
             ? 'This trip could not be found. It may have been reassigned.'
             : err.message || 'Something went wrong. Please try again.'
@@ -126,37 +188,6 @@ export default function MyTrips() {
     } finally {
       setBusy(false)
     }
-  }
-
-  async function handleSendLocation(tripId) {
-    if (!window.navigator.geolocation) {
-      setRespondError('Your browser does not support location services.')
-      return
-    }
-    setSendingLocationFor(tripId)
-    setRespondError(null)
-    window.navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          await trackingService.submitLocation({
-            tripId,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            observedAt: new Date().toISOString(),
-          })
-          setLastAction('Location sent.')
-        } catch (err) {
-          setRespondError(err.message || 'Unable to send your location. Please try again.')
-        } finally {
-          setSendingLocationFor(null)
-        }
-      },
-      () => {
-        setRespondError('Could not get your current location. Check your browser\u2019s location permission.')
-        setSendingLocationFor(null)
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
   }
 
   function actionsFor(row) {
@@ -170,13 +201,8 @@ export default function MyTrips() {
     }
     if (row.status === 'In-Progress') {
       return (
-        <Button
-          size="sm"
-          variant="secondary"
-          loading={sendingLocationFor === row.id}
-          onClick={() => handleSendLocation(row.id)}
-        >
-          Send location
+        <Button size="sm" variant="accent" onClick={() => setDialog({ tripId: row.id, decision: 'complete' })}>
+          Mark Completed
         </Button>
       )
     }
@@ -190,7 +216,17 @@ export default function MyTrips() {
     return (
       <div>
         <div>{userLabel(dispatcher)}</div>
-        {dispatcher.contactNumber && <div className="page-header-desc">{dispatcher.contactNumber}</div>}
+        {dispatcher.contactNumber && (
+          <a
+            href={`tel:${dispatcher.contactNumber}`}
+            className="flex items-center gap-1 text-primary hover:text-primary/80"
+            onClick={(e) => e.stopPropagation()}
+            title={`Call ${dispatcher.contactNumber}`}
+          >
+            <Icon name="phone" size={13} />
+            {dispatcher.contactNumber}
+          </a>
+        )}
       </div>
     )
   }
@@ -217,6 +253,13 @@ export default function MyTrips() {
 
       <SuccessMessage>{lastAction}</SuccessMessage>
       <ErrorMessage>{respondError}</ErrorMessage>
+      {locationSharing && (
+        <div className="flex items-center gap-1.5 font-body-sm text-body-sm text-on-surface-variant" style={{ marginTop: 'var(--space-2)' }}>
+          <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--positive, #2e7d32)', display: 'inline-block' }} />
+          Sharing your location automatically for your active trip.
+        </div>
+      )}
+      <ErrorMessage>{geolocationUnsupported ? 'Your browser does not support location services, so location can’t be shared automatically.' : locationError}</ErrorMessage>
 
       {loadError ? (
         <div className="card card-pad" style={{ marginTop: 'var(--space-3)' }}>
@@ -240,11 +283,23 @@ export default function MyTrips() {
 
       <ConfirmDialog
         open={!!dialog}
-        title={dialog?.decision === 'accept' ? 'Accept this trip?' : 'Reject this trip?'}
-        body={dialog?.decision === 'accept' ? 'You will be responsible for completing this trip.' : 'This trip will be returned to Dispatch and its vehicle freed up.'}
-        confirmLabel={dialog?.decision === 'accept' ? 'Accept' : 'Reject'}
+        title={
+          dialog?.decision === 'accept' ? 'Accept this trip?'
+            : dialog?.decision === 'complete' ? 'Mark this trip as completed?'
+              : 'Reject this trip?'
+        }
+        body={
+          dialog?.decision === 'accept' ? 'You will be responsible for completing this trip.'
+            : dialog?.decision === 'complete' ? 'This closes out the trip and frees your vehicle for new assignments. Automatic location sharing will stop.'
+              : 'This trip will be returned to Dispatch and its vehicle freed up.'
+        }
+        confirmLabel={
+          dialog?.decision === 'accept' ? 'Accept'
+            : dialog?.decision === 'complete' ? 'Mark Completed'
+              : 'Reject'
+        }
         cancelLabel="Cancel"
-        variant={dialog?.decision === 'accept' ? 'accent' : 'danger'}
+        variant={dialog?.decision === 'reject' ? 'danger' : 'accent'}
         loading={busy}
         onConfirm={confirmDecision}
         onCancel={() => setDialog(null)}

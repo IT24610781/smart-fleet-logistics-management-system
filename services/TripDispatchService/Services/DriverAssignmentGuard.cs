@@ -17,6 +17,13 @@ public class DriverAssignmentGuard(DatabaseConnection database)
             command.Parameters.AddWithValue("@id", driverId.ToString());
             if (Convert.ToInt64(await command.ExecuteScalarAsync(token)) != 0)
                 throw new InvalidOperationException("This Driver is inactive or has a pending deactivation and cannot receive new assignments.");
+
+            await using var activeTripCheck = new MySqlCommand(
+                "SELECT COUNT(*) FROM trips WHERE assigned_driver_id = @id AND status IN ('Assigned', 'In-Progress');", lease.Connection);
+            activeTripCheck.Parameters.AddWithValue("@id", driverId.ToString());
+            if (Convert.ToInt64(await activeTripCheck.ExecuteScalarAsync(token)) != 0)
+                throw new InvalidOperationException("This Driver already has an assigned or in-progress trip and cannot be assigned another until it is completed.");
+
             return lease;
         }
         catch { await lease.DisposeAsync(); throw; }

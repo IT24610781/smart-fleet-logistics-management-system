@@ -21,7 +21,7 @@ public sealed class DriverAssignmentGuardDatabaseTests
     }
 
     [GuardDatabaseFact]
-    public async Task AssignedAndActiveTripsPreventBlocking()
+    public async Task AssignedAndActiveTripsBlockDeactivationAndNewAssignment()
     {
         await using var fixture = await Fixture.CreateAsync();
         foreach (var status in new[] { "Assigned", "In-Progress" })
@@ -29,7 +29,11 @@ public sealed class DriverAssignmentGuardDatabaseTests
             var id = Guid.NewGuid();
             await fixture.InsertAsync(id, status);
             await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Guard.BlockForDeactivationAsync(id, default));
-            await using var lease = await fixture.Guard.BeginAssignmentAsync(id, default);
+            // Busy-driver guard: a Driver already carrying this trip cannot be
+            // handed a second one until it's resolved (Completed/Cancelled/
+            // rejected back to Requested). This reverses the prior behavior,
+            // which allowed assigning an already-busy Driver a second trip.
+            await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Guard.BeginAssignmentAsync(id, default));
         }
     }
 
@@ -114,8 +118,7 @@ public sealed class GuardDatabaseFactAttribute : FactAttribute
 {
     public GuardDatabaseFactAttribute()
     {
-        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRIP_GUARD_CONNECTION")
-                ?? throw new InvalidOperationException("Test MySQL connection is required.")))
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRIP_GUARD_CONNECTION")))
             Skip = "Set TEST_TRIP_GUARD_CONNECTION to a test MySQL server with create/drop-database permissions.";
     }
 }

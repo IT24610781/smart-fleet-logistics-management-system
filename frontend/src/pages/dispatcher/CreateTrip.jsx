@@ -142,7 +142,7 @@ export default function CreateTrip() {
         } catch (err) {
           showToast(
             err.status === 409
-              ? 'Trip created, but that vehicle was just taken by another trip. Assign one from Trips instead.'
+              ? `Trip created, but it could not be assigned: ${err.message || 'the vehicle or driver is no longer available'}. Assign one from Trips instead.`
               : 'Trip created, but the vehicle could not be assigned. Assign one from Trips instead.',
             'error'
           )

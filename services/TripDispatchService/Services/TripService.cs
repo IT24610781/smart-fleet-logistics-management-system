@@ -48,9 +48,6 @@ public class TripService
                 $"Drop-off location must be {LocationMaxLength} characters or fewer.";
         }
 
-        // Coordinates are optional (a typed address has none), but if given,
-        // must be real points on Earth - catches a swapped lat/lng or a
-        // stray value slipping through from the map picker.
         if (request.PickupLat is < -90 or > 90)
         {
             errors["pickupLat"] = "Pickup latitude must be between -90 and 90.";
@@ -138,9 +135,6 @@ public class TripService
         var trip = await _tripRepository.GetByIdAsync(tripId)
             ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
 
-        // Called on behalf of a Driver: they may only see their own trip -
-        // same "looks identical to not found" pattern used in RespondAsync,
-        // so a Driver can't probe for other drivers' trip ids.
         if (restrictToDriverId is not null && trip.AssignedDriverId != restrictToDriverId)
         {
             throw new NotFoundException($"No trip found with id '{tripId}'.");
@@ -303,13 +297,7 @@ public class TripService
         if (normalizedDecision == "accept")
         {
             trip.Status = TripStatus.InProgress;
-            // SCRUM-148 (US-19): same reasoning as AssignVehicleAsync - do
-            // NOT clear RejectedByDriverId here. The documented limitation
-            // is that it's a single column, overwritten only by a LATER
-            // REJECTION; clearing it on acceptance would erase a prior
-            // driver's rejection the moment the reassigned trip is finally
-            // accepted, which is the single most common case the Driver
-            // Performance Report needs to get right.
+            // SCRUM-148 (US-19): same reasoning as AssignVehicleAsync
         }
         else
         {
@@ -327,6 +315,40 @@ public class TripService
             trip.AssignedDriverId = null;
         }
 
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        await _tripRepository.UpdateAsync(trip);
+
+        return ToResponse(trip);
+    }
+
+    //Driver marks their own In-Progress trip as Completed
+
+    public async Task<TripResponse> CompleteTripAsync(
+        Guid tripId, Guid driverId, string? authorizationHeader)
+    {
+        var trip = await _tripRepository.GetByIdAsync(tripId)
+            ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
+
+        if (trip.AssignedDriverId != driverId)
+        {
+            throw new NotFoundException($"No trip found with id '{tripId}'.");
+        }
+
+        if (trip.Status != TripStatus.InProgress)
+        {
+            throw new InvalidOperationException(
+                $"This trip cannot be completed because its status is '{trip.Status}' (expected '{TripStatus.InProgress}').");
+        }
+
+        var vehicleId = trip.AssignedVehicleId;
+        if (vehicleId is not null)
+        {
+            await _fleetVehicleClient.SetVehicleStatusAsync(
+                vehicleId.Value, "Available", authorizationHeader);
+        }
+
+        trip.Status = TripStatus.Completed;
         trip.UpdatedAt = DateTime.UtcNow;
 
         await _tripRepository.UpdateAsync(trip);
@@ -355,6 +377,7 @@ public class TripService
             DropoffLat = trip.DropoffLat,
             DropoffLng = trip.DropoffLng,
             RequiredCapacity = trip.RequiredCapacity,
+            CreatedByDispatcherId = trip.CreatedByDispatcherId,
             Status = trip.Status,
             AssignedVehicleId = trip.AssignedVehicleId,
             AssignedDriverId = trip.AssignedDriverId,

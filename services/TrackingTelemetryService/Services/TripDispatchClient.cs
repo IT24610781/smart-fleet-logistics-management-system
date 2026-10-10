@@ -37,10 +37,7 @@ public class TripDispatchClient(IHttpClientFactory clients) : ITripDispatchClien
                 "Trip status could not be verified. No location update was recorded.", ex);
         }
     }
-<<<<<<< Updated upstream
-=======
 
-    
     public async Task<List<FleetTripSnapshot>> GetInProgressTripsAsync(
         string? authorizationHeader, CancellationToken cancellationToken)
     {
@@ -93,5 +90,4 @@ public class TripDispatchClient(IHttpClientFactory clients) : ITripDispatchClien
                 "Trip data could not be retrieved. The utilization report could not be generated.", ex);
         }
     }
->>>>>>> Stashed changes
 }

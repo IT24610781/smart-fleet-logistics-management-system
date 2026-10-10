@@ -106,7 +106,9 @@ export default function Drivers() {
           <p className="page-header-desc">Manage driver accounts created for the fleet. New drivers receive their credentials after account creation.</p>
         </div>
         <div className="page-header-actions">
-          <Link className="admin-cancel-link" to="/admin/drivers/create">Create Driver</Link>
+          <Link to="/admin/drivers/create">
+            <Button variant="accent">+ Create Driver</Button>
+          </Link>
         </div>
       </div>
 

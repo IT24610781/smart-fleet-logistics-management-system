@@ -3,6 +3,8 @@ public record TripSnapshot(Guid Id, string Status, Guid? AssignedDriverId, Guid?
 public record FleetTripSnapshot(
     Guid Id, string Status, Guid? AssignedVehicleId, Guid? AssignedDriverId,
     string PickupLocation, string DropoffLocation);
+public record CompletedTripSnapshot(
+    Guid Id, Guid? AssignedVehicleId, DateTime CreatedAt, DateTime UpdatedAt);
 
 public interface ITripDispatchClient
 {
@@ -13,4 +15,7 @@ public interface ITripDispatchClient
     // SCRUM-128: the set of currently In-Progress trips, used to scope the
     // fleet map to active vehicles only.
     Task<List<FleetTripSnapshot>> GetInProgressTripsAsync(string? authorizationHeader, CancellationToken cancellationToken);
+
+    // SCRUM-138: every Completed trip, used by the fleet-utilization report.
+    Task<List<CompletedTripSnapshot>> GetCompletedTripsAsync(string? authorizationHeader, CancellationToken cancellationToken);
 }

@@ -233,6 +233,10 @@ public class FleetLocationTests
         {
             if (Exception is not null) throw Exception;
             return Task.FromResult(InProgressTrips);
+
         }
+
+        public Task<List<CompletedTripSnapshot>> GetCompletedTripsAsync(string? authorizationHeader, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Not exercised by FleetLocationTests.");
     }
 }

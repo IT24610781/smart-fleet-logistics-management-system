@@ -27,6 +27,19 @@ builder.Services.AddHttpClient("TripDispatch", client =>
 });
 builder.Services.AddScoped<ITripDispatchClient, TripDispatchClient>();
 
+// SCRUM-138 (US-17): Fleet base URL, for the utilization report's vehicle
+// list. The report's location-ping data is read straight from
+// ITrackingRepository (this service already owns it) - no second client.
+var fleetBaseUrl = builder.Configuration["FleetService:BaseUrl"]
+    ?? throw new InvalidOperationException("FleetService:BaseUrl is not configured.");
+
+builder.Services.AddHttpClient("FleetVehicle", client =>
+{
+    client.BaseAddress = new Uri(fleetBaseUrl);
+});
+builder.Services.AddScoped<IFleetVehicleClient, FleetVehicleClient>();
+builder.Services.AddScoped<FleetUtilizationService>();
+
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT key is not configured.");
 

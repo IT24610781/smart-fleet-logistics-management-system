@@ -38,7 +38,6 @@ public class TripDispatchClient(IHttpClientFactory clients) : ITripDispatchClien
         }
     }
 
-    
     public async Task<List<FleetTripSnapshot>> GetInProgressTripsAsync(
         string? authorizationHeader, CancellationToken cancellationToken)
     {
@@ -62,6 +61,33 @@ public class TripDispatchClient(IHttpClientFactory clients) : ITripDispatchClien
         {
             throw new TripServiceUnavailableException(
                 "Fleet location data could not be retrieved.", ex);
+        }
+    }
+
+    // SCRUM-138: every Completed trip, for the fleet-utilization report.
+    public async Task<List<CompletedTripSnapshot>> GetCompletedTripsAsync(
+        string? authorizationHeader, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var client = clients.CreateClient("TripDispatch");
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/trips?status=Completed");
+            if (!string.IsNullOrEmpty(authorizationHeader))
+            {
+                request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorizationHeader);
+            }
+
+            using var response = await client.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var trips = await response.Content.ReadFromJsonAsync<List<CompletedTripSnapshot>>(cancellationToken);
+            return trips ?? [];
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or FormatException ||
+            (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
+        {
+            throw new TripServiceUnavailableException(
+                "Trip data could not be retrieved. The utilization report could not be generated.", ex);
         }
     }
 }

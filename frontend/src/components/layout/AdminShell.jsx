@@ -21,8 +21,9 @@ export default function AdminShell({ title, children, dirty = false }) {
   const { pathname } = useLocation()
   const parent = pathname.startsWith('/admin/drivers/') ? ['/admin/drivers', 'Drivers']
     : pathname.startsWith('/admin/vehicles/') ? ['/admin/vehicles', 'Vehicles'] : null
+  const topLevelListPage = pathname === '/admin/drivers' || pathname === '/admin/vehicles'
   return <AppShell title={title}><div className="admin-area">
-    {pathname !== '/admin/dashboard' && <nav className="admin-breadcrumb" aria-label="Breadcrumb">
+    {pathname !== '/admin/dashboard' && !topLevelListPage && <nav className="admin-breadcrumb" aria-label="Breadcrumb">
       <Link to="/admin/dashboard">Administration</Link><span aria-hidden="true">/</span>
       {parent && <><Link to={parent[0]}>{parent[1]}</Link><span aria-hidden="true">/</span></>}
       <span aria-current="page">{title}</span>

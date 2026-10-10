@@ -1,37 +1,37 @@
 import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useRef, useState } from 'react'
 import AppShell from '../../components/layout/AppShell'
-import MiniChart from '../../components/common/MiniChart'
 import StatusBadge from '../../components/common/StatusBadge'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import { ErrorMessage } from '../../components/common/ErrorMessage'
 import EmptyState from '../../components/common/EmptyState'
 import Button from '../../components/common/Button'
-import { getFleetUtilizationReport } from '../../services/reportService'
-import { MOCK_TRIP_COMPLETION, FLEET_OVERVIEW, DRIVER_OVERVIEW, TOP_DRIVERS_BY_TRIPS } from '../../utils/mockData'
+import { getFleetUtilizationReport, getTripCompletionReport } from '../../services/reportService'
+import { FLEET_OVERVIEW, DRIVER_OVERVIEW, TOP_DRIVERS_BY_TRIPS } from '../../utils/mockData'
 import './Reports.css'
 
 const RANGE_DAYS = { '7d': 7, '30d': 30, '90d': 90 }
 
 // Shared by Admin and Dispatcher (both are authorized per the SRS) — one
 // implementation instead of duplicating the page under each role folder.
-// Trip Completion / Vehicle Status / Driver Activity are still demo data —
-// those are separate stories (US-18/US-19) with no backend yet. Fleet
-// Utilization (SCRUM-138/139, US-17) is live against ReportingService.
+// Vehicle Status / Driver Activity are still demo data — US-19 has no
+// backend yet. Fleet Utilization (SCRUM-138/139, US-17) and Trip Completion
+// (SCRUM-142/143, US-18) are both live.
 export default function Reports() {
   const [range, setRange] = useState('7d')
+
   const [utilization, setUtilization] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState('')
-  const [reloadKey, setReloadKey] = useState(0)
+  const [utilLoading, setUtilLoading] = useState(true)
+  const [utilError, setUtilError] = useState('')
+  const [utilReloadKey, setUtilReloadKey] = useState(0)
+
+  const [completion, setCompletion] = useState(null)
+  const [completionLoading, setCompletionLoading] = useState(true)
+  const [completionError, setCompletionError] = useState('')
+  const [completionReloadKey, setCompletionReloadKey] = useState(0)
+
   const mountedRef = useRef(true)
 
-  const tc = MOCK_TRIP_COMPLETION
-
-  // Same shape as Tracking.jsx's fetch effect: nothing is set synchronously
-  // here - every setState call happens after the await, so switching range
-  // keeps the last good report on screen (no flicker) until the new one
-  // arrives or fails. "Refresh"/"Try again" re-run this via reloadKey.
   useEffect(() => {
     mountedRef.current = true
 
@@ -42,12 +42,12 @@ export default function Reports() {
         const report = await getFleetUtilizationReport({ start, end })
         if (!mountedRef.current) return
         setUtilization(report)
-        setLoadError('')
+        setUtilError('')
       } catch (err) {
         if (!mountedRef.current) return
-        setLoadError(err?.message || 'Could not load the fleet utilization report.')
+        setUtilError(err?.message || 'Could not load the fleet utilization report.')
       } finally {
-        if (mountedRef.current) setLoading(false)
+        if (mountedRef.current) setUtilLoading(false)
       }
     }
 
@@ -56,7 +56,33 @@ export default function Reports() {
     return () => {
       mountedRef.current = false
     }
-  }, [range, reloadKey])
+  }, [range, utilReloadKey])
+
+  useEffect(() => {
+    mountedRef.current = true
+
+    async function run() {
+      try {
+        const end = new Date()
+        const start = new Date(end.getTime() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000)
+        const report = await getTripCompletionReport({ start, end })
+        if (!mountedRef.current) return
+        setCompletion(report)
+        setCompletionError('')
+      } catch (err) {
+        if (!mountedRef.current) return
+        setCompletionError(err?.message || 'Could not load the trip completion report.')
+      } finally {
+        if (mountedRef.current) setCompletionLoading(false)
+      }
+    }
+
+    run()
+
+    return () => {
+      mountedRef.current = false
+    }
+  }, [range, completionReloadKey])
 
   return (
     <AppShell title="Reports">
@@ -78,23 +104,23 @@ export default function Reports() {
         <div className="card card-pad">
           <div className="report-card-header">
             <h3 className="section-title">Fleet Utilization Report</h3>
-            {!loading && !loadError && (
-              <Button variant="ghost" size="sm" onClick={() => setReloadKey((k) => k + 1)}>Refresh</Button>
+            {!utilLoading && !utilError && (
+              <Button variant="ghost" size="sm" onClick={() => setUtilReloadKey((k) => k + 1)}>Refresh</Button>
             )}
           </div>
 
-          {loading && <LoadingSpinner label="Calculating utilization…" center />}
+          {utilLoading && <LoadingSpinner label="Calculating utilization…" center />}
 
-          {!loading && loadError && (
+          {!utilLoading && utilError && (
             <>
-              <ErrorMessage>{loadError}</ErrorMessage>
+              <ErrorMessage>{utilError}</ErrorMessage>
               <div style={{ marginTop: 'var(--space-3)' }}>
-                <Button variant="secondary" size="sm" onClick={() => setReloadKey((k) => k + 1)}>Try again</Button>
+                <Button variant="secondary" size="sm" onClick={() => setUtilReloadKey((k) => k + 1)}>Try again</Button>
               </div>
             </>
           )}
 
-          {!loading && !loadError && utilization && utilization.vehicles.length === 0 && (
+          {!utilLoading && !utilError && utilization && utilization.vehicles.length === 0 && (
             <EmptyState
               icon="grid"
               title="No eligible vehicles"
@@ -102,7 +128,7 @@ export default function Reports() {
             />
           )}
 
-          {!loading && !loadError && utilization && utilization.vehicles.length > 0 && (
+          {!utilLoading && !utilError && utilization && utilization.vehicles.length > 0 && (
             <>
               <div style={{ marginBottom: 'var(--space-3)' }}>
                 <div className="report-metric-row"><span>Vehicles in report</span><span>{utilization.summary.totalVehicles}</span></div>
@@ -144,16 +170,43 @@ export default function Reports() {
         </div>
 
         <div className="card card-pad">
-          <h3 className="section-title">Trip Completion Report</h3>
-          <p className="report-demo-note">Demo data until US-18 is implemented.</p>
-          <MiniChart values={tc.trend} color="var(--beacon)" />
-          <div style={{ marginTop: 'var(--space-3)' }}>
-            <div className="report-metric-row"><span>Total trips</span><span>{tc.totalTrips}</span></div>
-            <div className="report-metric-row"><span>Completed</span><span>{tc.completed}</span></div>
-            <div className="report-metric-row"><span>Pending</span><span>{tc.pending}</span></div>
-            <div className="report-metric-row"><span>Rejected</span><span>{tc.rejected}</span></div>
-            <div className="report-metric-row"><span>Completion rate</span><span>{tc.completionPercent}%</span></div>
+          <div className="report-card-header">
+            <h3 className="section-title">Trip Completion Report</h3>
+            {!completionLoading && !completionError && (
+              <Button variant="ghost" size="sm" onClick={() => setCompletionReloadKey((k) => k + 1)}>Refresh</Button>
+            )}
           </div>
+
+          {completionLoading && <LoadingSpinner label="Calculating trip completion…" center />}
+
+          {!completionLoading && completionError && (
+            <>
+              <ErrorMessage>{completionError}</ErrorMessage>
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <Button variant="secondary" size="sm" onClick={() => setCompletionReloadKey((k) => k + 1)}>Try again</Button>
+              </div>
+            </>
+          )}
+
+          {!completionLoading && !completionError && completion && !completion.hasData && (
+            <EmptyState
+              icon="grid"
+              title="No trips in this period"
+              description="No trips were created within the selected period."
+            />
+          )}
+
+          {!completionLoading && !completionError && completion && completion.hasData && (
+            <div>
+              <div className="report-metric-row"><span>Eligible trips</span><span>{completion.eligibleTripCount}</span></div>
+              <div className="report-metric-row"><span>Completed</span><span>{completion.completedCount}</span></div>
+              <div className="report-metric-row"><span>In progress</span><span>{completion.inProgressCount}</span></div>
+              <div className="report-metric-row"><span>Assigned</span><span>{completion.assignedCount}</span></div>
+              <div className="report-metric-row"><span>Requested</span><span>{completion.requestedCount}</span></div>
+              <div className="report-metric-row"><span>Cancelled</span><span>{completion.cancelledCount}</span></div>
+              <div className="report-metric-row"><span>Completion rate</span><span>{completion.completionRatePercent}%</span></div>
+            </div>
+          )}
         </div>
 
         <div className="card card-pad">

@@ -37,8 +37,13 @@ The Container Apps use the `smartfleet-acr-pull` managed identity for image pull
 3. Run `./scripts/test-azure-workflow.ps1`. It fetches the Admin password at runtime and creates temporary QA accounts and records. It tests login, vehicle creation, Trip assignment, Driver acceptance, a location update, and location history. It prints IDs only; do not paste any secret output. The run writes `outputs/azure-e2e.json` locally.
 4. Check `https://smartfleet-frontend-it24610781.azurewebsites.net/login` and browser Network requests. Verify HTTPS API URLs and that Admin, Dispatcher, and Driver screens load. The four APIs should answer CORS preflight from the hosted frontend origin and reject an unrelated origin.
 5. Confirm Fleet publishes to Event Hubs by inspecting the `IncomingMessages` metric for `vehicle.status.events`. If asynchronous delivery is missing, inspect Fleet console logs before retrying.
+6. Run `./scripts/verify-azure-databases.ps1` from PowerShell with Azure CLI and the MySQL client installed. It reads each Container App's database secret at runtime, connects over TLS, and checks expected tables without printing credentials or changing schema.
+
+On 2026-10-10, Fleet's Event Hubs path was checked end to end. An Admin created QA vehicle `478e16af-4b78-4ba9-bceb-c76969df7888` and changed its status to `Under Maintenance` through the Fleet API. A separate Kafka consumer read the matching `QA-EH-` status event from `vehicle.status.events` at partition 0, offset 7. The namespace `IncomingMessages` metric rose to 2 at 15:38 UTC (one direct diagnostic event and one Fleet status event). Fleet logs also contain periodic `1/1 brokers are down` messages; this successful delivery proves the connection works, but that warning should be monitored for recurrence. The database verification script passed for all four service users and databases on the same date.
 
 The Tracking service needs `FleetService__BaseUrl`, `TripDispatchService__BaseUrl`, and `AuthService__BaseUrl` in its Container App environment. A code update that adds a required setting must be paired with an Azure configuration update before deploying the new image.
+
+The Auth service uses Brevo for password verification email. `PasswordEmail__ApiKey` references the Container App secret `password-email-api-key`; `PasswordEmail__SenderEmail` is `it24610781@my.sliit.lk`. Do not store the API key in Git or paste it into deployment logs. On 2026-10-10, a single test through `POST /api/auth/password/forgot` to a temporary QA Driver account was recorded as `delivered` by Brevo. The QA account was then deactivated; no password was changed.
 
 ## Rollback
 
@@ -50,6 +55,8 @@ az containerapp revision list -n <app-name> -g csp-project --query '[].{name:nam
 ```
 
 Then repeat the relevant API smoke test. Use backward-compatible database migrations so the previous image can still read the schema. In single-revision mode, updating the image creates a new revision; changing traffic alone will not repair a broken single active revision. Do not delete the previous image from ACR until rollback is no longer needed.
+
+This procedure was exercised on Tracking on 2026-10-10: an intentionally missing image produced an unhealthy `ImagePullBackOff` revision, the previous healthy revision kept serving the endpoint, and restoring the full-SHA image produced a healthy replacement revision. The live workflow test passed again after recovery.
 
 For database recovery, first review the MySQL Flexible Server's latest restorable time and seven-day retention. Restore into a **new** server at a chosen point in time, validate data there, and plan a controlled connection-string cutover. A restore drill creates billable resources, so schedule and budget it explicitly. No restore drill has been performed yet.
 
@@ -64,4 +71,4 @@ For database recovery, first review the MySQL Flexible Server's latest restorabl
 
 The old Express environment `smartfleet-demo-env`, old `martfleet-auth-demo` app, and two `smart-fleet-vehicle-*` App Services are still present. The old auth app is stopped. Confirm with teammates that no traffic or automation depends on each resource before retiring it. The new demo's APIs and frontend use `smartfleet-v2-env` and the four `smartfleet-*-demo` apps above.
 
-The scripted live workflow and login browser tests have passed. Fault-injection scenarios, a database restore drill, and a deliberately unhealthy revision followed by a live rollback have not been completed. The Trip API now maps Fleet HTTP errors, timeouts, and invalid vehicle lists to a structured 503; this requires deployment and a live recheck. The known Driver rejection status mismatch remains unresolved: the backend returns `Requested` with the assignment cleared while the Sprint 3 workbook expects `Rejected`. The team must confirm the intended requirement before changing either behavior or the workbook.
+The scripted live workflow and hosted Admin, Dispatcher, and Driver browser login tests have passed. The reviewed deployment in PR #55 and its CI run deployed the Trip API's structured 503 handling for Fleet HTTP errors, timeouts, and invalid vehicle lists; its fault cases passed in automated tests, but a live dependency fault-injection test has not been run. A database restore drill has not been performed. The known Driver rejection status mismatch remains unresolved: the backend returns `Requested` with the assignment cleared while the Sprint 3 workbook expects `Rejected`. The team must confirm the intended requirement before changing either behavior or the workbook.

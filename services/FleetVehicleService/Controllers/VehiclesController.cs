@@ -28,10 +28,7 @@ public class VehiclesController : ControllerBase
             var vehicle =
                 await _vehicleService.CreateVehicleAsync(request);
 
-            return CreatedAtAction(
-                nameof(CreateVehicle),
-                new { id = vehicle.Id },
-                vehicle);
+            return StatusCode(StatusCodes.Status201Created, vehicle);
         }
         catch (ValidationException ex)
         {

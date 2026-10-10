@@ -124,6 +124,24 @@ services:
       - tracking-db-data:/var/lib/mysql
       - ./database/tracking-telemetry/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
+  tracking-service:
+    build:
+      context: ./services/TrackingTelemetryService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=tracking-db;Port=3306;Database=tracking_telemetry_db;User ID=root;Password=rootpassword;"
+      TripDispatchService__BaseUrl: "http://trip-service:8080"
+      Jwt__Key: "${FLEET_JWT_KEY}"
+      Jwt__Issuer: "SmartFleet.AuthUserService"
+      Jwt__Audience: "SmartFleet"
+    depends_on:
+      - tracking-db
+      - trip-service
+
 volumes:
   auth-db-data:
   fleet-db-data:

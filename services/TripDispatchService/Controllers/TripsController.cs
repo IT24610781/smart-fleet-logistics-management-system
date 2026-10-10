@@ -234,10 +234,7 @@ public class TripsController : ControllerBase
             var trip =
                 await _tripService.CreateTripAsync(request, dispatcherId);
 
-            return CreatedAtAction(
-                nameof(CreateTrip),
-                new { id = trip.Id },
-                trip);
+            return Created($"/api/trips/{trip.Id}", trip);
         }
         catch (ValidationException ex)
         {

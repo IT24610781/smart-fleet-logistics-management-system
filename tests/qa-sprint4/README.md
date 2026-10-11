@@ -14,8 +14,19 @@ backend, Selenium and JMeter tests.
 
 ## 1 Start the live environment
 
+`docker-compose.yml` passes `Jwt__Key: "${FLEET_JWT_KEY}"` to the services. If `FLEET_JWT_KEY` is not set, Docker
+silently uses an empty key and every login or authenticated call fails with HTTP 500
+(`IDX10703: key length is zero`). Put the key in the git-ignored `.env` file in the repository root
+(keep any values already there; `git check-ignore .env` must print the file name):
+
+```
+FLEET_JWT_KEY=<random string of at least 32 characters>
+```
+
+Then recreate the containers so the value is picked up:
+
 ```powershell
-docker-compose up -d
+docker-compose up -d --force-recreate
 ```
 
 Create `frontend/.env.local` (git-ignored) so the browser talks to the local services, not Azure:

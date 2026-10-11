@@ -21,7 +21,14 @@ namespace Frontend.SeleniumTests;
 /// tests/qa-sprint4/README.md. Every test builds its own driver, vehicle and
 /// In-Progress trip, so tests do not depend on each other or on seeded data.
 /// </summary>
-[Collection("Selenium collection")]
+/// <summary>
+/// Own collection with no shared fixture: these tests build all of their data through the APIs, so they must
+/// not depend on the legacy SeededDriverFixture (which reads appsettings.Development.json and mints its own token).
+/// </summary>
+[CollectionDefinition("Sprint4 live")]
+public class Sprint4LiveCollection { }
+
+[Collection("Sprint4 live")]
 public class TrackingPageTests : Sprint3SeleniumTestBase
 {
     private static readonly string AuthUrl = Environment.GetEnvironmentVariable("QA_AUTH_URL") ?? "http://localhost:5100";
@@ -221,7 +228,7 @@ public class TrackingPageTests : Sprint3SeleniumTestBase
 
         WaitForItemText(s.Pickup, "fresh");
         Assert.DoesNotContain("No location reported yet", ListItem(s.Pickup).Text);
-        Assert.True(Driver.FindElements(By.CssSelector(".tracking-refreshed-at")).Any(e => e.Text.StartsWith("Updated")));
+        Assert.Contains(Driver.FindElements(By.CssSelector(".tracking-refreshed-at")), e => e.Text.StartsWith("Updated"));
     });
 
     [Sprint3BrowserFact]

@@ -48,6 +48,9 @@ public class TripService
                 $"Drop-off location must be {LocationMaxLength} characters or fewer.";
         }
 
+        // Coordinates are optional (a typed address has none), but if given,
+        // must be real points on Earth - catches a swapped lat/lng or a
+        // stray value slipping through from the map picker.
         if (request.PickupLat is < -90 or > 90)
         {
             errors["pickupLat"] = "Pickup latitude must be between -90 and 90.";
@@ -135,6 +138,9 @@ public class TripService
         var trip = await _tripRepository.GetByIdAsync(tripId)
             ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
 
+        // Called on behalf of a Driver: they may only see their own trip -
+        // same "looks identical to not found" pattern used in RespondAsync,
+        // so a Driver can't probe for other drivers' trip ids.
         if (restrictToDriverId is not null && trip.AssignedDriverId != restrictToDriverId)
         {
             throw new NotFoundException($"No trip found with id '{tripId}'.");
@@ -248,13 +254,6 @@ public class TripService
         trip.AssignedVehicleId = vehicleId;
         trip.AssignedDriverId = driverId;
         trip.Status = TripStatus.Assigned;
-        // SCRUM-148 (US-19): RejectedByDriverId is deliberately NOT cleared
-        // here anymore. It used to be wiped on every reassignment, which
-        // silently destroyed the only record of a driver's rejection the
-        // moment the trip moved on - the Driver Performance Report needs
-        // that value to survive reassignment to attribute rejections
-        // correctly. It's still overwritten by a later rejection (single
-        // column, not a full history) - documented limitation.
         trip.UpdatedAt = DateTime.UtcNow;
 
         await _tripRepository.UpdateAsync(trip);
@@ -297,7 +296,6 @@ public class TripService
         if (normalizedDecision == "accept")
         {
             trip.Status = TripStatus.InProgress;
-            // SCRUM-148 (US-19): same reasoning as AssignVehicleAsync
         }
         else
         {
@@ -322,7 +320,7 @@ public class TripService
         return ToResponse(trip);
     }
 
-    //Driver marks their own In-Progress trip as Completed
+    //Driver marks their own In-Progress trip as Completed, freeing the vehicle
 
     public async Task<TripResponse> CompleteTripAsync(
         Guid tripId, Guid driverId, string? authorizationHeader)
@@ -332,6 +330,9 @@ public class TripService
 
         if (trip.AssignedDriverId != driverId)
         {
+            // Same "looks identical to not found" pattern as RespondAsync - a
+            // Driver should not be able to tell the difference between a trip
+            // that isn't theirs and one that doesn't exist.
             throw new NotFoundException($"No trip found with id '{tripId}'.");
         }
 
@@ -349,6 +350,36 @@ public class TripService
         }
 
         trip.Status = TripStatus.Completed;
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        await _tripRepository.UpdateAsync(trip);
+
+        return ToResponse(trip);
+    }
+
+    // Dispatcher/Admin cancels a trip. Only allowed while the trip is
+    // Requested (nothing committed yet) or Assigned.
+
+    public async Task<TripResponse> CancelTripAsync(Guid tripId, string? authorizationHeader)
+    {
+        var trip = await _tripRepository.GetByIdAsync(tripId)
+            ?? throw new NotFoundException($"No trip found with id '{tripId}'.");
+
+        if (trip.Status != TripStatus.Requested && trip.Status != TripStatus.Assigned)
+        {
+            throw new InvalidOperationException(
+                $"This trip cannot be cancelled because its status is '{trip.Status}'. " +
+                $"A trip can only be cancelled while '{TripStatus.Requested}' or '{TripStatus.Assigned}'.");
+        }
+
+        var vehicleId = trip.AssignedVehicleId;
+        if (vehicleId is not null)
+        {
+            await _fleetVehicleClient.SetVehicleStatusAsync(
+                vehicleId.Value, "Available", authorizationHeader);
+        }
+
+        trip.Status = TripStatus.Cancelled;
         trip.UpdatedAt = DateTime.UtcNow;
 
         await _tripRepository.UpdateAsync(trip);

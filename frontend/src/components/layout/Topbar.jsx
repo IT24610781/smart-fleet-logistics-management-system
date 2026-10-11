@@ -6,7 +6,7 @@ export default function Topbar({ user, onOpenMobileMenu }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const pages = NAV_BY_ROLE[user?.role] || []
-  const mainPage = pages.some(page => page.to !== '/profile' && page.to === pathname)
+  const mainPage = pages.some(page => page.to !== '/profile' && pathname.startsWith(page.to))
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const matches = pages.filter(page => page.label.toLowerCase().includes(query.trim().toLowerCase()))

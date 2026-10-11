@@ -247,7 +247,7 @@ export default function MyTrips() {
       <div className="page-header">
         <div>
           <div className="page-header-title">My Trips</div>
-          <p className="page-header-desc">Trips assigned to you — accept or reject new assignments and track your history.</p>
+          <p className="page-header-desc">Trips assigned to you. You can accept or reject new assignments and track your history.</p>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
 @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
 .report-grid-full { grid-column: 1 / -1; }
+.report-grid > .card { min-width: 0; }
 .report-metric-row { display: flex; justify-content: space-between; padding: var(--space-2) 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .report-metric-row:last-child { border-bottom: none; }
 .report-metric-row span:first-child { color: var(--ink-500); }

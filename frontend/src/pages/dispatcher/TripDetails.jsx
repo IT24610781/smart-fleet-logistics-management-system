@@ -1,6 +1,8 @@
 import PageHeading from '../../components/common/PageHeading'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { MapContainer, TileLayer, CircleMarker, Tooltip, Popup } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
 import AppShell from '../../components/layout/AppShell'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
@@ -12,6 +14,11 @@ import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessa
 import { useToast } from '../../context/ToastContext'
 import * as tripService from '../../services/tripService'
 import * as userService from '../../services/userService'
+import * as trackingService from '../../services/trackingService'
+import '../dispatcher/Tracking.css'
+
+const FRESHNESS_COLOR = { fresh: '#2F8F5B', stale: '#D98E2B', unavailable: '#8A97A3' }
+const TRACK_REFRESH_INTERVAL_MS = 15000 // same cadence as the Tracking page
 
 function driverLabel(driver) {
   if (!driver) return null
@@ -24,6 +31,9 @@ function formatDateTime(value) {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
 }
+
+const CANCELLABLE_STATUSES = ['Requested', 'Assigned', 'In-Progress']
+const CANCEL_DISABLED_STATUSES = ['In-Progress']
 
 export default function TripDetails() {
   const { id } = useParams()
@@ -49,6 +59,18 @@ export default function TripDetails() {
   const [assigning, setAssigning] = useState(false)
   const [assignError, setAssignError] = useState(null)
   const [assigned, setAssigned] = useState(false)
+
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState(null)
+  const [cancelled, setCancelled] = useState(false)
+
+  const [trackOpen, setTrackOpen] = useState(false)
+  const [trackLocation, setTrackLocation] = useState(null)
+  const [trackLoading, setTrackLoading] = useState(false)
+  const [trackError, setTrackError] = useState(null)
+  const [trackLastRefreshedAt, setTrackLastRefreshedAt] = useState(null)
+  const trackMountedRef = useRef(true)
 
   useEffect(() => {
     let cancelled = false
@@ -119,6 +141,39 @@ export default function TripDetails() {
     }
   }, [trip])
 
+  // Inline "Track Trip" map: only polls while expanded and only while the
+  // trip is still In-Progress (the tracking feed only has positions for
+  // trips in that status - same rule the Tracking page follows).
+  useEffect(() => {
+    if (!trackOpen || !trip || trip.status !== 'In-Progress') return undefined
+    trackMountedRef.current = true
+
+    async function fetchLocation(isInitial) {
+      if (isInitial) setTrackLoading(true)
+      setTrackError(null)
+      try {
+        const fleet = await trackingService.getFleetLocations()
+        if (!trackMountedRef.current) return
+        const mine = fleet.find((loc) => loc.tripId === trip.id) || null
+        setTrackLocation(mine)
+        setTrackLastRefreshedAt(new Date())
+      } catch (err) {
+        if (!trackMountedRef.current) return
+        setTrackError(err.message || 'Unable to load this trip’s live location.')
+      } finally {
+        if (isInitial && trackMountedRef.current) setTrackLoading(false)
+      }
+    }
+
+    fetchLocation(true)
+    const intervalId = window.setInterval(() => fetchLocation(false), TRACK_REFRESH_INTERVAL_MS)
+
+    return () => {
+      trackMountedRef.current = false
+      window.clearInterval(intervalId)
+    }
+  }, [trackOpen, trip])
+
   async function handleConfirmAssign() {
     if (!confirmTarget || !selectedDriverId || !trip) return
     setAssigning(true)
@@ -148,6 +203,29 @@ export default function TripDetails() {
   const needsAssignment = trip?.status === 'Requested'
   const wasRejected = needsAssignment && trip?.rejectedByDriverId
 
+  async function handleConfirmCancel() {
+    if (!trip) return
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      const updated = await tripService.cancelTrip(trip.id)
+      setTrip(updated)
+      setCancelled(true)
+      setCancelOpen(false)
+      showToast('Trip cancelled.', 'success')
+      window.setTimeout(() => navigate('/dispatcher/trips'), 1200)
+    } catch (err) {
+      setCancelOpen(false)
+      setCancelError(
+        err.status === 409
+          ? (err.message || 'This trip can no longer be cancelled - it may have changed status.')
+          : err.message || 'Unable to cancel this trip. Please try again.'
+      )
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   return (
     <AppShell title="Trip Details">
       <div className="page-header">
@@ -156,11 +234,34 @@ export default function TripDetails() {
           <p className="page-header-desc">Full information for this trip, and vehicle assignment if it still needs one.</p>
         </div>
         <div className="page-header-actions">
+          {trip && CANCELLABLE_STATUSES.includes(trip.status) && (
+            <Button
+              variant="secondary"
+              className="btn-glass-danger"
+              disabled={CANCEL_DISABLED_STATUSES.includes(trip.status) || cancelled}
+              title={CANCEL_DISABLED_STATUSES.includes(trip.status) ? 'Cancel is disabled once the driver has accepted the trip' : undefined}
+              onClick={() => { setCancelError(null); setCancelOpen(true) }}
+            >
+              Cancel Trip
+            </Button>
+          )}
           <Link to="/dispatcher/trips">
             <Button variant="secondary">Back to Trips</Button>
           </Link>
         </div>
       </div>
+
+      {cancelError && (
+        <div className="card card-pad" style={{ marginBottom: 'var(--space-4)' }}>
+          <ErrorMessage>{cancelError}</ErrorMessage>
+        </div>
+      )}
+
+      {cancelled && (
+        <div className="card card-pad" style={{ marginBottom: 'var(--space-4)' }}>
+          <SuccessMessage>Trip cancelled. Redirecting to Trips…</SuccessMessage>
+        </div>
+      )}
 
       {loading && <LoadingSpinner center label="Loading trip…" />}
 
@@ -212,7 +313,69 @@ export default function TripDetails() {
                 </div>
               )}
             </div>
+
+            {trip.status === 'In-Progress' && (
+              <div style={{ marginTop: 'var(--space-4)' }}>
+                <Button variant="secondary" className="btn-glass" onClick={() => setTrackOpen((open) => !open)}>
+                  <Icon name="pin" size={15} /> {trackOpen ? 'Hide Map' : 'Track Trip'}
+                </Button>
+              </div>
+            )}
           </div>
+
+          {trackOpen && trip.status === 'In-Progress' && (
+            <div className="card card-pad" style={{ marginBottom: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
+                <h3 className="section-title" style={{ margin: 0 }}>Live location</h3>
+                {trackLastRefreshedAt && (
+                  <span className="tracking-refreshed-at">Updated {trackLastRefreshedAt.toLocaleTimeString()}</span>
+                )}
+              </div>
+
+              {trackLoading && <LoadingSpinner center label="Loading live location…" />}
+
+              {!trackLoading && trackError && <ErrorMessage>{trackError}</ErrorMessage>}
+
+              {!trackLoading && !trackError && (!trackLocation || trackLocation.latitude == null || trackLocation.longitude == null) && (
+                <EmptyState
+                  icon="pin"
+                  title="No location reported yet"
+                  description="This trip's driver hasn't sent a GPS position yet. The map will update automatically once one comes in."
+                />
+              )}
+
+              {!trackLoading && !trackError && trackLocation && trackLocation.latitude != null && trackLocation.longitude != null && (
+                <div className="map-shell" style={{ height: 360 }}>
+                  <MapContainer center={[trackLocation.latitude, trackLocation.longitude]} zoom={13} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <CircleMarker
+                      center={[trackLocation.latitude, trackLocation.longitude]}
+                      radius={10}
+                      pathOptions={{
+                        color: '#fff',
+                        weight: 2,
+                        fillColor: FRESHNESS_COLOR[trackLocation.freshness] || FRESHNESS_COLOR.unavailable,
+                        fillOpacity: 1,
+                      }}
+                    >
+                      <Tooltip direction="top" offset={[0, -8]} permanent>
+                        {driverLabel(driversById[trip.assignedDriverId]) || 'Driver'}
+                      </Tooltip>
+                      <Popup>
+                        <div style={{ fontSize: 13, lineHeight: 1.5 }}>
+                          <div><strong>{trip.pickupLocation} → {trip.dropoffLocation}</strong></div>
+                          <div>Last update: {formatDateTime(trackLocation.observedAt)}</div>
+                        </div>
+                      </Popup>
+                    </CircleMarker>
+                  </MapContainer>
+                </div>
+              )}
+            </div>
+          )}
 
           {wasRejected && (
             <div className="card card-pad" style={{ marginBottom: 'var(--space-4)' }}>
@@ -333,6 +496,26 @@ export default function TripDetails() {
         loading={assigning}
         onConfirm={handleConfirmAssign}
         onCancel={() => setConfirmTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={cancelOpen}
+        title="Cancel this trip?"
+        body={
+          trip
+            ? `Cancel the trip from ${trip.pickupLocation} to ${trip.dropoffLocation}? ${
+                trip.status === 'Assigned'
+                  ? 'The assigned vehicle will be freed up for new assignments.'
+                  : 'This cannot be undone.'
+              }`
+            : ''
+        }
+        confirmLabel="Cancel trip"
+        cancelLabel="Keep trip"
+        variant="danger"
+        loading={cancelling}
+        onConfirm={handleConfirmCancel}
+        onCancel={() => { if (!cancelling) setCancelOpen(false) }}
       />
     </AppShell>
   )

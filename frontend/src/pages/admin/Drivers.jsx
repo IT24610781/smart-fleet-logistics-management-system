@@ -1,16 +1,30 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import AppShell from '../../components/layout/AppShell'
-import DataTable from '../../components/common/DataTable'
+import { Link, useSearchParams } from 'react-router-dom'
+import AppShell from '../../components/layout/AdminShell'
+import DataTable from '../../components/common/AdminTable'
 import StatusBadge from '../../components/common/StatusBadge'
 import Button from '../../components/common/Button'
+import AdminDetails from '../../components/common/AdminDetails'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
+import { useToast } from '../../context/ToastContext'
 import Icon from '../../components/common/Icon'
 import { ErrorMessage } from '../../components/common/ErrorMessage'
 import * as userService from '../../services/userService'
 
 export default function Drivers() {
-  const [query, setQuery] = useState('')
-  const [status, setStatus] = useState('all')
+  const [params, setParams] = useSearchParams()
+  const query = params.get('q') || ''
+  const status = params.get('status') || 'all'
+  const setFilter = (key, value) => setParams(prev => { const next = new window.URLSearchParams(prev); if (value && value !== 'all') next.set(key,value); else next.delete(key); return next }, { replace:true })
+  const setQuery = value => setFilter('q',value)
+  const setStatus = value => setFilter('status',value)
+  const { showToast } = useToast()
+  const [deactivateTarget, setDeactivateTarget] = useState(null)
+  const [deactivating, setDeactivating] = useState(false)
+  const [deactivationError, setDeactivationError] = useState(null)
+  const [selected, setSelected] = useState(null)
+  const [reload, setReload] = useState(0)
   const [drivers, setDrivers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -38,7 +52,7 @@ export default function Drivers() {
     }
 
     loadDrivers()
-  }, [])
+  }, [reload])
 
   const rows = useMemo(() => {
     return drivers.filter((d) => {
@@ -47,6 +61,23 @@ export default function Drivers() {
       return matchesQuery && matchesStatus
     })
   }, [drivers, query, status])
+
+  async function confirmDeactivation() {
+    if (!deactivateTarget || deactivating) return
+    setDeactivating(true)
+    setDeactivationError(null)
+    try {
+      await userService.deactivateDriver(deactivateTarget.id)
+      setDrivers(current => current.map(driver => driver.id === deactivateTarget.id ? { ...driver, status: 'Inactive' } : driver))
+      setSelected(current => current?.id === deactivateTarget.id ? { ...current, status: 'Inactive' } : current)
+      setDeactivateTarget(null)
+      showToast('Driver account deactivated.', 'success')
+    } catch (err) {
+      setDeactivationError(err.message || 'Unable to deactivate the Driver.')
+    } finally {
+      setDeactivating(false)
+    }
+  }
 
   const columns = [
     { key: 'name', header: 'Name', render: (r) => <span className="cell-primary">{r.name}</span> },
@@ -57,11 +88,11 @@ export default function Drivers() {
     { key: 'createdDate', header: 'Created Date' },
     {
       key: 'actions', header: 'Actions',
-      render: () => (
+      render: (driver) => (
         <div className="cell-actions">
-          <Button size="sm" variant="ghost">View</Button>
-          <Button size="sm" variant="ghost">Edit</Button>
-          <Button size="sm" variant="danger">Deactivate</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(driver)}>View</Button>
+          <Button size="sm" variant="ghost" disabled title="Driver editing is not available yet">Edit</Button>
+          <Button size="sm" variant="secondary" disabled={driver.status === 'Inactive' || deactivating} onClick={() => { setDeactivationError(null); setDeactivateTarget(driver) }}>Deactivate</Button>
         </div>
       ),
     },
@@ -71,11 +102,13 @@ export default function Drivers() {
     <AppShell title="Drivers">
       <div className="page-header">
         <div>
-          <div className="page-header-title">Drivers</div>
+          <PageHeading eyebrow="People management" title="Drivers" />
           <p className="page-header-desc">Manage driver accounts created for the fleet. New drivers receive their credentials after account creation.</p>
         </div>
         <div className="page-header-actions">
-          <Link to="/admin/drivers/create"><Button variant="accent">+ Create Driver</Button></Link>
+          <Link to="/admin/drivers/create">
+            <Button variant="accent">+ Create Driver</Button>
+          </Link>
         </div>
       </div>
 
@@ -91,15 +124,19 @@ export default function Drivers() {
         </select>
       </div>
 
+      <p className="admin-muted">Inactive Drivers cannot log in or receive new assignments. Driver editing is not available yet.</p>
       <ErrorMessage>{error}</ErrorMessage>
+      {error && <Button variant="secondary" onClick={() => setReload(x => x+1)}>Retry</Button>}
 
-      <DataTable
+      {!error && <DataTable
         columns={columns}
         rows={rows}
         loading={loading}
         emptyTitle="No drivers found"
         emptyDescription="Try a different search or create a new driver account."
-      />
+      />}
+      <ConfirmDialog open={!!deactivateTarget} title="Deactivate Driver?" body={`Deactivate ${deactivateTarget?.name}? Login and existing sessions will be blocked. The account and trip history will be kept. Assigned or active trips must be resolved first.`} confirmLabel="Deactivate" loading={deactivating} errorMessage={deactivationError} onConfirm={confirmDeactivation} onCancel={() => { if (!deactivating) setDeactivateTarget(null) }} />
+      {selected && <AdminDetails title="Driver details" onClose={() => setSelected(null)} fields={[['Name',selected.name],['Username',selected.username],['Email',selected.email],['Contact',selected.contact],['Status',selected.status],['Created',selected.createdDate]]}/>}
     </AppShell>
   )
 }

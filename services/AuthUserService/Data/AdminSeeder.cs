@@ -6,10 +6,17 @@ namespace AuthUserService.Data;
 public class AdminSeeder
 {
     private readonly DatabaseConnection _databaseConnection;
+    private readonly IConfiguration _configuration;
+    private readonly IHostEnvironment _environment;
 
-    public AdminSeeder(DatabaseConnection databaseConnection)
+    public AdminSeeder(
+        DatabaseConnection databaseConnection,
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         _databaseConnection = databaseConnection;
+        _configuration = configuration;
+        _environment = environment;
     }
 
     public async Task SeedAsync()
@@ -37,6 +44,18 @@ public class AdminSeeder
             return;
         }
 
+        var adminPassword = _configuration["BootstrapAdmin:Password"];
+        if (string.IsNullOrWhiteSpace(adminPassword))
+        {
+            if (!_environment.IsDevelopment())
+            {
+                throw new InvalidOperationException(
+                    "BootstrapAdmin:Password must be configured before creating the initial Admin account.");
+            }
+
+            adminPassword = "Admin123!";
+        }
+
         var admin = new User
         {
             Id = Guid.CreateVersion7(),
@@ -45,9 +64,7 @@ public class AdminSeeder
 
             Email = "admin@smartfleet.com",
 
-            // Change this password before using the application.
-            PasswordHash =
-                BCrypt.Net.BCrypt.HashPassword("Admin123!"),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword),
 
             FirstName = "System",
 
@@ -104,8 +121,17 @@ public class AdminSeeder
         insertCommand.Parameters.AddWithValue("@role", admin.Role);
         insertCommand.Parameters.AddWithValue("@is_active", admin.IsActive);
 
-        await insertCommand.ExecuteNonQueryAsync();
-
-        Console.WriteLine("Initial Admin account created successfully.");
+                try
+        {
+            await insertCommand.ExecuteNonQueryAsync();
+            Console.WriteLine("Initial Admin account created successfully.");
+        }
+        catch (MySqlException ex) when (ex.Number == 1062)
+        {
+           
+            Console.WriteLine(
+                "Initial Admin was created concurrently by another " +
+                "process. Skipping.");
+        }
     }
 }

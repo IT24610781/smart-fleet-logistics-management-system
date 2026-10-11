@@ -1,21 +1,9 @@
-/* ==========================================================================
-   Smart Fleet — Design Tokens
-   Re-skinned to the "Precision Fleet Architecture" system from the Stitch
-   export (see DESIGN.md). Colors/spacing/radius/typography live in
-   tailwind.config.js as Tailwind theme values (e.g. bg-primary,
-   text-on-surface, rounded-xl, font-headline-lg) — this file only holds
-   what Tailwind utility classes can't express: font loading, the global
-   focus ring, scrollbar styling, and a couple of small reusable classes
-   used across pages.
-   ========================================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
-/* Compatibility layer for pages not covered by the Stitch redesign
-   (Vehicles, Reports, Trips, Tracking, MyTrips, Dispatcher pages) — see
-   styles/legacy.css for why this exists. Must stay above @tailwind per
-   CSS @import ordering rules. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=optional');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=optional');
 @import './styles/legacy.css';
+@import './styles/themes.css';
+@import './styles/navigation.css';
+@import './styles/preferences.css';
 
 @tailwind base;
 @tailwind components;
@@ -29,6 +17,24 @@ html,
 body {
   margin: 0;
   padding: 0;
+  /* Stops the iOS/Android "rubber-band" bounce and pull-to-refresh drag -
+     on a phone, opening a full-height page and having the browser's own
+     bounce/overscroll animation settle right after looks exactly like the
+     page itself is moving. This removes that movement; normal in-page
+     scrolling is unaffected. */
+  overscroll-behavior-y: none;
+}
+
+html {
+  /* Always reserves the vertical scrollbar's width, whether or not a
+     scrollbar is actually showing. Without this, a page toggling between
+     "needs a scrollbar" and "doesn't" (e.g. while web fonts load and the
+     layout's height settles) changes the viewport's usable width by the
+     scrollbar's ~15px, and anything sized with background-size:cover -
+     like the login page's background photo - visibly rescales/snaps when
+     that happens, which reads as the whole page "zooming". Reserving the
+     gutter up front means that width never changes. */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -36,7 +42,24 @@ body {
 }
 
 #root {
+  /* 100vh on a phone is measured as if the browser's address bar is
+     always hidden. As it actually shows/hides while the page settles
+     right after opening, every element sized off 100vh visibly resizes -
+     the other half of the "page moves on open" issue on mobile. 100dvh
+     (dynamic viewport height) tracks the real visible area instead, so
+     nothing resizes once it's loaded; older browsers that don't know the
+     dvh unit just keep the first, 100vh, declaration. */
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Same dvh fix as #root above, for every page built with Tailwind's
+   min-h-screen utility (AuthShell, AppShell, Forbidden) - overriding the
+   utility here, after @tailwind utilities, rather than touching every
+   className, so it's one place for the whole app. */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Focus visibility — kept everywhere, never suppressed */
@@ -86,82 +109,163 @@ body {
   animation: spin 0.7s linear infinite;
 }
 
-.toast-viewport {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 100;
-  display: flex;
-  width: min(24rem, calc(100vw - 2rem));
-  flex-direction: column;
-  gap: 0.75rem;
-  pointer-events: none;
+/* Two-column form row (First/Last name, Password/Confirm, ...).
+   Used by DispatcherRegister and the Trips form. Stacks on small screens. */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
-.toast {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.875rem 0.75rem 0.875rem 1rem;
-  border: 1px solid;
-  border-radius: 0.75rem;
-  box-shadow: 0 0.75rem 2rem rgba(0, 35, 111, 0.16);
-  font-size: 0.875rem;
-  line-height: 1.35;
-  pointer-events: auto;
-  animation: toast-in 180ms ease-out;
-}
-
-.toast-success {
-  border-color: theme('colors.secondary');
-  background: theme('colors.secondary-container');
-  color: theme('colors.on-secondary-container');
-}
-
-.toast-error {
-  border-color: theme('colors.error');
-  background: theme('colors.error-container');
-  color: theme('colors.on-error-container');
-}
-
-.toast-info {
-  border-color: theme('colors.outline-variant');
-  background: theme('colors.surface-container-lowest');
-  color: theme('colors.on-surface');
-}
-
-.toast-icon {
-  flex: 0 0 auto;
-  margin-top: 0.05rem;
-}
-
-.toast-message {
-  flex: 1;
-}
-
-.toast-close {
-  flex: 0 0 auto;
-  padding: 0.125rem;
-  color: currentColor;
-  opacity: 0.7;
-}
-
-.toast-close:hover {
-  opacity: 1;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-0.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (min-width: 640px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Compact, theme-aware notifications with keyboard and hover pause. */
+.toast-viewport { position:fixed; top:20px; right:24px; z-index:1000; display:flex; width:min(390px,calc(100vw - 32px)); flex-direction:column; gap:12px; pointer-events:none; }
+.toast { --toast-accent:37 99 185; position:relative; display:flex; align-items:flex-start; gap:12px; padding:18px 14px 19px 18px; overflow:hidden; border:1px solid rgb(var(--sf-outline-variant) / .6); border-radius:16px; background:rgb(var(--sf-surface-container-lowest) / .95); color:rgb(var(--sf-on-surface)); box-shadow:0 12px 36px #00000018,0 2px 6px #00000008; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); font:400 13px/1.5 Inter,sans-serif; pointer-events:auto; animation:toast-in 220ms ease-out; }
+.toast-success { --toast-accent:21 128 97; }
+.toast-error { --toast-accent:190 51 63; }
+.toast-info { --toast-accent:37 99 185; }
+.toast-warning { --toast-accent:151 100 12; }
+.toast-icon-box { width:36px; height:36px; flex:0 0 36px; display:flex; align-items:center; justify-content:center; border-radius:11px; background:rgb(var(--toast-accent) / .1); color:rgb(var(--toast-accent)); }
+.toast-copy { flex:1; min-width:0; padding-top:1px; }
+.toast-title { display:block; font-size:14px; font-weight:600; margin-bottom:3px; }
+.toast-message { margin:0; color:rgb(var(--sf-on-surface-variant)); overflow-wrap:anywhere; }
+.toast-close { width:28px; height:28px; display:flex; align-items:center; justify-content:center; flex:0 0 28px; border-radius:8px; color:rgb(var(--sf-on-surface-variant)); transition:background .15s; }
+.toast-close:hover { background:rgb(var(--sf-on-surface) / .07); }
+.toast-progress { position:absolute; bottom:0; left:0; right:0; height:3px; background:rgb(var(--toast-accent) / .55); transform-origin:left; animation:toast-countdown linear forwards; }
+html[data-theme="dark"] .toast-success { --toast-accent:112 222 184; }
+html[data-theme="dark"] .toast-error { --toast-accent:255 157 162; }
+html[data-theme="dark"] .toast-info { --toast-accent:156 194 255; }
+html[data-theme="dark"] .toast-warning { --toast-accent:244 208 139; }
+@keyframes toast-in { from { opacity:0; transform:translateY(-8px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes toast-countdown { from { transform:scaleX(1); } to { transform:scaleX(0); } }
+@media(max-width:600px) { .toast-viewport { top:12px; right:16px; } }
+@media(prefers-reduced-motion:reduce) { .toast-progress { display:none; } }
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Keep sidebar navigation clean without changing content links. */
+a.fleet-nav-link, a.fleet-nav-link:hover,
+a.fleet-brand, a.fleet-brand:hover { text-decoration: none; }
+
+/* Consistent page introductions across all operational roles. */
+.fleet-page-eyebrow { display:block; margin-bottom:8px; color:rgb(var(--sf-secondary)); font:700 12px/1.5 Inter,sans-serif; letter-spacing:.1em; text-transform:uppercase; }
+.fleet-page-heading .fleet-page-title { margin:0; font:700 30px/1.3 'Plus Jakarta Sans',Inter,sans-serif; letter-spacing:-.035em; color:rgb(var(--sf-on-surface)); }
+.fleet-page-description, .page-header > div > .page-header-desc, .fleet-page-heading + p { margin-top:8px; max-width:70ch; font:400 15px/1.6 Inter,sans-serif; color:rgb(var(--sf-on-surface-variant)); }
+.profile-page > .fleet-page-heading { margin-bottom:24px; }
+@media(max-width:600px) { .fleet-page-heading .fleet-page-title { font-size:25px; } }
+
+/* Public authentication screens: blue atmosphere with frosted glass surfaces. */
+.auth-glass-page, .registration-page {
+  --auth-glass:255 255 255;
+  --auth-blue:8 43 120;
+  /* Outer background photo: frontend/public/login-bg.jpg, a futuristic
+     logistics-yard render. The two radial gradients + a light dark tint sit
+     on top of it so the photo stays clearly visible while the card's shadow
+     and surrounding page chrome keep enough contrast. */
+  background:
+    radial-gradient(ellipse at 12% 12%,rgb(63 132 224 / .22),transparent 48%),
+    radial-gradient(ellipse at 90% 85%,rgb(63 167 210 / .18),transparent 45%),
+    linear-gradient(rgb(var(--sf-background) / .35),rgb(var(--sf-background) / .35)),
+    url('/login-bg.jpg') center / cover no-repeat,
+    rgb(var(--sf-background));
+  color:rgb(var(--sf-on-surface));
+}
+.auth-glass-card, .registration-card {
+  /* Opacity + blur lowered (was .65 / 24px) so the background photo reads
+     through the right-side sign-in panel clearly - the brand panel on the
+     left is unaffected since it paints its own solid navy gradient on top
+     of this layer regardless. */
+  background:rgb(var(--auth-glass) / .32);
+  border:1px solid rgb(var(--sf-outline-variant) / .65);
+  border-radius:24px;
+  box-shadow:0 24px 70px rgb(8 43 120 / .14),inset 0 1px 0 rgb(255 255 255 / .5);
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+}
+.auth-glass-card .auth-brand-panel, html[data-theme="dark"] .auth-glass-card .auth-brand-panel {
+  /* Darkened from the earlier mid-navy gradient so the brand mark (the
+     larger icon + wordmark above) reads as a separately-lit object against
+     the panel instead of blending into it. */
+  background:linear-gradient(145deg,rgb(4 16 48 / .98),rgb(6 26 64 / .95));
+  color:#fff;
+  border-right:1px solid rgb(255 255 255 / .18);
+}
+.auth-glass-card .auth-brand-panel :is(h1,p,span) { color:#e6f0ff; }
+.auth-glass-card .auth-brand-panel h1 { color:#fff; }
+/* The card (.auth-glass-card above) already blurs/tints whatever sits
+   behind the whole card. This panel sits on top of that, lightly tinted and
+   lightly blurred, so the background photo shows through clearly behind the
+   sign-in form while the brand panel (left) stays solid navy. */
+.auth-glass-form {
+  background:rgb(var(--auth-glass) / .04);
+  backdrop-filter:blur(8px) saturate(140%);
+  -webkit-backdrop-filter:blur(8px) saturate(140%);
+  border-left:1px solid rgb(255 255 255 / .12);
+}
+@supports not (backdrop-filter:blur(1px)) { .auth-glass-form { background:rgb(var(--auth-glass) / .85); } }
+.auth-glass-form input, .registration-form input { background:rgb(var(--auth-glass) / .56); border-color:rgb(var(--sf-outline-variant) / .85); color:rgb(var(--sf-on-surface)); }
+.auth-glass-form input:focus, .registration-form input:focus { border-color:#4e84d5; box-shadow:0 0 0 3px rgb(78 132 213 / .15); }
+.auth-glass-form button[type="submit"], .registration-form .registration-submit { background:rgb(var(--auth-blue)); color:#fff; }
+.auth-glass-form button[type="submit"]:hover:not(:disabled), .registration-form .registration-submit:hover:not(:disabled) { background:#123e91; }
+.registration-card { max-width:780px; padding:36px 40px; }
+.registration-brand, .registration-login a { color:rgb(var(--auth-blue)); }
+.registration-card h1 { color:rgb(var(--sf-on-surface)); }
+html[data-theme="dark"] :is(.auth-glass-page,.registration-page) { --auth-glass:27 32 44; }
+html[data-theme="dark"] .registration-brand, html[data-theme="dark"] .registration-login a { color:#accbff; }
+@supports not (backdrop-filter:blur(1px)) { .auth-glass-card,.registration-card { background:rgb(var(--sf-surface-container-lowest)); } }
+@media(max-width:600px) { .registration-card { padding:28px 20px; border-radius:18px; } .registration-page { padding:24px 12px; } .registration-form .registration-submit { min-width:0; width:100%; } }
+
+.btn-glass, .btn-glass-danger, .btn-glass-info {
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+.btn-glass { background: rgb(var(--sf-secondary) / .12); border: 1px solid rgb(var(--sf-secondary) / .35); color: rgb(var(--sf-secondary)); }
+.btn-glass:hover:not(:disabled) { background: rgb(var(--sf-secondary) / .2); border-color: rgb(var(--sf-secondary) / .5); }
+
+.btn-glass-danger { background: rgb(var(--sf-error) / .12); border: 1px solid rgb(var(--sf-error) / .35); color: rgb(var(--sf-error)); }
+.btn-glass-danger:hover:not(:disabled) { background: rgb(var(--sf-error) / .2); border-color: rgb(var(--sf-error) / .5); }
+
+.btn-glass-info { background: rgb(var(--sf-primary) / .12); border: 1px solid rgb(var(--sf-primary) / .35); color: rgb(var(--sf-primary)); }
+.btn-glass-info:hover:not(:disabled) { background: rgb(var(--sf-primary) / .2); border-color: rgb(var(--sf-primary) / .5); }
+
+.btn-glass:disabled, .btn-glass-danger:disabled, .btn-glass-info:disabled { background: rgb(var(--sf-outline-variant) / .12); border-color: rgb(var(--sf-outline-variant) / .4); color: rgb(var(--sf-on-surface-variant)); }
+
+@supports not (backdrop-filter:blur(1px)) {
+  .btn-glass { background: rgb(var(--sf-secondary) / .14); }
+  .btn-glass-danger { background: rgb(var(--sf-error) / .14); }
+  .btn-glass-info { background: rgb(var(--sf-primary) / .14); }
+}
+
+.password-verification { font:400 14px/1.6 Inter,sans-serif; }
+.password-change-page { max-width:720px; margin:auto; }
+.password-change-card { margin-top:24px; }
+.password-code-notice { padding:16px; margin-bottom:20px; border-radius:12px; background:rgb(var(--sf-primary) / .08); border:1px solid rgb(var(--sf-outline-variant) / .6); }
+.password-code-notice strong { display:block; overflow-wrap:anywhere; }
+.password-code-notice p, .password-session-note { color:rgb(var(--sf-on-surface-variant)); font-size:13px; margin-top:8px; }
+.password-resend { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:12px; }
+.password-session-note { margin:18px 0 12px; }
+.password-back-link { color:rgb(var(--sf-primary)); font:600 14px/1.6 Inter,sans-serif; }
+
+/* The shared depot photograph belongs only to the three stakeholder dashboards. */
+.dashboard-main { position:relative; isolation:isolate; min-height:calc(100vh - 64px); min-height:calc(100dvh - 64px); }
+.dashboard-main::before {
+  content:""; position:absolute; z-index:-1; inset:0 0 auto; height:680px; pointer-events:none;
+  background-image:linear-gradient(180deg,rgb(5 18 32 / .35) 0%,rgb(5 18 32 / .48) 39%,rgb(var(--sf-background) / .92) 82%,rgb(var(--sf-background)) 100%),url('/images/fleet-dashboard-depot.png');
+  background-position:center top,center center; background-repeat:no-repeat; background-size:cover;
+}
+.dashboard-main .fleet-page-heading { min-height:250px; display:flex; flex-direction:column; justify-content:flex-end; padding:28px 0 34px; }
+.dashboard-main .fleet-page-heading .fleet-page-eyebrow { color:#93e4df; }
+.dashboard-main .fleet-page-heading .fleet-page-title { color:#fff; text-shadow:0 2px 12px rgb(0 0 0 / .35); }
+.dashboard-main .fleet-page-heading .fleet-page-description { color:#e7eff5; text-shadow:0 1px 8px rgb(0 0 0 / .5); }
+@media(max-width:700px) {
+  .dashboard-main::before { height:540px; background-position:center top,63% center; }
+  .dashboard-main .fleet-page-heading { min-height:210px; padding-bottom:22px; }
 }

@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   auth-db:
     image: mysql:8.0
@@ -9,5 +8,142 @@ services:
     ports:
       - "3307:3306"
     volumes:
+      - auth-db-data:/var/lib/mysql
       - ./database/auth-user/schema.sql:/docker-entrypoint-initdb.d/schema.sql
-    
+
+  fleet-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: fleet_vehicle_db
+    ports:
+      - "3317:3306"
+    volumes:
+      - fleet-db-data:/var/lib/mysql
+      - ./database/fleet-vehicle/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  trip-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: trip_dispatch_db
+    ports:
+      - "3327:3306"
+    volumes:
+      - trip-db-data:/var/lib/mysql
+      - ./database/trip-dispatch/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  trip-service:
+    build:
+      context: ./services/TripDispatchService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5051:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=trip-db;Port=3306;Database=trip_dispatch_db;User ID=root;Password=rootpassword;"
+      FleetService__BaseUrl: "http://fleet-service:8080"
+      AuthService__BaseUrl: "http://auth-service:8080"
+      Jwt__Key: "${FLEET_JWT_KEY}"
+      Jwt__Issuer: "SmartFleet.AuthUserService"
+      Jwt__Audience: "SmartFleet"
+    depends_on:
+      - trip-db
+      - fleet-service
+
+  fleet-service:
+    build:
+      context: ./services/FleetVehicleService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5041:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=fleet-db;Port=3306;Database=fleet_vehicle_db;User ID=root;Password=rootpassword;"
+      Jwt__Key: "${FLEET_JWT_KEY}"
+      Jwt__Issuer: "SmartFleet.AuthUserService"
+      Jwt__Audience: "SmartFleet"
+      Kafka__BootstrapServers: "kafka:9092"
+      AuthService__BaseUrl: "http://auth-service:8080"
+    depends_on:
+      - fleet-db
+      - kafka
+
+  auth-service:
+    build:
+      context: ./services/AuthUserService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5100:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: "Server=auth-db;Port=3306;Database=fleet_identity_db;User ID=root;Password=rootpassword;"
+      Jwt__Key: "${FLEET_JWT_KEY}"
+      Jwt__Issuer: "SmartFleet.AuthUserService"
+      Jwt__Audience: "SmartFleet"
+      Jwt__ExpirationMinutes: "120"
+      PasswordEmail__ApiKey: "${BREVO_API_KEY:-}"
+      PasswordEmail__SenderEmail: "${BREVO_SENDER_EMAIL:-}"
+      TripService__BaseUrl: "http://trip-service:8080"
+    depends_on:
+      - auth-db
+
+  kafka:
+    image: apache/kafka:3.7.0
+    restart: always
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:9092,EXTERNAL://:9094,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+  
+  tracking-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: tracking_telemetry_db
+    ports:
+      - "3337:3306"
+    volumes:
+      - tracking-db-data:/var/lib/mysql
+      - ./database/tracking-telemetry/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  tracking-service:
+    build:
+      context: ./services/TrackingTelemetryService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=tracking-db;Port=3306;Database=tracking_telemetry_db;User ID=root;Password=rootpassword;"
+      TripDispatchService__BaseUrl: "http://trip-service:8080"
+      Jwt__Key: "${FLEET_JWT_KEY}"
+      Jwt__Issuer: "SmartFleet.AuthUserService"
+      Jwt__Audience: "SmartFleet"
+    depends_on:
+      - tracking-db
+      - trip-service
+
+volumes:
+  auth-db-data:
+  fleet-db-data:
+  trip-db-data:
+  tracking-db-data:

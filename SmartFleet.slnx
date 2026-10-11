@@ -8,6 +8,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/AuthUserService.Tests/AuthUserService.Tests.csproj" />
     <Project Path="tests/FleetVehicleService.Tests/FleetVehicleService.Tests.csproj" />
+    <Project Path="tests/Frontend.SeleniumTests/Frontend.SeleniumTests.csproj" />
     <Project Path="tests/TrackingTelemetryService.Tests/TrackingTelemetryService.Tests.csproj" />
     <Project Path="tests/TripDispatchService.Tests/TripDispatchService.Tests.csproj" />
   </Folder>

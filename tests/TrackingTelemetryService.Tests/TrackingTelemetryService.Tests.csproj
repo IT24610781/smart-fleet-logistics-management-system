@@ -18,4 +18,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\services\TrackingTelemetryService\TrackingTelemetryService.csproj" />
+  </ItemGroup>
+
 </Project>

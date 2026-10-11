@@ -1,0 +1,135 @@
+:root {
+  --sf-surface: 246 247 249;
+  --sf-on-error-container: 147 0 10;
+  --sf-on-surface: 24 28 34;
+  --sf-outline-variant: 212 217 224;
+  --sf-secondary-container: 87 223 254;
+  --sf-surface-variant: 227 231 235;
+  --sf-on-primary: 255 255 255;
+  --sf-primary: 0 35 111;
+  --sf-primary-fixed: 220 225 255;
+  --sf-on-secondary-fixed: 0 31 38;
+  --sf-error: 186 26 26;
+  --sf-on-secondary: 255 255 255;
+  --sf-tertiary-container: 0 56 154;
+  --sf-surface-bright: 255 255 255;
+  --sf-secondary: 0 104 122;
+  --sf-on-primary-fixed: 0 22 78;
+  --sf-on-background: 24 28 34;
+  --sf-surface-container-lowest: 255 255 255;
+  --sf-surface-container-highest: 217 222 228;
+  --sf-tertiary-fixed-dim: 180 197 255;
+  --sf-inverse-surface: 33 49 69;
+  --sf-on-tertiary-fixed-variant: 0 62 168;
+  --sf-surface-container-low: 241 243 245;
+  --sf-secondary-fixed-dim: 76 215 246;
+  --sf-error-container: 255 218 214;
+  --sf-on-primary-container: 144 168 255;
+  --sf-on-secondary-container: 0 97 114;
+  --sf-tertiary: 0 36 107;
+  --sf-on-primary-fixed-variant: 38 65 145;
+  --sf-on-tertiary: 255 255 255;
+  --sf-secondary-fixed: 172 237 255;
+  --sf-surface-container-high: 227 231 235;
+  --sf-tertiary-fixed: 219 225 255;
+  --sf-surface-tint: 64 89 170;
+  --sf-outline: 117 118 130;
+  --sf-primary-container: 30 58 138;
+  --sf-surface-container: 234 237 240;
+  --sf-on-surface-variant: 82 90 101;
+  --sf-surface-dim: 203 219 245;
+  --sf-on-tertiary-fixed: 0 23 75;
+  --sf-background: 246 247 249;
+  --sf-inverse-primary: 182 196 255;
+  --sf-on-error: 255 255 255;
+  --sf-on-secondary-fixed-variant: 0 78 92;
+  --sf-on-tertiary-container: 141 169 255;
+  --sf-inverse-on-surface: 234 241 255;
+  --sf-primary-fixed-dim: 182 196 255;
+}
+html[data-theme="dark"] {
+  color-scheme:dark;
+  --sf-surface: 24 24 27;
+  --sf-on-error-container: 255 217 212;
+  --sf-on-surface: 246 246 248;
+  --sf-outline-variant: 65 65 74;
+  --sf-secondary-container: 23 78 72;
+  --sf-surface-variant: 56 56 63;
+  --sf-on-primary: 16 39 79;
+  --sf-primary: 169 196 255;
+  --sf-primary-fixed: 35 61 99;
+  --sf-on-secondary-fixed: 196 247 235;
+  --sf-error: 255 180 171;
+  --sf-on-secondary: 7 62 56;
+  --sf-tertiary-container: 43 66 108;
+  --sf-surface-bright: 44 44 49;
+  --sf-secondary: 117 218 204;
+  --sf-on-primary-fixed: 224 235 255;
+  --sf-on-background: 246 246 248;
+  --sf-surface-container-lowest: 13 13 16;
+  --sf-surface-container-highest: 56 56 63;
+  --sf-tertiary-fixed-dim: 180 197 255;
+  --sf-inverse-surface: 234 234 239;
+  --sf-on-tertiary-fixed-variant: 215 228 255;
+  --sf-surface-container-low: 30 30 34;
+  --sf-secondary-fixed-dim: 76 215 246;
+  --sf-error-container: 92 41 41;
+  --sf-on-primary-container: 220 231 255;
+  --sf-on-secondary-container: 181 244 233;
+  --sf-tertiary: 180 197 255;
+  --sf-on-primary-fixed-variant: 215 228 255;
+  --sf-on-tertiary: 22 38 80;
+  --sf-secondary-fixed: 23 78 72;
+  --sf-surface-container-high: 45 45 51;
+  --sf-tertiary-fixed: 219 225 255;
+  --sf-surface-tint: 64 89 170;
+  --sf-outline: 149 151 162;
+  --sf-primary-container: 36 67 109;
+  --sf-surface-container: 37 37 42;
+  --sf-on-surface-variant: 184 186 196;
+  --sf-surface-dim: 9 9 12;
+  --sf-on-tertiary-fixed: 0 23 75;
+  --sf-background: 24 24 27;
+  --sf-inverse-primary: 182 196 255;
+  --sf-on-error: 94 20 16;
+  --sf-on-secondary-fixed-variant: 181 244 233;
+  --sf-on-tertiary-container: 220 229 255;
+  --sf-inverse-on-surface: 28 28 32;
+  --sf-primary-fixed-dim: 170 195 248;
+
+  --ink-900:#f6f6f8; --ink-700:#dddde3; --ink-500:#b8bac4; --ink-300:#a4a6b2;
+  --ink-100:#40536b; --surface:#0d0d10; --surface-muted:#1e1e22; --surface-sunken:#25252a; --border:#41414a;
+  --brand-900:#b8d0ff; --brand-700:#a9c4ff; --brand-500:#a9c4ff; --brand-100:#233d63;
+  --success:#8bddae; --success-100:#173c2b; --warning:#f2c578; --warning-100:#45371f;
+  --error:#ffb4ab; --error-100:#5c2929; --info:#99ceec; --info-100:#203d50; --offline:#b5c4d8; --offline-100:#293e57;
+}
+body { background:rgb(var(--sf-background)); color:rgb(var(--sf-on-surface)); }
+html[data-theme="dark"] .auth-brand-panel { background:#14213d; }
+html[data-theme="dark"] .auth-brand-panel :is(h1,p,span) { color:#e4efff; }
+
+html[data-theme="dark"] .btn-primary { color:#10274f; }
+
+:root { color-scheme:light; --sf-glass:255 255 255; --sf-glass-opacity:.78; --sf-brand-glass:234 241 247; --sf-nav-active:0 104 122; }
+html[data-theme="dark"] { color-scheme:dark; --sf-glass:42 42 47; --sf-glass-opacity:.76; --sf-brand-glass:62 62 69; --sf-nav-active:117 218 204; }
+.fleet-app-shell { color:rgb(var(--sf-on-surface)); background:radial-gradient(ellipse at top left,rgb(var(--sf-secondary) / .09),transparent 55%),rgb(var(--sf-background)); }
+
+/* Keep the older operational pages on the same palette as the shared shell. */
+:root {
+  --surface:rgb(var(--sf-surface-container-lowest));
+  --surface-muted:rgb(var(--sf-surface-container-low));
+  --surface-sunken:rgb(var(--sf-surface-container));
+  --border:rgb(var(--sf-outline-variant));
+  --ink-900:rgb(var(--sf-on-surface));
+  --ink-700:rgb(var(--sf-on-surface));
+  --ink-500:rgb(var(--sf-on-surface-variant));
+  --font-ui:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;
+}
+html[data-theme="dark"] {
+  --surface:rgb(var(--sf-surface-container-lowest));
+  --surface-muted:rgb(var(--sf-surface-container-low));
+  --surface-sunken:rgb(var(--sf-surface-container));
+  --border:rgb(var(--sf-outline-variant));
+  --ink-900:rgb(var(--sf-on-surface));
+  --ink-700:rgb(var(--sf-on-surface));
+  --ink-500:rgb(var(--sf-on-surface-variant));
+}

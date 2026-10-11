@@ -10,14 +10,15 @@ export const NAV_BY_ROLE = {
   ],
   Dispatcher: [
     { label: 'Dashboard', to: '/dispatcher/dashboard', icon: 'grid' },
-    { label: 'Trips', to: '/dispatcher/trips', icon: 'route' },
+    { label: 'Trips', to: '/dispatcher/trips', icon: 'route', end: true },
     { label: 'Tracking', to: '/dispatcher/tracking', icon: 'pin' },
-    { label: 'Reports', to: '/dispatcher/reports', icon: 'chart' },
+    { label: 'Trip History', to: '/dispatcher/trips/history', icon: 'check' },
     { label: 'Profile', to: '/profile', icon: 'user' },
   ],
   Driver: [
     { label: 'Dashboard', to: '/driver/dashboard', icon: 'grid' },
-    { label: 'My Trips', to: '/driver/trips', icon: 'route' },
+    { label: 'My Trips', to: '/driver/trips', icon: 'route', end: true },
+    { label: 'Completed Trips', to: '/driver/trips/completed', icon: 'check' },
     { label: 'Profile', to: '/profile', icon: 'user' },
   ],
 }

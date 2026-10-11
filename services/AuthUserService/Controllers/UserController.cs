@@ -12,14 +12,17 @@ public class UsersController : ControllerBase
 {
     private readonly UserService _userService;
 
-    public UsersController(UserService userService)
+    private readonly DriverDeactivationService _deactivation;
+
+    public UsersController(UserService userService, DriverDeactivationService deactivation)
     {
         _userService = userService;
+        _deactivation = deactivation;
     }
 
-    // ============================================================
+
     // US-01: Admin creates Driver account
-    // ============================================================
+
 
     [Authorize(Roles = "Admin")]
     [HttpPost("drivers")]
@@ -31,10 +34,7 @@ public class UsersController : ControllerBase
             var user =
                 await _userService.CreateUserAsync(request);
 
-            return CreatedAtAction(
-                nameof(CreateDriver),
-                new { id = user.Id },
-                user);
+            return Created($"/api/users/{user.Id}", user);
         }
         catch (ArgumentException ex)
         {
@@ -52,13 +52,11 @@ public class UsersController : ControllerBase
         }
     }
 
-
-    // ============================================================
     // US-01: Admin lists Driver accounts
+    // US-12: Dispatcher also needs this list to pick a driver at assign time.
     // GET /api/users/drivers
-    // ============================================================
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Dispatcher")]
     [HttpGet("drivers")]
     public async Task<IActionResult> GetDrivers()
     {
@@ -66,11 +64,25 @@ public class UsersController : ControllerBase
         return Ok(drivers);
     }
 
+    [Authorize(Roles = "Admin")]
+    [HttpPost("drivers/{id:guid}/deactivate")]
+    public async Task<IActionResult> DeactivateDriver(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _deactivation.DeactivateAsync(id, Request.Headers.Authorization.ToString(), cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        catch (DriverDependencyException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+    }
 
-    // ============================================================
     // US-04: View own profile
     // GET /api/users/me
-    // ============================================================
 
     [Authorize]
     [HttpGet("me")]
@@ -95,10 +107,23 @@ public class UsersController : ControllerBase
     }
 
 
-    // ============================================================
+    [Authorize]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUserById(Guid id)
+    {
+        try
+        {
+            var user = await _userService.GetProfileAsync(id);
+            return Ok(user);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     // US-04: Edit own profile
     // PUT /api/users/me
-    // ============================================================
 
     [Authorize]
     [HttpPut("me")]
@@ -132,10 +157,7 @@ public class UsersController : ControllerBase
         }
     }
 
-
-    // ============================================================
     // Get authenticated user's ID from JWT
-    // ============================================================
 
     private Guid GetCurrentUserId()
     {

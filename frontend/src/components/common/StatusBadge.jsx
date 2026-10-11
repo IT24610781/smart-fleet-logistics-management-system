@@ -1,27 +1,56 @@
-const TONE = {
-  active: 'bg-secondary-container/50 text-on-secondary-container',
-  available: 'bg-secondary-container/50 text-on-secondary-container',
-  completed: 'bg-secondary-container/50 text-on-secondary-container',
-  approved: 'bg-secondary-container/50 text-on-secondary-container',
-  pending: 'bg-tertiary-container/40 text-on-tertiary-container',
-  'in progress': 'bg-tertiary-container/40 text-on-tertiary-container',
-  maintenance: 'bg-tertiary-container/40 text-on-tertiary-container',
-  assigned: 'bg-primary-container/30 text-on-primary-container',
-  'in use': 'bg-primary-container/30 text-on-primary-container',
-  rejected: 'bg-error-container text-on-error-container',
-  error: 'bg-error-container text-on-error-container',
-  inactive: 'bg-error-container text-on-error-container',
-  deactivated: 'bg-error-container text-on-error-container',
-  offline: 'bg-surface-container text-on-surface-variant',
-  idle: 'bg-surface-container text-on-surface-variant',
+const TONES = {
+  positive: 'bg-secondary-fixed text-on-secondary-fixed',
+  info: 'bg-primary-fixed text-on-primary-fixed',
+  active: 'bg-primary text-on-primary',
+  warning: 'bg-amber-100 text-amber-900',
+  danger: 'bg-error-container text-on-error-container',
+  neutral: 'bg-surface-container text-on-surface-variant',
 }
 
-// One place mapping a status string to a tone, reused by every table/badge
-// across Admin, Dispatcher and Driver pages.
+// Keys are lower-case with spaces: "In-Progress", "in_progress" and
+// "In Progress" all normalise to 'in progress'.
+const STATUS_TONE = {
+  // vehicles
+  available: 'positive',
+  'on trip': 'active',
+  'under maintenance': 'warning',
+  maintenance: 'warning',
+  // trips
+  requested: 'warning',
+  assigned: 'info',
+  'in progress': 'active',
+  completed: 'positive',
+  cancelled: 'danger',
+  // users / misc
+  active: 'positive',
+  approved: 'positive',
+  pending: 'warning',
+  'in use': 'active',
+  rejected: 'danger',
+  error: 'danger',
+  inactive: 'danger',
+  deactivated: 'danger',
+  offline: 'neutral',
+  idle: 'neutral',
+  // fleet-map location freshness (SCRUM-128/129)
+  fresh: 'positive',
+  stale: 'warning',
+  unavailable: 'neutral',
+  // fleet utilization report (SCRUM-138/139)
+  'limited data': 'warning',
+  // driver performance report (SCRUM-148/149)
+  'no activity': 'neutral',
+}
+
+function normalise(status) {
+  return String(status ?? '').toLowerCase().replace(/[-_]+/g, ' ').trim()
+}
+
 export default function StatusBadge({ status }) {
-  const tone = TONE[String(status).toLowerCase()] || 'bg-surface-container text-on-surface-variant'
+  const tone = TONES[STATUS_TONE[normalise(status)]] || TONES.neutral
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-full font-label-md text-label-md capitalize ${tone}`}>
+      <span aria-hidden="true" className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current" />
       {status}
     </span>
   )

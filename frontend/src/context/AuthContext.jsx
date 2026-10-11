@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import * as authService from '../services/authService'
 
 const AuthContext = createContext(null)
@@ -47,6 +47,16 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(USER_KEY)
     setUser(null)
   }, [])
+
+  useEffect(() => {
+    const onStorage = event => { if (event.key === TOKEN_KEY && !event.newValue) logout() }
+    window.addEventListener('smartfleet:session-ended', logout)
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('smartfleet:session-ended', logout)
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [logout])
 
   // Controlled profile update. Filters to SAFE_USER_FIELDS before touching
   // React state or localStorage, so a page can never accidentally persist

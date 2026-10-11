@@ -1,6 +1,7 @@
+import PageHeading from '../../components/common/PageHeading'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import AppShell from '../../components/layout/AppShell'
+import AppShell from '../../components/layout/AdminShell'
 import FormField from '../../components/forms/FormField'
 import Button from '../../components/common/Button'
 import { ErrorMessage, SuccessMessage } from '../../components/common/ErrorMessage'
@@ -67,19 +68,15 @@ export default function CreateDriver() {
   }
 
   return (
-    <AppShell title="Create Driver">
+    <AppShell dirty={Object.values(form).some(value => String(value).trim()) && !created} title="Create Driver">
       <div className="mb-6">
-        <div className="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant mb-1">
-          <span className="material-symbols-outlined text-base">person_add</span>
-          US-01 · Admin creates Driver account
-        </div>
-        <h2 className="font-headline-lg text-headline-lg text-on-surface">Create Driver</h2>
+        <PageHeading eyebrow="People management" title="Create Driver" />
         <p className="font-body-md text-body-md text-on-surface-variant mt-1">
           Set up a new driver account. The driver will receive their login credentials separately.
         </p>
       </div>
 
-      <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 max-w-2xl">
+      <div className="w-full max-w-2xl mx-auto rounded-xl border border-outline-variant bg-surface-container-lowest p-6">
         <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
           <ErrorMessage>{formError}</ErrorMessage>
           <SuccessMessage>{created ? 'Driver account created successfully.' : null}</SuccessMessage>
@@ -98,9 +95,10 @@ export default function CreateDriver() {
 
           <div className="flex flex-wrap gap-3 pt-2">
             <Button type="submit" loading={submitting}>{submitting ? 'Creating…' : 'Create driver'}</Button>
+            <Link className="admin-cancel-link" to="/admin/drivers">Cancel</Link>
             {created && (
               <>
-                <Link to="/admin/drivers"><Button variant="secondary" type="button">View Drivers</Button></Link>
+                <Link className="admin-cancel-link" to="/admin/drivers">View Drivers</Link>
                 <Button variant="ghost" type="button" onClick={() => setCreated(false)}>Create Another Driver</Button>
               </>
             )}

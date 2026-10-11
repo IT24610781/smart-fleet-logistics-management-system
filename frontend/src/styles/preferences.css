@@ -1,0 +1,42 @@
+.registration-page { min-height:100vh; min-height:100dvh; padding:30px 24px 60px; background:rgb(var(--sf-surface-container-lowest)); font-family:Inter,sans-serif; }
+.registration-brand { display:flex; align-items:center; gap:10px; width:fit-content; margin:0 auto 32px; color:rgb(var(--sf-secondary)); font:700 20px 'Plus Jakarta Sans',sans-serif; text-decoration:none; }
+.registration-brand img { width:34px; height:34px; }
+.registration-card { max-width:700px; margin:auto; }
+.registration-card h1 { font:700 27px/1.4 'Plus Jakarta Sans',sans-serif; text-align:center; }
+.registration-intro { text-align:center; color:rgb(var(--sf-on-surface-variant)); font-size:14px; margin:8px 0 32px; }
+.registration-form { display:flex; flex-direction:column; gap:25px; }
+.registration-form fieldset { display:flex; flex-direction:column; gap:20px; min-width:0; }
+.registration-form legend { font-size:15px; font-weight:600; margin-bottom:16px; }
+.registration-form input { border-radius:9px; min-height:46px; background:rgb(var(--sf-surface-container-lowest)); }
+.registration-role { font-size:13px; color:rgb(var(--sf-on-surface-variant)); }
+.registration-form .registration-submit { min-width:260px; min-height:46px; margin:8px auto 0; border-radius:30px; background:#082b78; color:#fff; }
+.registration-form .registration-submit:hover:not(:disabled) { background:#123e91; }
+.registration-login { text-align:center; font-size:13px; color:rgb(var(--sf-on-surface-variant)); margin-top:24px; }
+.registration-login a { color:rgb(var(--sf-secondary)); font-weight:600; }
+.profile-page { max-width:960px; margin:0 auto; font-family:Inter,sans-serif; }
+.profile-page h1 { font:700 28px/1.4 'Plus Jakarta Sans',sans-serif; margin-bottom:20px; }
+.profile-identity { display:flex; align-items:center; gap:16px; margin-bottom:32px; }
+.profile-avatar { width:60px; height:60px; border-radius:50%; display:flex; justify-content:center; align-items:center; background:rgb(var(--sf-secondary-container)); color:rgb(var(--sf-on-secondary-container)); font:700 20px 'Plus Jakarta Sans',sans-serif; }
+.profile-identity strong { display:block; font-size:16px; }
+.profile-identity div>span { display:block; font-size:13px; color:rgb(var(--sf-on-surface-variant)); margin-top:4px; }
+.profile-section { margin:26px 0; }
+.profile-preferences { max-width:960px; margin:26px auto; }
+.profile-section-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:12px; }
+.profile-section h2 { font-size:17px; font-weight:600; }
+.profile-section-heading button { border-radius:30px; font-size:12px; padding:6px 16px; }
+.profile-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:26px 40px; border:1px solid rgb(var(--sf-outline-variant) / .6); border-radius:20px; padding:28px 30px; background:rgb(var(--sf-surface-container-lowest)); }
+.profile-detail-grid dt { font-size:12px; color:rgb(var(--sf-on-surface-variant)); margin-bottom:5px; }
+.profile-detail-grid dd { font-size:14px; overflow-wrap:anywhere; }
+.profile-edit-form,.profile-settings-card { padding:28px 30px; border:1px solid rgb(var(--sf-outline-variant) / .6); border-radius:20px; background:rgb(var(--sf-surface-container-lowest)); }
+.profile-edit-form fieldset { min-width:0; }
+.profile-edit-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:24px; }
+.profile-theme-row,.profile-session-row { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.profile-settings-card strong { font-size:14px; }
+.profile-settings-card p { font-size:13px; color:rgb(var(--sf-on-surface-variant)); margin-top:5px; }
+.profile-session-row { margin-top:24px; padding-top:24px; border-top:1px solid rgb(var(--sf-outline-variant) / .5); }
+.profile-theme-options { display:flex; gap:10px; }
+.profile-theme-options button { padding:10px 14px; display:flex; gap:8px; align-items:center; border:1px solid rgb(var(--sf-outline-variant)); border-radius:10px; font-size:13px; }
+.profile-theme-options button[aria-pressed="true"] { border-color:rgb(var(--sf-secondary)); background:rgb(var(--sf-secondary-container)); color:rgb(var(--sf-on-secondary-container)); }
+.theme-swatch { width:16px; height:16px; border-radius:50%; border:1px solid #8395a6; }
+.theme-swatch-light { background:#fafcff; }.theme-swatch-dark { background:#14213d; }
+@media(max-width:600px) { .profile-detail-grid { padding:22px; gap:22px; grid-template-columns:1fr; } .profile-edit-form,.profile-settings-card { padding:22px; } .profile-theme-row,.profile-session-row { align-items:flex-start; flex-direction:column; } .registration-page { padding:24px 20px; } }

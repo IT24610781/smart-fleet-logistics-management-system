@@ -1,14 +1,35 @@
-// Fleet / Vehicle Service — not yet implemented by the backend.
-// Kept as a placeholder so Vehicles.jsx can swap mock data for real calls
-// later without touching any component code.
-import api from './api'
+// Fleet / Vehicle Service.
+import { createApiClient } from './api'
 
-export async function listVehicles() {
-  const { data } = await api.get('/api/vehicles')
+const vehicleApi = createApiClient(
+  import.meta.env.VITE_VEHICLE_API_URL || 'http://localhost:5041'
+)
+
+export async function createVehicle(form) {
+  const { data } = await vehicleApi.post('/api/vehicles', {
+    registrationNo: form.registrationNo,
+    type: form.type,
+    capacity: form.capacity,
+  })
   return data
 }
 
-export async function updateVehicleStatus(vehicleId, status) {
-  const { data } = await api.patch(`/api/vehicles/${vehicleId}/status`, { status })
+export async function listVehicles() {
+  const { data } = await vehicleApi.get('/api/vehicles')
   return data
+}
+
+// US-06: full update of a vehicle's editable fields.
+export async function updateVehicle(id, form) {
+  const { data } = await vehicleApi.put(`/api/vehicles/${id}`, {
+    registrationNo: form.registrationNo,
+    type: form.type,
+    capacity: form.capacity,
+    status: form.status,
+  })
+  return data
+}
+
+export async function deleteVehicle(id) {
+  await vehicleApi.delete(`/api/vehicles/${id}`)
 }

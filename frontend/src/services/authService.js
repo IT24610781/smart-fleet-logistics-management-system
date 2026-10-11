@@ -1,5 +1,4 @@
-// Auth & User Service — currently implements only what the backend exposes
-// today (login). Registration is scaffolded for a later sprint per the SRS.
+// Auth & User Service - login (US-02) and Dispatcher self-registration (US-08).
 import api from './api'
 
 export async function login(username, password) {
@@ -7,10 +6,18 @@ export async function login(username, password) {
   return data // expected: { token, user: { id, username, role, ... } }
 }
 
-// NOT YET IMPLEMENTED BY THE BACKEND.
-// Wired to the service layer now so the DispatcherRegister page can call a
-// real endpoint the moment it exists, without any UI changes.
+// US-08: public endpoint - no token needed. The server always assigns the
+// "Dispatcher" role; the role is never sent from the browser.
 export async function registerDispatcher(payload) {
   const { data } = await api.post('/api/auth/register/dispatcher', payload)
+  return data
+}
+
+export async function requestPasswordCode(change, payload) {
+  const { data } = await api.post(`/api/auth/password/${change ? 'change/request' : 'forgot'}`, change ? { currentPassword: payload.currentPassword } : { email: payload.email })
+  return data
+}
+export async function completePasswordChange(change, payload) {
+  const { data } = await api.post(`/api/auth/password/${change ? 'change/confirm' : 'reset'}`, payload)
   return data
 }

@@ -5,11 +5,18 @@ on:
     branches:
       - dev
       - main
-      - feature/*
+      - 'feature/*'
   pull_request:
     branches:
       - dev
       - main
+
+concurrency:
+  group: smartfleet-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   build-test:
@@ -27,25 +34,74 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Load test schema into MySQL
+
+      - name: Load Auth test schema into MySQL
         run: |
-          sed 's/fleet_identity_db/fleet_identity_db_test/g' database/auth-user/schema.sql > /tmp/schema.test.sql
-          mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/schema.test.sql
+          sed 's/fleet_identity_db/fleet_identity_db_test/g' database/auth-user/schema.sql > /tmp/auth-schema.test.sql
+          mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/auth-schema.test.sql
+
+      - name: Load Fleet test schema into MySQL
+        run: |
+          sed 's/fleet_vehicle_db/fleet_vehicle_db_test/g' database/fleet-vehicle/schema.sql > /tmp/fleet-schema.test.sql
+          mysql -h 127.0.0.1 -P 3306 -u root -ptest_root_password < /tmp/fleet-schema.test.sql
+
       - name: Restore
         run: dotnet restore SmartFleet.slnx
+
       - name: Build
         run: dotnet build SmartFleet.slnx --no-restore
-      - name: Test
+
+      - name: Test AuthUserService
         env:
           ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=test_root_password;"
-        run: dotnet test SmartFleet.slnx --no-build
+        run: dotnet test tests/AuthUserService.Tests --no-build
+
+      - name: Test FleetVehicleService
+        env:
+          ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_vehicle_db_test;Uid=root;Pwd=test_root_password;"
+        run: dotnet test tests/FleetVehicleService.Tests --no-build
+
+      - name: Test remaining projects
+        env:
+          TEST_TRIP_GUARD_CONNECTION: "Server=127.0.0.1;Port=3306;Uid=root;Pwd=test_root_password;"
+        run: |
+          dotnet test tests/TrackingTelemetryService.Tests --no-build
+          dotnet test tests/TripDispatchService.Tests --no-build
+
+  frontend-check:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Frontend Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build Frontend
+        working-directory: frontend
+        run: npm run build
 
   docker-build:
     name: Docker Build Check
@@ -53,29 +109,197 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      - name: Build Auth Service Docker Image
-        run: docker build -t auth-service:ci ./services/AuthUserService
-
-  deploy:
-    name: Deploy to Azure (Auth Service)
-    needs: [build-test, docker-build]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      - name: Publish Auth Service
-        run: dotnet publish services/AuthUserService -c Release -o ./publish
+      - name: Build release images
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet restore SmartFleet.slnx
+          for spec in 'AuthUserService auth-service' 'FleetVehicleService fleet-service' 'TripDispatchService trip-service' 'TrackingTelemetryService tracking-service'; do
+            read -r project image <<< "$spec"
+            dotnet publish "services/$project/$project.csproj" -c Release --no-restore -o "release/$image"
+            docker build -f scripts/Dockerfile.published --build-arg "SERVICE_DLL=$project.dll" -t "$image:ci" "release/$image"
+          done
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
+      # Report findings first; make this a required gate after the team reviews the baseline.
+      - name: Scan Auth image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
-          app-name: smart-fleet-auth-service
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./publish
+          image: auth-service:ci
+          fail-build: false
+          output-format: table
+      - name: Scan Fleet image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: fleet-service:ci
+          fail-build: false
+          output-format: table
+      - name: Scan Trip image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: trip-service:ci
+          fail-build: false
+          output-format: table
+      - name: Scan Tracking image
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: tracking-service:ci
+          fail-build: false
+          output-format: table
+
+  deploy-auth:
+    name: Deploy Auth
+    needs: [build-test, frontend-check, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Build and deploy Auth
+        uses: ./.github/actions/deploy-containerapp
+        with:
+          project: AuthUserService
+          image: auth-service
+          app: smartfleet-auth-demo
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  deploy-fleet:
+    name: Deploy Fleet
+    needs: deploy-auth
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Build and deploy Fleet
+        uses: ./.github/actions/deploy-containerapp
+        with:
+          project: FleetVehicleService
+          image: fleet-service
+          app: smartfleet-fleet-demo
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  deploy-trip:
+    name: Deploy Trip
+    needs: deploy-fleet
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Build and deploy Trip
+        uses: ./.github/actions/deploy-containerapp
+        with:
+          project: TripDispatchService
+          image: trip-service
+          app: smartfleet-trip-demo
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  deploy-tracking:
+    name: Deploy Tracking
+    needs: deploy-trip
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Build and deploy Tracking
+        uses: ./.github/actions/deploy-containerapp
+        with:
+          project: TrackingTelemetryService
+          image: tracking-service
+          app: smartfleet-tracking-demo
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: deploy-tracking
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and deploy frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd frontend
+          npm ci
+          npm run build
+          mkdir -p ../release/frontend
+          cp -r dist server.cjs package.json ../release/frontend/
+          cd ../release/frontend
+          zip -qr ../frontend.zip .
+          az webapp deploy -g csp-project -n smartfleet-frontend-it24610781 --src-path ../frontend.zip --type zip --only-show-errors
+
+      - name: Smoke test hosted frontend
+        run: curl --fail --silent --show-error https://smartfleet-frontend-it24610781.azurewebsites.net/login > /dev/null
+
+  smoke-azure:
+    name: Post-deployment workflow smoke
+    needs: deploy-frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify all four readiness endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          for app in smartfleet-auth-demo smartfleet-fleet-demo smartfleet-trip-demo smartfleet-tracking-demo; do
+            curl --fail --silent --show-error --retry 6 --retry-delay 5 "https://$app.icystone-b3019ce0.malaysiawest.azurecontainerapps.io/health/ready" > /dev/null
+          done
+
+      - name: Verify authenticated cross-service workflow
+        shell: pwsh
+        run: ./scripts/test-azure-workflow.ps1

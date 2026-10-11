@@ -9,7 +9,7 @@
   color: var(--ink-500);
   cursor: pointer;
 }
-.trip-tab.active { background: var(--ink-900); color: #fff; border-color: var(--ink-900); }
+.trip-tab.active { background: rgb(var(--sf-primary)); color: rgb(var(--sf-on-primary)); border-color: rgb(var(--sf-primary)); }
 
 .new-trip-panel {
   border: 1px solid var(--border);

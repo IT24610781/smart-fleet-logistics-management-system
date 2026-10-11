@@ -3,7 +3,7 @@ using MySqlConnector;
 
 namespace AuthUserService.Data;
 
-public class UserRepository
+public class UserRepository : IUserAccountRepository
 {
     private readonly DatabaseConnection _databaseConnection;
 
@@ -12,9 +12,7 @@ public class UserRepository
         _databaseConnection = databaseConnection;
     }
 
-    // ============================================================
     // US-01: Create user
-    // ============================================================
 
     public async Task CreateUserAsync(User user)
     {
@@ -66,10 +64,7 @@ public class UserRepository
         await command.ExecuteNonQueryAsync();
     }
 
-
-    // ============================================================
     // US-01: List driver users
-    // ============================================================
 
     public async Task<List<User>> GetDriversAsync()
     {
@@ -111,10 +106,7 @@ public class UserRepository
         return users;
     }
 
-
-    // ============================================================
     // US-02: Find user by username
-    // ============================================================
 
     public async Task<User?> GetByUsernameAsync(string username)
     {
@@ -157,10 +149,7 @@ public class UserRepository
         return null;
     }
 
-
-    // ============================================================
     // US-01: Find user by email
-    // ============================================================
 
     public async Task<User?> GetByEmailAsync(string email)
     {
@@ -203,10 +192,7 @@ public class UserRepository
         return null;
     }
 
-
-    // ============================================================
     // US-04: Get currently logged-in user's profile
-    // ============================================================
 
     public async Task<User?> GetByIdAsync(Guid id)
     {
@@ -249,10 +235,7 @@ public class UserRepository
         return null;
     }
 
-
-    // ============================================================
     // US-04: Update currently logged-in user's profile
-    // ============================================================
 
     public async Task UpdateProfileAsync(User user)
     {
@@ -262,7 +245,6 @@ public class UserRepository
                 first_name = @first_name,
                 last_name = @last_name,
                 contact_number = @contact_number,
-                password_hash = @password_hash,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = @id;
             """;
@@ -291,17 +273,20 @@ public class UserRepository
             "@contact_number",
             user.ContactNumber);
 
-        command.Parameters.AddWithValue(
-            "@password_hash",
-            user.PasswordHash);
-
         await command.ExecuteNonQueryAsync();
     }
 
-
-    // ============================================================
     // Map database row -> User model
-    // ============================================================
+
+    public async Task DeactivateDriverAsync(Guid id)
+    {
+        await using var connection = _databaseConnection.CreateConnection();
+        await connection.OpenAsync();
+        await using var command = new MySqlCommand(
+            "UPDATE users SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = @id AND role = 'Driver' AND is_active = TRUE;", connection);
+        command.Parameters.AddWithValue("@id", id.ToString());
+        await command.ExecuteNonQueryAsync();
+    }
 
     private static User MapUser(MySqlDataReader reader)
     {
@@ -325,9 +310,9 @@ public class UserRepository
 
             IsActive = reader.GetBoolean("is_active"),
 
-            CreatedAt = reader.GetDateTime("created_at"),
+            CreatedAt = DateTime.SpecifyKind(reader.GetDateTime("created_at"), DateTimeKind.Utc),
 
-            UpdatedAt = reader.GetDateTime("updated_at")
+            UpdatedAt = DateTime.SpecifyKind(reader.GetDateTime("updated_at"), DateTimeKind.Utc)
         };
     }
 }

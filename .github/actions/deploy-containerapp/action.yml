@@ -1,0 +1,71 @@
+name: Deploy Container App
+description: Build and deploy one Smart Fleet API image to its Azure Container App
+inputs:
+  project:
+    required: true
+    description: Service project directory and assembly name
+  image:
+    required: true
+    description: ACR image repository name
+  app:
+    required: true
+    description: Azure Container App name
+  azure-client-id:
+    required: true
+    description: Azure federated identity client ID
+  azure-tenant-id:
+    required: true
+    description: Azure tenant ID
+  azure-subscription-id:
+    required: true
+    description: Azure subscription ID
+runs:
+  using: composite
+  steps:
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    - name: Sign in to Azure
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure-client-id }}
+        tenant-id: ${{ inputs.azure-tenant-id }}
+        subscription-id: ${{ inputs.azure-subscription-id }}
+    - name: Install Container Apps CLI
+      shell: bash
+      run: az extension add --name containerapp --upgrade --only-show-errors
+    - name: Publish and push API image
+      shell: bash
+      env:
+        PROJECT: ${{ inputs.project }}
+        IMAGE: ${{ inputs.image }}
+      run: |
+        set -euo pipefail
+        registry=smartfleetacr-fxgpf2gudpaag4bb.azurecr.io
+        az acr login --name smartfleetacr
+        dotnet restore SmartFleet.slnx
+        dotnet publish "services/$PROJECT/$PROJECT.csproj" -c Release --no-restore -o "release/$IMAGE"
+        docker build -f scripts/Dockerfile.published --build-arg "SERVICE_DLL=$PROJECT.dll" -t "$registry/$IMAGE:$GITHUB_SHA" "release/$IMAGE"
+        docker push "$registry/$IMAGE:$GITHUB_SHA"
+    - name: Update Container App and verify revision
+      shell: bash
+      env:
+        APP: ${{ inputs.app }}
+        IMAGE: ${{ inputs.image }}
+      run: |
+        set -euo pipefail
+        registry=smartfleetacr-fxgpf2gudpaag4bb.azurecr.io
+        previous=$(az containerapp show -n "$APP" -g csp-project --query 'properties.template.containers[0].image' -o tsv)
+        echo "$APP previous image: $previous" >> "$GITHUB_STEP_SUMMARY"
+        az containerapp update -n "$APP" -g csp-project --image "$registry/$IMAGE:$GITHUB_SHA" -o none
+        revision=$(az containerapp show -n "$APP" -g csp-project --query properties.latestRevisionName -o tsv)
+        healthy=false
+        for attempt in {1..12}; do
+          state=$(az containerapp revision show -n "$APP" -g csp-project --revision "$revision" --query properties.runningState -o tsv)
+          if [[ "$state" == Running* ]]; then healthy=true; break; fi
+          if [[ "$state" == Failed ]]; then break; fi
+          sleep 10
+        done
+        if [[ "$healthy" != true ]]; then echo "$APP revision $revision is $state" >&2; exit 1; fi
+        echo "$APP deployed revision: $revision" >> "$GITHUB_STEP_SUMMARY"

@@ -63,7 +63,7 @@ public class CreateDriverPageTests : SeleniumTestBase
 
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
 
-        var successBanner = Wait.Until(d => d.FindElement(By.CssSelector(".success-banner")));
+        var successBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='status']")));
         Assert.Contains("Driver account created successfully.", successBanner.Text);
     }
 
@@ -83,7 +83,7 @@ public class CreateDriverPageTests : SeleniumTestBase
 
         FillDriverForm("Selenium", "First", $"seldup1{suffix}", email, "ValidPass123", "0770000000");
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
-        Wait.Until(d => d.FindElement(By.CssSelector(".success-banner")));
+        Wait.Until(d => d.FindElement(By.CssSelector("[role='status']")));
 
         // Reload the empty form and try again with the SAME email,
         // different username.
@@ -93,10 +93,10 @@ public class CreateDriverPageTests : SeleniumTestBase
         FillDriverForm("Selenium", "Second", $"seldup2{suffix}", email, "ValidPass123", "0770000001");
         Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
 
-        var errorBanner = Wait.Until(d => d.FindElement(By.CssSelector(".error-banner")));
+        var errorBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='alert']")));
         Assert.Contains("already exists", errorBanner.Text, StringComparison.OrdinalIgnoreCase);
 
-        var successBanners = Driver.FindElements(By.CssSelector(".success-banner"));
+        var successBanners = Driver.FindElements(By.CssSelector("[role='status']"));
         Assert.Empty(successBanners);
     }
 
@@ -124,7 +124,7 @@ public class CreateDriverPageTests : SeleniumTestBase
         var inlineError = Wait.Until(d => d.FindElement(By.Id("email-error")));
         Assert.Contains("valid email", inlineError.Text, StringComparison.OrdinalIgnoreCase);
 
-        var successBanners = Driver.FindElements(By.CssSelector(".success-banner"));
+        var successBanners = Driver.FindElements(By.CssSelector("[role='status']"));
         Assert.Empty(successBanners);
     }
 

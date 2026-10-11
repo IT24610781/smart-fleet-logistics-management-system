@@ -1,6 +1,24 @@
 .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
 @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
+.report-grid-full { grid-column: 1 / -1; }
+.report-grid > .card { min-width: 0; }
 .report-metric-row { display: flex; justify-content: space-between; padding: var(--space-2) 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .report-metric-row:last-child { border-bottom: none; }
 .report-metric-row span:first-child { color: var(--ink-500); }
 .report-metric-row span:last-child { font-weight: 600; color: var(--ink-900); font-family: var(--font-mono); }
+
+.report-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+.report-card-header .section-title { margin-bottom: 0; }
+.report-demo-note { font-size: 11.5px; color: var(--ink-500); margin: 0 0 var(--space-2); }
+
+/* SCRUM-139: per-vehicle utilization results (US-17) */
+.utilization-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.utilization-table th {
+  text-align: left; font-weight: 600; color: var(--ink-500); font-size: 11.5px;
+  text-transform: uppercase; letter-spacing: 0.03em; padding: var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.utilization-table td { padding: var(--space-2); border-bottom: 1px solid var(--border); vertical-align: middle; }
+.utilization-table tr:last-child td { border-bottom: none; }
+.utilization-table td:last-child { display: flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); }
+.utilization-vehicle-type { color: var(--ink-500); font-weight: 400; }

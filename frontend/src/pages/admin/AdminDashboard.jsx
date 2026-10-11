@@ -1,103 +1,82 @@
+import PageHeading from '../../components/common/PageHeading'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import AppShell from '../../components/layout/AppShell'
-import StatCard from '../../components/common/StatCard'
+import AppShell from '../../components/layout/AdminShell'
 import StatusBadge from '../../components/common/StatusBadge'
 import DataTable from '../../components/common/DataTable'
-import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
+import AdminDetails from '../../components/common/AdminDetails'
 import { useAuth } from '../../context/AuthContext'
-import { MOCK_ADMIN_STATS, MOCK_TRIPS, FLEET_OVERVIEW, DRIVER_OVERVIEW, RECENT_ACTIVITY } from '../../utils/mockData'
-import './AdminDashboard.css'
+import { listDrivers } from '../../services/userService'
+import { listVehicles } from '../../services/vehicleService'
+import { listTrips } from '../../services/tripService'
 
-const ACTIVITY_ICON = { driver: 'users', trip: 'route', vehicle: 'truck', maintenance: 'alert' }
-
-// Primary Admin dashboard (sections 10-12). KPI cards, Fleet Overview,
-// Driver Overview, a mixed Recent Activity feed, a Recent Trips table with
-// the exact columns the spec asks for, and Quick Actions. All demo data —
-// clearly separated in src/utils/mockData.js until the real services exist.
+const date = (value) => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleString() : 'Unavailable'
 export default function AdminDashboard() {
   const { user } = useAuth()
-  const s = MOCK_ADMIN_STATS
-
-  const tripColumns = [
-    { key: 'id', header: 'Trip ID', render: (r) => <span className="cell-id">{r.id}</span> },
-    { key: 'driver', header: 'Driver' },
-    { key: 'vehicle', header: 'Vehicle', render: (r) => <span className="cell-id">{r.vehicle}</span> },
-    { key: 'route', header: 'Route', render: (r) => `${r.origin} → ${r.destination}` },
-    { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
-    { key: 'createdDate', header: 'Date' },
+  const [sources, setSources] = useState({ drivers: null, vehicles: null, trips: null })
+  const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    Promise.allSettled([listDrivers(), listVehicles(), listTrips()]).then(results => {
+      if (cancelled) return
+      const data = {}, failures = {}
+      results.forEach((result, i) => {
+        const key = ['drivers', 'vehicles', 'trips'][i]
+        data[key] = result.status === 'fulfilled' ? result.value : null
+        if (result.status === 'rejected') failures[key] = result.reason?.message || 'Unable to retrieve data.'
+      })
+      setSources(data); setErrors(failures); setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [])
+  const { drivers, vehicles, trips } = sources
+  const driverName = id => drivers?.find(d => d.id === id)
+  const vehicleName = id => vehicles?.find(v => v.id === id)?.registrationNo || id || 'Not assigned'
+  const name = id => { const d = driverName(id); return d ? `${d.firstName} ${d.lastName}` : id || 'Not assigned' }
+  const recent = [...(trips || [])].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0,5)
+  const metrics = [
+    ['Total Drivers', drivers?.length, 'users', '/admin/drivers', 'Registered Driver accounts'],
+    ['Total Vehicles', vehicles?.length, 'truck', '/admin/vehicles', 'Vehicles in your registry'],
+    ['Available Vehicles', vehicles?.filter(v => v.status === 'Available').length, 'grid', '/admin/vehicles?status=available', 'Ready for assignment'],
+    ['Active Trips', trips?.filter(t => t.status === 'In-Progress').length, 'route', null, 'Trips currently in progress'],
   ]
+  const columns = [
+    { key:'id', header:'Trip', render:r => <button className="admin-text-button" onClick={() => setSelected(r)} aria-label={`View trip ${r.id}`}>{r.id.slice(0,8)}</button> },
+    { key:'route', header:'Route', render:r => <div><strong>{r.pickupLocation}</strong><span className="admin-route-destination">To {r.dropoffLocation}</span></div> },
+    { key:'assignedDriverId', header:'Driver', render:r => name(r.assignedDriverId) },
+    { key:'assignedVehicleId', header:'Vehicle', render:r => vehicleName(r.assignedVehicleId) },
+    { key:'status', header:'Status', render:r => <StatusBadge status={r.status} /> },
+    { key:'createdAt', header:'Created', render:r => date(r.createdAt) },
+  ]
+  return <AppShell title="Fleet Administration">
+    <section className="admin-hero">
+      <PageHeading eyebrow="Fleet operations" title="Fleet administration" description={<> Welcome back{user?.firstName ? `, ${user.firstName}` : ''}. Manage your people, vehicles and active operations. </>} />
 
-  return (
-    <AppShell title="Dashboard">
-      <div className="stack">
-        <div>
-          <h2 style={{ marginBottom: 2 }}>Welcome back{user?.firstName ? `, ${user.firstName}` : ''}</h2>
-          <p style={{ color: 'var(--ink-500)', fontSize: 13 }}>Here's what's happening across the fleet today.</p>
-        </div>
-
-        <div className="stat-grid">
-          <StatCard label="Total Drivers" value={s.totalDrivers.value} icon="users" delta={s.totalDrivers.delta} />
-          <StatCard label="Total Vehicles" value={s.totalVehicles.value} icon="truck" delta={s.totalVehicles.delta} />
-          <StatCard label="Available Vehicles" value={s.availableVehicles.value} icon="grid" delta={s.availableVehicles.delta} />
-          <StatCard label="Active Trips" value={s.activeTrips.value} icon="route" delta={s.activeTrips.delta} />
-        </div>
-
-        <div className="dash-grid">
-          <div className="stack">
-            <div className="card card-pad">
-              <h3 className="section-title">Recent trips</h3>
-              <DataTable columns={tripColumns} rows={MOCK_TRIPS.slice(0, 5)} rowKey="id" emptyTitle="No trips yet" />
-            </div>
-
-            <div className="card card-pad">
-              <h3 className="section-title">Recent activity</h3>
-              <div className="activity-list">
-                {RECENT_ACTIVITY.map((a) => (
-                  <div className="activity-row" key={a.id}>
-                    <div className="activity-row-main" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <span className="activity-icon"><Icon name={ACTIVITY_ICON[a.type] || 'grid'} size={13} /></span>
-                      <span className="activity-row-title" style={{ fontWeight: 500 }}>{a.text}</span>
-                    </div>
-                    <span className="activity-row-meta">{a.time}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="stack">
-            <div className="card card-pad">
-              <h3 className="section-title">Quick actions</h3>
-              <div className="quick-actions">
-                <Link to="/admin/drivers/create"><Button block variant="accent">+ Create Driver</Button></Link>
-                <Link to="/admin/drivers"><Button block variant="secondary">View Drivers</Button></Link>
-                <Link to="/admin/vehicles"><Button block variant="secondary">View Vehicles</Button></Link>
-                <Link to="/admin/reports"><Button block variant="secondary">View Reports</Button></Link>
-              </div>
-            </div>
-
-            <div className="card card-pad">
-              <h3 className="section-title">Fleet overview</h3>
-              <div className="activity-list">
-                <div className="activity-row"><StatusBadge status="Available" /><span className="cell-id">{FLEET_OVERVIEW.available} vehicles</span></div>
-                <div className="activity-row"><StatusBadge status="In Use" /><span className="cell-id">{FLEET_OVERVIEW.inUse} vehicles</span></div>
-                <div className="activity-row"><StatusBadge status="Maintenance" /><span className="cell-id">{FLEET_OVERVIEW.maintenance} vehicles</span></div>
-                <div className="activity-row"><StatusBadge status="Inactive" /><span className="cell-id">{FLEET_OVERVIEW.inactive} vehicles</span></div>
-              </div>
-            </div>
-
-            <div className="card card-pad">
-              <h3 className="section-title">Driver overview</h3>
-              <div className="activity-list">
-                <div className="activity-row"><span>Total drivers</span><span className="cell-id">{DRIVER_OVERVIEW.total}</span></div>
-                <div className="activity-row"><StatusBadge status="Active" /><span className="cell-id">{DRIVER_OVERVIEW.active} drivers</span></div>
-                <div className="activity-row"><StatusBadge status="Inactive" /><span className="cell-id">{DRIVER_OVERVIEW.inactive} drivers</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </AppShell>
-  )
+    </section>
+    {!loading && Object.keys(errors).length > 0 && <div className="admin-source-error" role="alert"><strong>Some fleet data is unavailable.</strong>{Object.entries(errors).map(([key,error]) => <p key={key}>{key}: {error}</p>)}<p>Available sections remain visible. Reload this page to try again.</p></div>}
+    <div className="admin-metrics">{metrics.map(([label,value,icon,to,hint]) => {
+      const content = <><div className={`admin-metric-icon admin-metric-icon-${icon}`} aria-hidden="true"><Icon name={icon} size={46}/></div><div className="admin-metric-copy"><span className="admin-metric-label">{label}</span><strong className="admin-metric-value">{loading ? '...' : value ?? '--'}</strong><span className="admin-muted">{loading ? 'Loading' : value == null ? 'Data unavailable' : hint}</span></div></>
+      return to ? <Link key={label} className="admin-metric" to={to}>{content}</Link> : <div key={label} className="admin-metric">{content}</div>
+    })}</div>
+    <div className="admin-dashboard-grid">
+      <section className="admin-panel"><div className="admin-section-head"><div><h3>Recent trips</h3><p>The five most recently created trips</p></div></div>
+        {errors.trips && !loading ? <p className="admin-muted">Trip information is unavailable. Reload this page to retry.</p> : <DataTable columns={columns} rows={recent} loading={loading} emptyTitle="No trips yet" emptyDescription="Trips will appear here when Dispatchers create them." />}
+      </section>
+      <aside className="admin-panel"><h3>Quick actions</h3><p className="admin-muted">Keep your fleet ready for the next trip.</p><div className="admin-quick-links">
+        <Link to="/admin/drivers"><Icon name="users" size={20}/><span>Manage Drivers<small>View and manage Driver accounts</small></span><Icon name="chevronRight" size={16}/></Link>
+        <Link to="/admin/vehicles/create"><Icon name="truck" size={20}/><span>Add Vehicle<small>Expand the vehicle registry</small></span><Icon name="chevronRight" size={16}/></Link>
+        <Link to="/admin/reports"><Icon name="chart" size={20}/><span>Reports<small>View the reporting page</small></span><Icon name="chevronRight" size={16}/></Link>
+      </div></aside>
+      <section className="admin-panel"><div className="admin-section-head"><h3>Fleet availability</h3><Link to="/admin/vehicles">Manage vehicles</Link></div>
+        {loading || !vehicles ? <p className="admin-muted">{loading ? 'Loading vehicles...' : 'Vehicle data unavailable.'}</p> : <div className="admin-overview">{['Available','On Trip','Under Maintenance'].map(status => <Link key={status} to={`/admin/vehicles?status=${encodeURIComponent(status.toLowerCase())}`}><StatusBadge status={status}/><strong>{vehicles.filter(v => v.status === status).length}</strong></Link>)}</div>}
+      </section>
+      <section className="admin-panel"><div className="admin-section-head"><h3>Driver accounts</h3><Link to="/admin/drivers">Manage Drivers</Link></div>
+        {loading || !drivers ? <p className="admin-muted">{loading ? 'Loading Drivers...' : 'Driver data unavailable.'}</p> : <div className="admin-overview">{['Active','Inactive'].map(status => <Link key={status} to={`/admin/drivers?status=${status.toLowerCase()}`}><StatusBadge status={status}/><strong>{drivers.filter(d => d.isActive === (status === 'Active')).length}</strong></Link>)}</div>}
+      </section>
+    </div>
+    {selected && <AdminDetails title="Trip details" onClose={() => setSelected(null)} fields={[['Trip ID',selected.id],['Pickup',selected.pickupLocation],['Drop-off',selected.dropoffLocation],['Capacity',selected.requiredCapacity],['Status',selected.status],['Driver',name(selected.assignedDriverId)],['Vehicle',vehicleName(selected.assignedVehicleId)],['Created',date(selected.createdAt)],['Updated',date(selected.updatedAt)]]}/>}
+  </AppShell>
 }

@@ -2,8 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try { document.documentElement.dataset.theme = localStorage.getItem('smartfleet_theme') === 'dark' ? 'dark' : 'light'; }
+      catch { document.documentElement.dataset.theme = 'light'; }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/fleet-mark.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Opens the connection to Google Fonts' servers as early as possible,
+         before the CSS that requests the actual font files has even been
+         parsed - shaves the handshake time off how long the fallback font
+         is visible before the real one swaps in (see index.css's
+         font-display change for the rest of this fix). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <title>Smart Fleet — Fleet &amp; Logistics Management</title>
   </head>
   <body>

@@ -30,6 +30,10 @@ public class TripsController : ControllerBase
     {
         try
         {
+            // A Driver may only fetch their OWN trip this way - Dispatcher/
+            // Admin can fetch any trip. Tracking forwards the Driver's own
+            // token here to verify ownership/status before accepting a
+            // location update.
             Guid? callerDriverId = User.IsInRole("Driver") ? GetCurrentUserId() : null;
             var trip = await _tripService.GetTripByIdAsync(id, callerDriverId);
             return Ok(trip);
@@ -204,6 +208,34 @@ public class TripsController : ControllerBase
             var driverId = GetCurrentUserId();
             var authorizationHeader = Request.Headers.Authorization.ToString();
             var trip = await _tripService.CompleteTripAsync(id, driverId, authorizationHeader);
+            return Ok(trip);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (FleetVehicleUnavailableException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    //Dispatcher/Admin cancels a trip. Only valid while Requested or
+    //Assigned - rejected with 409 once In-Progress (the Driver has already
+    //accepted), or Completed/Cancelled (already final).
+
+    [Authorize(Roles = "Dispatcher,Admin")]
+    [HttpPost("{id}/cancel")]
+    public async Task<IActionResult> CancelTrip(Guid id)
+    {
+        try
+        {
+            var authorizationHeader = Request.Headers.Authorization.ToString();
+            var trip = await _tripService.CancelTripAsync(id, authorizationHeader);
             return Ok(trip);
         }
         catch (NotFoundException ex)

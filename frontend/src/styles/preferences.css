@@ -1,5 +1,4 @@
-
-.registration-page { min-height:100vh; padding:30px 24px 60px; background:rgb(var(--sf-surface-container-lowest)); font-family:Inter,sans-serif; }
+.registration-page { min-height:100vh; min-height:100dvh; padding:30px 24px 60px; background:rgb(var(--sf-surface-container-lowest)); font-family:Inter,sans-serif; }
 .registration-brand { display:flex; align-items:center; gap:10px; width:fit-content; margin:0 auto 32px; color:rgb(var(--sf-secondary)); font:700 20px 'Plus Jakarta Sans',sans-serif; text-decoration:none; }
 .registration-brand img { width:34px; height:34px; }
 .registration-card { max-width:700px; margin:auto; }

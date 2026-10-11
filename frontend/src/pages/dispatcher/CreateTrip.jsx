@@ -142,6 +142,9 @@ export default function CreateTrip() {
         } catch (err) {
           showToast(
             err.status === 409
+              // The conflict may be the vehicle (just taken) or the driver
+              // (already has an assigned/in-progress trip) - show the
+              // backend's own reason instead of assuming it's the vehicle.
               ? `Trip created, but it could not be assigned: ${err.message || 'the vehicle or driver is no longer available'}. Assign one from Trips instead.`
               : 'Trip created, but the vehicle could not be assigned. Assign one from Trips instead.',
             'error'

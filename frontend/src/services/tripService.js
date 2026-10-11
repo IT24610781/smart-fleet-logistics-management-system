@@ -30,6 +30,14 @@ export async function respondToTrip(tripId, decision) {
   return data
 }
 
+// Dispatcher/Admin cancels a trip. Only valid while the trip is Requested or
+// In-Progress - the backend returns 409 for Assigned (a driver response is
+// outstanding), Completed or Cancelled (already final).
+export async function cancelTrip(tripId) {
+  const { data } = await tripApi.post(`/api/trips/${tripId}/cancel`)
+  return data
+}
+
 export async function updateTripStatus(tripId, status) {
   const { data } = await tripApi.patch(`/api/trips/${tripId}/status`, { status })
   return data
@@ -65,6 +73,8 @@ export async function getMyTrips() {
 }
 
 // US-12 follow-up: driver marks their own In-Progress trip as Completed.
+// Only valid from In-Progress - the backend rejects any other status with a
+// 409 and frees the assigned vehicle automatically.
 export async function completeTrip(tripId) {
   const { data } = await tripApi.post(`/api/trips/${tripId}/complete`)
   return data

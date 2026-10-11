@@ -18,7 +18,7 @@ const TITLES = {
   '/dispatcher/dashboard': 'Dispatcher dashboard',
   '/dispatcher/trips': 'Trips',
   '/dispatcher/tracking': 'Live tracking',
-  '/dispatcher/reports': 'Reports',
+  '/dispatcher/trips/history': 'Trip History',
   '/driver/dashboard': 'Driver dashboard',
   '/driver/trips': 'My trips',
   '/profile': 'My profile',

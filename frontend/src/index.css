@@ -1,20 +1,5 @@
-/* ==========================================================================
-   Smart Fleet — Design Tokens
-   Re-skinned to the "Precision Fleet Architecture" system from the Stitch
-   export (see DESIGN.md). Colors/spacing/radius/typography live in
-   tailwind.config.js as Tailwind theme values (e.g. bg-primary,
-   text-on-surface, rounded-xl, font-headline-lg) — this file only holds
-   what Tailwind utility classes can't express: font loading, the global
-   focus ring, scrollbar styling, and a couple of small reusable classes
-   used across pages.
-   ========================================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
-/* Compatibility layer for pages not covered by the Stitch redesign
-   (Vehicles, Reports, Trips, Tracking, MyTrips, Dispatcher pages) — see
-   styles/legacy.css for why this exists. Must stay above @tailwind per
-   CSS @import ordering rules. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=optional');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=optional');
 @import './styles/legacy.css';
 @import './styles/themes.css';
 @import './styles/navigation.css';
@@ -32,6 +17,24 @@ html,
 body {
   margin: 0;
   padding: 0;
+  /* Stops the iOS/Android "rubber-band" bounce and pull-to-refresh drag -
+     on a phone, opening a full-height page and having the browser's own
+     bounce/overscroll animation settle right after looks exactly like the
+     page itself is moving. This removes that movement; normal in-page
+     scrolling is unaffected. */
+  overscroll-behavior-y: none;
+}
+
+html {
+  /* Always reserves the vertical scrollbar's width, whether or not a
+     scrollbar is actually showing. Without this, a page toggling between
+     "needs a scrollbar" and "doesn't" (e.g. while web fonts load and the
+     layout's height settles) changes the viewport's usable width by the
+     scrollbar's ~15px, and anything sized with background-size:cover -
+     like the login page's background photo - visibly rescales/snaps when
+     that happens, which reads as the whole page "zooming". Reserving the
+     gutter up front means that width never changes. */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -39,7 +42,24 @@ body {
 }
 
 #root {
+  /* 100vh on a phone is measured as if the browser's address bar is
+     always hidden. As it actually shows/hides while the page settles
+     right after opening, every element sized off 100vh visibly resizes -
+     the other half of the "page moves on open" issue on mobile. 100dvh
+     (dynamic viewport height) tracks the real visible area instead, so
+     nothing resizes once it's loaded; older browsers that don't know the
+     dvh unit just keep the first, 100vh, declaration. */
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Same dvh fix as #root above, for every page built with Tailwind's
+   min-h-screen utility (AuthShell, AppShell, Forbidden) - overriding the
+   utility here, after @tailwind utilities, rather than touching every
+   className, so it's one place for the whole app. */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Focus visibility — kept everywhere, never suppressed */
@@ -146,25 +166,51 @@ a.fleet-brand, a.fleet-brand:hover { text-decoration: none; }
 .auth-glass-page, .registration-page {
   --auth-glass:255 255 255;
   --auth-blue:8 43 120;
-  background:radial-gradient(ellipse at 12% 12%,rgb(63 132 224 / .22),transparent 48%),radial-gradient(ellipse at 90% 85%,rgb(63 167 210 / .18),transparent 45%),rgb(var(--sf-background));
+  /* Outer background photo: frontend/public/login-bg.jpg, a futuristic
+     logistics-yard render. The two radial gradients + a light dark tint sit
+     on top of it so the photo stays clearly visible while the card's shadow
+     and surrounding page chrome keep enough contrast. */
+  background:
+    radial-gradient(ellipse at 12% 12%,rgb(63 132 224 / .22),transparent 48%),
+    radial-gradient(ellipse at 90% 85%,rgb(63 167 210 / .18),transparent 45%),
+    linear-gradient(rgb(var(--sf-background) / .35),rgb(var(--sf-background) / .35)),
+    url('/login-bg.jpg') center / cover no-repeat,
+    rgb(var(--sf-background));
   color:rgb(var(--sf-on-surface));
 }
 .auth-glass-card, .registration-card {
-  background:rgb(var(--auth-glass) / .65);
+  /* Opacity + blur lowered (was .65 / 24px) so the background photo reads
+     through the right-side sign-in panel clearly - the brand panel on the
+     left is unaffected since it paints its own solid navy gradient on top
+     of this layer regardless. */
+  background:rgb(var(--auth-glass) / .32);
   border:1px solid rgb(var(--sf-outline-variant) / .65);
   border-radius:24px;
   box-shadow:0 24px 70px rgb(8 43 120 / .14),inset 0 1px 0 rgb(255 255 255 / .5);
-  backdrop-filter:blur(24px) saturate(140%);
-  -webkit-backdrop-filter:blur(24px) saturate(140%);
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
 }
 .auth-glass-card .auth-brand-panel, html[data-theme="dark"] .auth-glass-card .auth-brand-panel {
-  background:linear-gradient(145deg,rgb(8 43 120 / .94),rgb(11 58 130 / .84));
+  /* Darkened from the earlier mid-navy gradient so the brand mark (the
+     larger icon + wordmark above) reads as a separately-lit object against
+     the panel instead of blending into it. */
+  background:linear-gradient(145deg,rgb(4 16 48 / .98),rgb(6 26 64 / .95));
   color:#fff;
   border-right:1px solid rgb(255 255 255 / .18);
 }
 .auth-glass-card .auth-brand-panel :is(h1,p,span) { color:#e6f0ff; }
 .auth-glass-card .auth-brand-panel h1 { color:#fff; }
-.auth-glass-form { background:rgb(var(--auth-glass) / .2); }
+/* The card (.auth-glass-card above) already blurs/tints whatever sits
+   behind the whole card. This panel sits on top of that, lightly tinted and
+   lightly blurred, so the background photo shows through clearly behind the
+   sign-in form while the brand panel (left) stays solid navy. */
+.auth-glass-form {
+  background:rgb(var(--auth-glass) / .04);
+  backdrop-filter:blur(8px) saturate(140%);
+  -webkit-backdrop-filter:blur(8px) saturate(140%);
+  border-left:1px solid rgb(255 255 255 / .12);
+}
+@supports not (backdrop-filter:blur(1px)) { .auth-glass-form { background:rgb(var(--auth-glass) / .85); } }
 .auth-glass-form input, .registration-form input { background:rgb(var(--auth-glass) / .56); border-color:rgb(var(--sf-outline-variant) / .85); color:rgb(var(--sf-on-surface)); }
 .auth-glass-form input:focus, .registration-form input:focus { border-color:#4e84d5; box-shadow:0 0 0 3px rgb(78 132 213 / .15); }
 .auth-glass-form button[type="submit"], .registration-form .registration-submit { background:rgb(var(--auth-blue)); color:#fff; }
@@ -177,6 +223,27 @@ html[data-theme="dark"] .registration-brand, html[data-theme="dark"] .registrati
 @supports not (backdrop-filter:blur(1px)) { .auth-glass-card,.registration-card { background:rgb(var(--sf-surface-container-lowest)); } }
 @media(max-width:600px) { .registration-card { padding:28px 20px; border-radius:18px; } .registration-page { padding:24px 12px; } .registration-form .registration-submit { min-width:0; width:100%; } }
 
+.btn-glass, .btn-glass-danger, .btn-glass-info {
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+.btn-glass { background: rgb(var(--sf-secondary) / .12); border: 1px solid rgb(var(--sf-secondary) / .35); color: rgb(var(--sf-secondary)); }
+.btn-glass:hover:not(:disabled) { background: rgb(var(--sf-secondary) / .2); border-color: rgb(var(--sf-secondary) / .5); }
+
+.btn-glass-danger { background: rgb(var(--sf-error) / .12); border: 1px solid rgb(var(--sf-error) / .35); color: rgb(var(--sf-error)); }
+.btn-glass-danger:hover:not(:disabled) { background: rgb(var(--sf-error) / .2); border-color: rgb(var(--sf-error) / .5); }
+
+.btn-glass-info { background: rgb(var(--sf-primary) / .12); border: 1px solid rgb(var(--sf-primary) / .35); color: rgb(var(--sf-primary)); }
+.btn-glass-info:hover:not(:disabled) { background: rgb(var(--sf-primary) / .2); border-color: rgb(var(--sf-primary) / .5); }
+
+.btn-glass:disabled, .btn-glass-danger:disabled, .btn-glass-info:disabled { background: rgb(var(--sf-outline-variant) / .12); border-color: rgb(var(--sf-outline-variant) / .4); color: rgb(var(--sf-on-surface-variant)); }
+
+@supports not (backdrop-filter:blur(1px)) {
+  .btn-glass { background: rgb(var(--sf-secondary) / .14); }
+  .btn-glass-danger { background: rgb(var(--sf-error) / .14); }
+  .btn-glass-info { background: rgb(var(--sf-primary) / .14); }
+}
+
 .password-verification { font:400 14px/1.6 Inter,sans-serif; }
 .password-change-page { max-width:720px; margin:auto; }
 .password-change-card { margin-top:24px; }
@@ -188,7 +255,7 @@ html[data-theme="dark"] .registration-brand, html[data-theme="dark"] .registrati
 .password-back-link { color:rgb(var(--sf-primary)); font:600 14px/1.6 Inter,sans-serif; }
 
 /* The shared depot photograph belongs only to the three stakeholder dashboards. */
-.dashboard-main { position:relative; isolation:isolate; min-height:calc(100vh - 64px); }
+.dashboard-main { position:relative; isolation:isolate; min-height:calc(100vh - 64px); min-height:calc(100dvh - 64px); }
 .dashboard-main::before {
   content:""; position:absolute; z-index:-1; inset:0 0 auto; height:680px; pointer-events:none;
   background-image:linear-gradient(180deg,rgb(5 18 32 / .35) 0%,rgb(5 18 32 / .48) 39%,rgb(var(--sf-background) / .92) 82%,rgb(var(--sf-background)) 100%),url('/images/fleet-dashboard-depot.png');

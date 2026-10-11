@@ -6,10 +6,15 @@ import DataTable from '../../components/common/DataTable'
 import StatusBadge from '../../components/common/StatusBadge'
 import Button from '../../components/common/Button'
 import Icon from '../../components/common/Icon'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { ErrorMessage } from '../../components/common/ErrorMessage'
+import { useToast } from '../../context/ToastContext'
 import * as tripService from '../../services/tripService'
 import * as userService from '../../services/userService'
 import './Trips.css'
+
+const CANCELLABLE_STATUSES = ['Requested', 'Assigned', 'In-Progress']
+const CANCEL_DISABLED_STATUSES = ['In-Progress']
 
 const TABS = ['All', 'Requested', 'Assigned', 'In-Progress', 'Completed', 'Cancelled']
 
@@ -29,6 +34,7 @@ function driverName(driver) {
 // the tab changes, and joins against the driver list so the Dispatcher can
 // see who a trip is with and, once accepted, how to reach them.
 export default function Trips() {
+  const { showToast } = useToast()
   const [tab, setTab] = useState('All')
   const [query, setQuery] = useState('')
   const [trips, setTrips] = useState([])
@@ -37,6 +43,10 @@ export default function Trips() {
   const [reloadKey, setReloadKey] = useState(0)
 
   const [driversById, setDriversById] = useState({})
+
+  const [cancelTarget, setCancelTarget] = useState(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -126,6 +136,37 @@ export default function Trips() {
     return null
   }
 
+  function handleCancelClick(trip) {
+    setCancelError(null)
+    setCancelTarget(trip)
+  }
+
+  function handleCancelDialogClose() {
+    if (cancelling) return
+    setCancelTarget(null)
+    setCancelError(null)
+  }
+
+  async function handleConfirmCancel() {
+    if (!cancelTarget) return
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      await tripService.cancelTrip(cancelTarget.id)
+      setTrips((prev) => prev.map((t) => (t.id === cancelTarget.id ? { ...t, status: 'Cancelled' } : t)))
+      setCancelTarget(null)
+      showToast('Trip cancelled.', 'success')
+    } catch (err) {
+      setCancelError(
+        err.status === 409
+          ? (err.message || 'This trip can no longer be cancelled - it may have changed status.')
+          : err.message || 'Unable to cancel this trip. Please try again.'
+      )
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   const columns = [
     { key: 'id', header: 'Trip ID', render: (r) => <span className="cell-id">{r.id.slice(0, 8)}</span> },
     { key: 'pickupLocation', header: 'Pickup' },
@@ -139,9 +180,22 @@ export default function Trips() {
       header: '',
       align: 'right',
       render: (r) => (
-        <Link to={`/dispatcher/trips/${r.id}/details`}>
-          <Button variant="ghost">View details</Button>
-        </Link>
+        <div className="cell-actions">
+          {CANCELLABLE_STATUSES.includes(r.status) && (
+            <Button
+              variant="ghost"
+              className="btn-glass-danger"
+              disabled={CANCEL_DISABLED_STATUSES.includes(r.status)}
+              title={CANCEL_DISABLED_STATUSES.includes(r.status) ? 'Cancel is disabled once the driver has accepted the trip' : undefined}
+              onClick={() => handleCancelClick(r)}
+            >
+              Cancel
+            </Button>
+          )}
+          <Link to={`/dispatcher/trips/${r.id}/details`}>
+            <Button variant="ghost" className="btn-glass-info">View details</Button>
+          </Link>
+        </div>
       ),
     },
   ]
@@ -190,6 +244,27 @@ export default function Trips() {
           emptyDescription={tab === 'All' ? 'Create a trip request to get started.' : 'Try a different tab or search.'}
         />
       )}
+
+      <ConfirmDialog
+        open={!!cancelTarget}
+        title="Cancel this trip?"
+        body={
+          cancelTarget
+            ? `Cancel the trip from ${cancelTarget.pickupLocation} to ${cancelTarget.dropoffLocation}? ${
+                cancelTarget.status === 'Assigned'
+                  ? 'The assigned vehicle will be freed up for new assignments.'
+                  : 'This cannot be undone.'
+              }`
+            : ''
+        }
+        confirmLabel="Cancel trip"
+        cancelLabel="Keep trip"
+        variant="danger"
+        loading={cancelling}
+        errorMessage={cancelError || undefined}
+        onConfirm={handleConfirmCancel}
+        onCancel={handleCancelDialogClose}
+      />
     </AppShell>
   )
 }

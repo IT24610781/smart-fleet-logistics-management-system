@@ -20,6 +20,7 @@ import Trips from './pages/dispatcher/Trips'
 import CreateTrip from './pages/dispatcher/CreateTrip'
 import TripDetails from './pages/dispatcher/TripDetails'
 import Tracking from './pages/dispatcher/Tracking'
+import TripHistory from './pages/dispatcher/TripHistory'
 
 import DriverDashboard from './pages/driver/DriverDashboard'
 import MyTrips from './pages/driver/MyTrips'
@@ -69,7 +70,7 @@ export default function App() {
         <Route path="/dispatcher/trips/create" element={<ProtectedRoute allowedRoles={['Dispatcher']}><CreateTrip /></ProtectedRoute>} />
         <Route path="/dispatcher/trips/:id/details" element={<ProtectedRoute allowedRoles={['Dispatcher']}><TripDetails /></ProtectedRoute>} />
         <Route path="/dispatcher/tracking" element={<ProtectedRoute allowedRoles={['Dispatcher']}><Tracking /></ProtectedRoute>} />
-        <Route path="/dispatcher/reports" element={<ProtectedRoute allowedRoles={['Dispatcher']}><Reports /></ProtectedRoute>} />
+        <Route path="/dispatcher/trips/history" element={<ProtectedRoute allowedRoles={['Dispatcher']}><TripHistory /></ProtectedRoute>} />
 
         {/* Driver */}
         <Route path="/driver/dashboard" element={<ProtectedRoute allowedRoles={['Driver']}><DriverDashboard /></ProtectedRoute>} />

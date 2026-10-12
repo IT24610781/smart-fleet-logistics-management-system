@@ -5,7 +5,7 @@ using Xunit;
 namespace Frontend.SeleniumTests;
 
 /// <summary>
-/// SCRUM-154 / US-14: "Driver sends live location update", seen from the driver's My Trips page (/driver/trips).
+/// SCRUM-154 / US-14: "Driver sends live location update", seen from the driver's My Trips page.
 /// The page shares the driver's browser position automatically while a trip is In-Progress.
 /// Chrome is given a fake position through the DevTools protocol, so no real GPS is needed.
 ///   dotnet test tests/Frontend.SeleniumTests --filter "Story=US-14"

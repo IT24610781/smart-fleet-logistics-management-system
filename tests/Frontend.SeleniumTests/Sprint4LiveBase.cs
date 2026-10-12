@@ -8,7 +8,7 @@ using Xunit;
 namespace Frontend.SeleniumTests;
 
 /// <summary>
-/// Shared plumbing for the Sprint 4 live Selenium tests (US-14, US-17, US-18, US-19).
+/// Shared plumbing for the Sprint 4 live Selenium tests.
 /// Same opt-in rules as TrackingPageTests:
 ///   set QA_RUN_SPRINT3_UI=1
 ///   set "QA_ADMIN_PASSWORD=..."          (QA_ADMIN_USERNAME defaults to admin)

@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 import Icon from '../common/Icon'
 import { NAV_BY_ROLE } from './navConfig'
 import { useAuth } from '../../context/AuthContext'
-const descriptions = { Dashboard:'Your fleet overview and daily operations.', Drivers:'View Driver accounts and manage their availability.', Vehicles:'Manage your vehicle registry and fleet availability.', Trips:'Create requests and manage assignments.', 'My Trips':'View assigned trips and respond to requests.', 'Completed Trips':'Your finished trip history.', Tracking:'Open the fleet tracking page.', Reports:'Open the reporting page.' }
+const descriptions = { Dashboard:'Your fleet overview and daily operations.', Drivers:'View Driver accounts and manage their availability.', Vehicles:'Manage your vehicle registry and fleet availability.', Trips:'Create requests and manage assignments.', 'My Trips':'View assigned trips and respond to requests.', 'Completed Trips':'Your finished trip history.', 'Trip History':'Trips you created that have been completed.', Tracking:'Open the fleet tracking page.', Reports:'Open the reporting page.' }
 export default function Sidebar({ mobileOpen, onCloseMobile }) {
   const { user } = useAuth()
   const [dismissed, setDismissed] = useState(null)

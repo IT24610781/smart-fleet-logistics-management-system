@@ -13,11 +13,6 @@ import { getDriverPerformanceReport, listTrips } from '../../services/tripServic
 import { listDrivers, getUser } from '../../services/userService'
 import { FLEET_OVERVIEW } from '../../utils/mockData'
 import './Reports.css'
-// AdminDetails.jsx's own markup (.admin-detail-dialog etc.) and the plain
-// "view trip" link style (.admin-text-button) are only defined in
-// AdminDashboard.css - pulled in here too so the Trip Details modal below
-// is styled correctly even when a Dispatcher opens this same page without
-// ever having visited /admin/dashboard.
 import '../admin/AdminDashboard.css'
 
 const RANGE_DAYS = { '7d': 7, '30d': 30, '90d': 90 }
@@ -60,6 +55,7 @@ export default function Reports() {
   const [driverReloadKey, setDriverReloadKey] = useState(0)
   const [selectedDriverId, setSelectedDriverId] = useState('')
 
+  // Trip Details: every trip, filtered client-side to the selected date
 
   const [allTrips, setAllTrips] = useState([])
   const [driversById, setDriversById] = useState({})
@@ -286,29 +282,31 @@ export default function Reports() {
                 )}
               </div>
 
-              <table className="utilization-table">
-                <thead>
-                  <tr>
-                    <th>Vehicle</th>
-                    <th>Trips</th>
-                    <th>In-use hours</th>
-                    <th>Utilization</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {utilization.vehicles.map((v) => (
-                    <tr key={v.vehicleId}>
-                      <td>{v.registrationNo} <span className="utilization-vehicle-type">· {v.vehicleType}</span></td>
-                      <td>{v.completedTripCount}</td>
-                      <td>{v.inUseHours}h</td>
-                      <td>
-                        {v.utilizationPercent}%
-                        {v.hasInsufficientData && <StatusBadge status="Limited data" />}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="utilization-table">
+                  <thead>
+                    <tr>
+                      <th>Vehicle</th>
+                      <th>Trips</th>
+                      <th>In-use hours</th>
+                      <th>Utilization</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {utilization.vehicles.map((v) => (
+                      <tr key={v.vehicleId}>
+                        <td>{v.registrationNo} <span className="utilization-vehicle-type">· {v.vehicleType}</span></td>
+                        <td>{v.completedTripCount}</td>
+                        <td>{v.inUseHours}h</td>
+                        <td>
+                          {v.utilizationPercent}%
+                          {v.hasInsufficientData && <StatusBadge status="Limited data" />}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </div>
@@ -423,31 +421,33 @@ export default function Reports() {
               )}
 
               {visibleDrivers.length > 0 && (
-                <table className="utilization-table">
-                  <thead>
-                    <tr>
-                      <th>Driver</th>
-                      <th>Accepted</th>
-                      <th>Completed</th>
-                      <th>Rejected</th>
-                      <th>Activity</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleDrivers.map((d) => (
-                      <tr key={d.driverId}>
-                        <td>
-                          {d.firstName} {d.lastName}{' '}
-                          <StatusBadge status={d.isActive ? 'Active' : 'Inactive'} />
-                        </td>
-                        <td>{d.acceptedCount}</td>
-                        <td>{d.completedCount}</td>
-                        <td>{d.rejectedCount}</td>
-                        <td>{!d.hasActivity && <StatusBadge status="No activity" />}</td>
+                <div className="overflow-x-auto">
+                  <table className="utilization-table">
+                    <thead>
+                      <tr>
+                        <th>Driver</th>
+                        <th>Accepted</th>
+                        <th>Completed</th>
+                        <th>Rejected</th>
+                        <th>Activity</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {visibleDrivers.map((d) => (
+                        <tr key={d.driverId}>
+                          <td>
+                            {d.firstName} {d.lastName}{' '}
+                            <StatusBadge status={d.isActive ? 'Active' : 'Inactive'} />
+                          </td>
+                          <td>{d.acceptedCount}</td>
+                          <td>{d.completedCount}</td>
+                          <td>{d.rejectedCount}</td>
+                          <td>{!d.hasActivity && <StatusBadge status="No activity" />}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </>
           )}

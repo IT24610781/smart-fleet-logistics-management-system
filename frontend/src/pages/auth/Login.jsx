@@ -70,7 +70,7 @@ export default function Login() {
           onChange={(e) => setUsername(e.target.value)}
           required
           autoComplete="username"
-          placeholder="e.g. driver01"
+          placeholder="e.g. Kavindu"
         />
         <FormField
           label="Password"

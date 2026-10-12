@@ -52,17 +52,29 @@ public class TrackingPageTests : Sprint3SeleniumTestBase
     // ---------------------------------------------------------------- API helpers
 
     private static async Task<JsonNode> Api(string host, string path, string method = "GET",
-        object? body = null, string? token = null)
+    object? body = null, string? token = null)
+{
+    for (var attempt = 1; ; attempt++)
     {
-        using var client = new HttpClient { BaseAddress = new Uri(host) };
-        if (token != null) client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var request = new HttpRequestMessage(new HttpMethod(method), path);
-        if (body != null) request.Content = JsonContent.Create(body);
-        var response = await client.SendAsync(request);
-        var text = await response.Content.ReadAsStringAsync();
-        Assert.True(response.IsSuccessStatusCode, $"{method} {host}{path} -> {(int)response.StatusCode}: {text}");
-        return string.IsNullOrEmpty(text) ? new JsonObject() : JsonNode.Parse(text)!;
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(host) };
+            if (token != null) client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var request = new HttpRequestMessage(new HttpMethod(method), path);
+            if (body != null) request.Content = JsonContent.Create(body);
+            var response = await client.SendAsync(request);
+            var text = await response.Content.ReadAsStringAsync();
+            Assert.True(response.IsSuccessStatusCode, $"{method} {host}{path} -> {(int)response.StatusCode}: {text}");
+            return string.IsNullOrEmpty(text) ? new JsonObject() : JsonNode.Parse(text)!;
+        }
+        catch (HttpRequestException ex) when (attempt < 3)
+        {
+            Console.WriteLine($"[QA] {method} {host}{path} attempt {attempt} failed: {ex.InnerException?.Message ?? ex.Message}");
+            await Task.Delay(1000 * attempt);
+        }
     }
+}
+
 
     private async Task<string> Token(string username, string password) =>
         (await Api(AuthUrl, "/api/auth/login", "POST", new { username, password }))["token"]!.GetValue<string>();

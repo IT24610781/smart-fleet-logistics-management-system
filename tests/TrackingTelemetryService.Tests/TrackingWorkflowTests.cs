@@ -65,6 +65,55 @@ public class TrackingWorkflowTests
     }
 
     [Fact]
+    public async Task SubmitLocation_ObservedAtWithoutOffset_SriLankanLocalTime_IsAccepted()
+    {
+        // Regression for QA bug on L14_08: a timestamp like
+        // "2026-10-12T19:21:00" (no "Z"/offset) deserializes with
+        // DateTimeKind.Unspecified. It represents the driver device's
+        // current Sri Lankan wall-clock time (UTC+5:30), so it must be
+        // converted before being compared against DateTime.UtcNow -
+        // otherwise a perfectly valid "now" looks ~5.5 hours in the future.
+        var repository = new InMemoryTrackingRepository();
+        var tripClient = new FakeTripDispatchClient { Result = new TripSnapshot(TripId, "In-Progress", DriverId, VehicleId) };
+        var service = new TrackingService(repository, tripClient);
+
+        var sriLankaLocalNow = DateTime.SpecifyKind(
+            DateTime.UtcNow.AddMinutes(330), // UTC+5:30
+            DateTimeKind.Unspecified);
+
+        var result = await service.SubmitLocationAsync(DriverId, new SubmitLocationRequest
+        {
+            TripId = TripId, Latitude = 7.2513m, Longitude = 80.3464m, ObservedAt = sriLankaLocalNow
+        }, "Bearer x", CancellationToken.None);
+
+        Assert.Equal(1, repository.Writes);
+        Assert.Equal(7.2513m, result.Latitude);
+        // Stored value is normalized back to true UTC, not the raw local digits.
+        Assert.True(Math.Abs((repository.LastWrite!.ObservedAt - DateTime.UtcNow).TotalMinutes) < 1);
+    }
+
+    [Fact]
+    public async Task SubmitLocation_ObservedAtWithoutOffset_TooFarInPastEvenAfterConversion_IsRejected()
+    {
+        // An offset-less timestamp still has to be a real "now", not an
+        // excuse to bypass staleness checks once converted from local time.
+        var repository = new InMemoryTrackingRepository();
+        var tripClient = new FakeTripDispatchClient { Result = new TripSnapshot(TripId, "In-Progress", DriverId, VehicleId) };
+        var service = new TrackingService(repository, tripClient);
+
+        var staleLocalTimestamp = DateTime.SpecifyKind(
+            DateTime.UtcNow.AddMinutes(330).AddHours(-48),
+            DateTimeKind.Unspecified);
+
+        await Assert.ThrowsAsync<ValidationException>(() => service.SubmitLocationAsync(DriverId, new SubmitLocationRequest
+        {
+            TripId = TripId, Latitude = 7.2513m, Longitude = 80.3464m, ObservedAt = staleLocalTimestamp
+        }, "Bearer x", CancellationToken.None));
+
+        Assert.Equal(0, repository.Writes);
+    }
+
+    [Fact]
     public async Task SubmitLocation_AnotherDriversTrip_LooksIdenticalToNotFound()
     {
         var repository = new InMemoryTrackingRepository();
@@ -149,6 +198,29 @@ public class TrackingWorkflowTests
         Assert.Equal(2, history.Count);
         Assert.All(history, h => Assert.Equal(TripId, h.TripId));
         Assert.True(history[0].ObservedAt < history[1].ObservedAt);
+    }
+
+    [Fact]
+    public async Task GetHistory_SmallLimit_StillIncludesTheNewestPing()
+    {
+        // Regression for QA bug on L16_02: pings submitted out of order,
+        // identified by latitude (1.1 oldest, 2.2 middle, 3.3 newest).
+        // With limit=2 the two most recent pings must come back - not the
+        // two oldest - because the repository was ordering ASC and taking
+        // from the front, silently dropping the newest ping.
+        var repository = new InMemoryTrackingRepository();
+        var t0 = DateTime.UtcNow.AddMinutes(-10);
+        repository.Seed(TripId, DriverId, VehicleId, t0, latitude: 1.1m);         // oldest
+        repository.Seed(TripId, DriverId, VehicleId, t0.AddMinutes(1), latitude: 2.2m); // middle
+        repository.Seed(TripId, DriverId, VehicleId, t0.AddMinutes(2), latitude: 3.3m); // newest
+
+        var tripClient = new FakeTripDispatchClient { Result = new TripSnapshot(TripId, "In-Progress", DriverId, VehicleId) };
+        var service = new TrackingService(repository, tripClient);
+
+        var history = await service.GetHistoryAsync(TripId, null, 2, "Bearer x", CancellationToken.None);
+
+        Assert.Equal(2, history.Count);
+        Assert.Equal(new[] { 2.2m, 3.3m }, history.Select(h => h.Latitude));
     }
 
     [Fact]
@@ -250,7 +322,13 @@ public class TrackingWorkflowTests
         public Task<List<TripLocationUpdate>> GetByTripIdAsync(Guid tripId, int limit)
         {
             LastRequestedLimit = limit;
-            var result = Rows.Where(r => r.TripId == tripId).OrderBy(r => r.ObservedAt).Take(limit).ToList();
+            // Mirrors TrackingRepository's real query: take the newest
+            // `limit` pings, then return them back in chronological order.
+            var result = Rows.Where(r => r.TripId == tripId)
+                .OrderByDescending(r => r.ObservedAt)
+                .Take(limit)
+                .OrderBy(r => r.ObservedAt)
+                .ToList();
             return Task.FromResult(result);
         }
 
@@ -259,11 +337,11 @@ public class TrackingWorkflowTests
         public Task<Dictionary<Guid, TripLocationUpdate>> GetLatestPerTripAsync(List<Guid> tripIds) =>
             throw new NotSupportedException("Not exercised by TrackingWorkflowTests.");
 
-        public void Seed(Guid tripId, Guid driverId, Guid vehicleId, DateTime observedAt) =>
+        public void Seed(Guid tripId, Guid driverId, Guid vehicleId, DateTime observedAt, decimal latitude = 7m) =>
             Rows.Add(new TripLocationUpdate
             {
                 Id = Guid.NewGuid(), TripId = tripId, DriverId = driverId, VehicleId = vehicleId,
-                Latitude = 7m, Longitude = 80m, ObservedAt = observedAt, ReceivedAt = observedAt
+                Latitude = latitude, Longitude = 80m, ObservedAt = observedAt, ReceivedAt = observedAt
             });
     }
 

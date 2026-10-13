@@ -11,7 +11,7 @@ import AdminDetails from '../../components/common/AdminDetails'
 import { getFleetUtilizationReport, getTripCompletionReport } from '../../services/reportService'
 import { getDriverPerformanceReport, listTrips } from '../../services/tripService'
 import { listDrivers, getUser } from '../../services/userService'
-import { FLEET_OVERVIEW } from '../../utils/mockData'
+import { listVehicles } from '../../services/vehicleService'
 import './Reports.css'
 import '../admin/AdminDashboard.css'
 
@@ -65,6 +65,10 @@ export default function Reports() {
   const [tripsReloadKey, setTripsReloadKey] = useState(0)
   const [tripStatusFilter, setTripStatusFilter] = useState('All')
   const [selectedTrip, setSelectedTrip] = useState(null)
+  const [vehicles, setVehicles] = useState([])
+  const [vehiclesLoading, setVehiclesLoading] = useState(true)
+  const [vehiclesError, setVehiclesError] = useState('')
+  const [vehiclesReloadKey, setVehiclesReloadKey] = useState(0)
 
   const mountedRef = useRef(true)
 
@@ -149,6 +153,40 @@ export default function Reports() {
       mountedRef.current = false
     }
   }, [range, driverReloadKey])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      setVehiclesLoading(true)
+      try {
+        const data = await listVehicles()
+        if (cancelled) return
+        setVehicles(data)
+        setVehiclesError('')
+      } catch (err) {
+        if (!cancelled) setVehiclesError(err?.message || 'Could not load vehicle status.')
+      } finally {
+        if (!cancelled) setVehiclesLoading(false)
+      }
+    }
+
+    run()
+
+    return () => {
+      cancelled = true
+    }
+  }, [vehiclesReloadKey])
+
+  const fleetOverview = useMemo(() => {
+    const counts = { available: 0, onTrip: 0, underMaintenance: 0 }
+    for (const v of vehicles) {
+      if (v.status === 'Available') counts.available += 1
+      else if (v.status === 'On Trip') counts.onTrip += 1
+      else if (v.status === 'Under Maintenance') counts.underMaintenance += 1
+    }
+    return counts
+  }, [vehicles])
 
   useEffect(() => {
     let cancelled = false
@@ -352,14 +390,39 @@ export default function Reports() {
         </div>
 
         <div className="card card-pad">
-          <h3 className="section-title">Vehicle Status Overview</h3>
-          <p className="report-demo-note">Demo data.</p>
-          <div>
-            <div className="report-metric-row"><StatusBadge status="Available" /><span>{FLEET_OVERVIEW.available}</span></div>
-            <div className="report-metric-row"><StatusBadge status="In Use" /><span>{FLEET_OVERVIEW.inUse}</span></div>
-            <div className="report-metric-row"><StatusBadge status="Maintenance" /><span>{FLEET_OVERVIEW.maintenance}</span></div>
-            <div className="report-metric-row"><StatusBadge status="Inactive" /><span>{FLEET_OVERVIEW.inactive}</span></div>
+          <div className="report-card-header">
+            <h3 className="section-title">Vehicle Status Overview</h3>
+            {!vehiclesLoading && !vehiclesError && (
+              <Button variant="ghost" size="sm" onClick={() => setVehiclesReloadKey((k) => k + 1)}>Refresh</Button>
+            )}
           </div>
+
+          {vehiclesLoading && <LoadingSpinner label="Loading vehicle status…" center />}
+
+          {!vehiclesLoading && vehiclesError && (
+            <>
+              <ErrorMessage>{vehiclesError}</ErrorMessage>
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <Button variant="secondary" size="sm" onClick={() => setVehiclesReloadKey((k) => k + 1)}>Try again</Button>
+              </div>
+            </>
+          )}
+
+          {!vehiclesLoading && !vehiclesError && vehicles.length === 0 && (
+            <EmptyState
+              icon="grid"
+              title="No vehicles"
+              description="No vehicles are registered yet."
+            />
+          )}
+
+          {!vehiclesLoading && !vehiclesError && vehicles.length > 0 && (
+            <div>
+              <div className="report-metric-row"><StatusBadge status="Available" /><span>{fleetOverview.available}</span></div>
+              <div className="report-metric-row"><StatusBadge status="On Trip" /><span>{fleetOverview.onTrip}</span></div>
+              <div className="report-metric-row"><StatusBadge status="Under Maintenance" /><span>{fleetOverview.underMaintenance}</span></div>
+            </div>
+          )}
         </div>
 
         <div className="card card-pad">

@@ -50,20 +50,30 @@ public class TrackingRepository(DatabaseConnection databaseConnection) : ITracki
 
         public async Task<List<TripLocationUpdate>> GetByTripIdAsync(Guid tripId, int limit)
     {
+        // SCRUM-23/134 (US-16): LIMIT has to cap how many pings come back,
+        // but it must cap from the newest end. Ordering ASC and limiting
+        // directly (the old query) keeps the oldest @limit rows and silently
+        // drops the newest ones whenever a trip has more pings than the
+        // requested limit. Instead, take the newest @limit rows first, then
+        // re-sort that subset ascending so callers still see chronological
+        // order with the newest ping included.
         const string sql = """
-            SELECT
-                id,
-                trip_id,
-                driver_id,
-                vehicle_id,
-                latitude,
-                longitude,
-                observed_at,
-                received_at
-            FROM trip_location_updates
-            WHERE trip_id = @trip_id
-            ORDER BY observed_at ASC
-            LIMIT @limit;
+            SELECT * FROM (
+                SELECT
+                    id,
+                    trip_id,
+                    driver_id,
+                    vehicle_id,
+                    latitude,
+                    longitude,
+                    observed_at,
+                    received_at
+                FROM trip_location_updates
+                WHERE trip_id = @trip_id
+                ORDER BY observed_at DESC
+                LIMIT @limit
+            ) AS newest_pings
+            ORDER BY observed_at ASC;
             """;
 
         await using var connection = databaseConnection.CreateConnection();

@@ -8,6 +8,7 @@ public class TrackingService(ITrackingRepository repository, ITripDispatchClient
 {
     private static readonly TimeSpan MaxFutureSkew = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan MaxPastAge = TimeSpan.FromHours(24);
+    private static readonly TimeSpan SriLankaOffset = TimeSpan.FromMinutes(330);
 
     public async Task<LocationUpdateResponse> SubmitLocationAsync(
         Guid driverId,
@@ -40,18 +41,24 @@ public class TrackingService(ITrackingRepository repository, ITripDispatchClient
             errors["longitude"] = "Longitude must be between -180 and 180.";
         }
 
+        DateTime observedAtUtc = default;
+
         if (request.ObservedAt is null)
         {
             errors["observedAt"] = "Observation time is required.";
         }
         else
         {
+            observedAtUtc = request.ObservedAt.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.ObservedAt.Value - SriLankaOffset, DateTimeKind.Utc)
+                : request.ObservedAt.Value.ToUniversalTime();
+
             var now = DateTime.UtcNow;
-            if (request.ObservedAt > now.Add(MaxFutureSkew))
+            if (observedAtUtc > now.Add(MaxFutureSkew))
             {
                 errors["observedAt"] = "Observation time cannot be in the future.";
             }
-            else if (request.ObservedAt < now.Subtract(MaxPastAge))
+            else if (observedAtUtc < now.Subtract(MaxPastAge))
             {
                 errors["observedAt"] = "Observation time is too far in the past.";
             }
@@ -97,7 +104,7 @@ public class TrackingService(ITrackingRepository repository, ITripDispatchClient
             VehicleId = trip.AssignedVehicleId.Value,
             Latitude = request.Latitude!.Value,
             Longitude = request.Longitude!.Value,
-            ObservedAt = request.ObservedAt!.Value,
+            ObservedAt = observedAtUtc,
             ReceivedAt = DateTime.UtcNow,
         };
 

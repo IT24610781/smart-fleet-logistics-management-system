@@ -7,9 +7,10 @@
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="Variables">
         <collectionProp name="Arguments.arguments"/>
       </elementProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
     </TestPlan>
     <hashTree>
-      <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Headers" enabled="true">
+      <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Headers">
         <collectionProp name="HeaderManager.headers">
           <elementProp name="" elementType="Header">
             <stringProp name="Header.name">Content-Type</stringProp>
@@ -19,19 +20,20 @@
       </HeaderManager>
       <hashTree/>
       <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults (TrackingTelemetryService)" enabled="true">
+        <intProp name="HTTPSampler.connect_timeout">10000</intProp>
+        <intProp name="HTTPSampler.response_timeout">30000</intProp>
         <stringProp name="HTTPSampler.domain">${__P(qa.trackingHost,localhost)}</stringProp>
         <stringProp name="HTTPSampler.port">${__P(qa.trackingPort,5000)}</stringProp>
         <stringProp name="HTTPSampler.protocol">http</stringProp>
-        <stringProp name="HTTPSampler.connect_timeout">10000</stringProp>
-        <stringProp name="HTTPSampler.response_timeout">30000</stringProp>
         <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
           <collectionProp name="Arguments.arguments"/>
         </elementProp>
+        <stringProp name="HTTPSampler.implementation"></stringProp>
       </ConfigTestElement>
       <hashTree/>
       <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="setUp: load fixtures and log in" enabled="true">
-        <stringProp name="ThreadGroup.num_threads">1</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <intProp name="ThreadGroup.num_threads">1</intProp>
+        <intProp name="ThreadGroup.ramp_time">1</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">stoptest</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop">
@@ -47,27 +49,27 @@
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 // Runs once, before every thread group. Fixture file comes from -Jqa.fixtures=&lt;path&gt;.
-def path = props.get('qa.fixtures')
-if (!path) throw new IllegalStateException('Pass -Jqa.fixtures=&lt;fixtures json&gt; (see prepare_tracking_fixtures.py)')
+def path = props.get(&apos;qa.fixtures&apos;)
+if (!path) throw new IllegalStateException(&apos;Pass -Jqa.fixtures=&lt;fixtures json&gt; (see prepare_tracking_fixtures.py)&apos;)
 def f = new JsonSlurper().parse(new File(path))
-props.put('qa.fixtureObj', f)
+props.put(&apos;qa.fixtureObj&apos;, f)
 def login = { String name, String pass -&gt;
-  def c = new URL(f.authUrl + '/api/auth/login').openConnection()
-  c.requestMethod = 'POST'; c.doOutput = true
-  c.setRequestProperty('Content-Type', 'application/json')
+  def c = new URL(f.authUrl + &apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod = &apos;POST&apos;; c.doOutput = true
+  c.setRequestProperty(&apos;Content-Type&apos;, &apos;application/json&apos;)
   c.connectTimeout = 10000; c.readTimeout = 15000
-  c.outputStream.withCloseable { it.write(JsonOutput.toJson([username: name, password: pass]).getBytes('UTF-8')) }
+  c.outputStream.withCloseable { it.write(JsonOutput.toJson([username: name, password: pass]).getBytes(&apos;UTF-8&apos;)) }
   def b = new JsonSlurper().parse(c.inputStream)
   c.disconnect()
   return b.token
 }
 
-props.put('qa.dispatcherToken', login(f.dispatcher, f.password))
-def adminPw = props.get('qa.adminPassword')
+props.put(&apos;qa.dispatcherToken&apos;, login(f.dispatcher, f.password))
+def adminPw = props.get(&apos;qa.adminPassword&apos;)
 if (adminPw) {
-  props.put('qa.adminToken', login(props.get('qa.adminUser') ?: 'admin', adminPw))
+  props.put(&apos;qa.adminToken&apos;, login(props.get(&apos;qa.adminUser&apos;) ?: &apos;admin&apos;, adminPw))
 }
-log.info('Tracking perf setup done: ' + f.drivers.size() + ' in-progress trips, admin token present: ' + (adminPw != null))
+log.info(&apos;Tracking perf setup done: &apos; + f.drivers.size() + &apos; in-progress trips, admin token present: &apos; + (adminPw != null))
 
 </stringProp>
           <stringProp name="filename"></stringProp>
@@ -92,13 +94,13 @@ log.info('Tracking perf setup done: ' + f.drivers.size() + ' in-progress trips, 
           <stringProp name="script">
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
-def f = props.get('qa.fixtureObj')
+def f = props.get(&apos;qa.fixtureObj&apos;)
 def login = { String name, String pass -&gt;
-  def c = new URL(f.authUrl + '/api/auth/login').openConnection()
-  c.requestMethod = 'POST'; c.doOutput = true
-  c.setRequestProperty('Content-Type', 'application/json')
+  def c = new URL(f.authUrl + &apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod = &apos;POST&apos;; c.doOutput = true
+  c.setRequestProperty(&apos;Content-Type&apos;, &apos;application/json&apos;)
   c.connectTimeout = 10000; c.readTimeout = 15000
-  c.outputStream.withCloseable { it.write(JsonOutput.toJson([username: name, password: pass]).getBytes('UTF-8')) }
+  c.outputStream.withCloseable { it.write(JsonOutput.toJson([username: name, password: pass]).getBytes(&apos;UTF-8&apos;)) }
   def b = new JsonSlurper().parse(c.inputStream)
   c.disconnect()
   return b.token
@@ -106,9 +108,9 @@ def login = { String name, String pass -&gt;
 // Login and variable setup are pre-processors, so they are NOT part of the measured sample time.
 int idx = ctx.threadNum % f.drivers.size()
 def d = f.drivers[idx]
-if (!vars.get('driverToken')) { vars.put('driverToken', login(d.username, f.password)) }
-vars.put('tripId', d.tripId)
-vars.put('observedAt', java.time.Instant.now().toString())
+if (!vars.get(&apos;driverToken&apos;)) { vars.put(&apos;driverToken&apos;, login(d.username, f.password)) }
+vars.put(&apos;tripId&apos;, d.tripId)
+vars.put(&apos;observedAt&apos;, java.time.Instant.now().toString())
 
 </stringProp>
           <stringProp name="filename"></stringProp>
@@ -125,7 +127,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{ "tripId": "${tripId}", "latitude": 6.${__Random(8000,9999)}, "longitude": 79.${__Random(8000,9999)}, "observedAt": "${observedAt}" }</stringProp>
+                <stringProp name="Argument.value">{ &quot;tripId&quot;: &quot;${tripId}&quot;, &quot;latitude&quot;: 6.${__Random(8000,9999)}, &quot;longitude&quot;: 79.${__Random(8000,9999)}, &quot;observedAt&quot;: &quot;${observedAt}&quot; }</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
@@ -147,7 +149,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Status 201" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="201">201</stringProp>
+              <stringProp name="49587">201</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <intProp name="Assertion.test_type">8</intProp>
@@ -179,8 +181,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
           <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
-            <collectionProp name="Arguments.arguments">
-            </collectionProp>
+            <collectionProp name="Arguments.arguments"/>
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
@@ -199,7 +200,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Status 200" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="200">200</stringProp>
+              <stringProp name="49586">200</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <intProp name="Assertion.test_type">8</intProp>
@@ -209,7 +210,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Body contains tripId" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="body1">tripId</stringProp>
+              <stringProp name="-865466336">tripId</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
             <intProp name="Assertion.test_type">2</intProp>
@@ -234,13 +235,13 @@ vars.put('observedAt', java.time.Instant.now().toString())
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Pick this thread's trip" enabled="true">
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Pick this thread&apos;s trip" enabled="true">
           <stringProp name="scriptLanguage">groovy</stringProp>
           <stringProp name="cacheKey">true</stringProp>
           <stringProp name="script">
-def f = props.get('qa.fixtureObj')
+def f = props.get(&apos;qa.fixtureObj&apos;)
 int idx = ctx.threadNum % f.drivers.size()
-vars.put('tripId', f.drivers[idx].tripId)
+vars.put(&apos;tripId&apos;, f.drivers[idx].tripId)
 
 </stringProp>
           <stringProp name="filename"></stringProp>
@@ -281,7 +282,7 @@ vars.put('tripId', f.drivers[idx].tripId)
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Status 200" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="200">200</stringProp>
+              <stringProp name="49586">200</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <intProp name="Assertion.test_type">8</intProp>
@@ -307,7 +308,7 @@ vars.put('tripId', f.drivers[idx].tripId)
       </ThreadGroup>
       <hashTree>
         <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Only when -Jqa.adminPassword was supplied" enabled="true">
-          <stringProp name="IfController.condition">${__groovy(props.get("qa.adminToken") != null)}</stringProp>
+          <stringProp name="IfController.condition">${__groovy(props.get(&quot;qa.adminToken&quot;) != null)}</stringProp>
           <boolProp name="IfController.evaluateAll">false</boolProp>
           <boolProp name="IfController.useExpression">true</boolProp>
         </IfController>
@@ -318,8 +319,8 @@ vars.put('tripId', f.drivers[idx].tripId)
             <stringProp name="script">
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-vars.put('rEnd', Instant.now().toString())
-vars.put('rStart', Instant.now().minus(7, ChronoUnit.DAYS).toString())
+vars.put(&apos;rEnd&apos;, Instant.now().toString())
+vars.put(&apos;rStart&apos;, Instant.now().minus(7, ChronoUnit.DAYS).toString())
 
 </stringProp>
             <stringProp name="filename"></stringProp>
@@ -367,7 +368,7 @@ vars.put('rStart', Instant.now().minus(7, ChronoUnit.DAYS).toString())
             <hashTree/>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Status 200" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="200">200</stringProp>
+                <stringProp name="49586">200</stringProp>
               </collectionProp>
               <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
               <intProp name="Assertion.test_type">8</intProp>
@@ -395,13 +396,13 @@ vars.put('rStart', Instant.now().minus(7, ChronoUnit.DAYS).toString())
           <stringProp name="script">
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
-def f = props.get('qa.fixtureObj')
+def f = props.get(&apos;qa.fixtureObj&apos;)
 def login = { String name, String pass -&gt;
-  def c = new URL(f.authUrl + '/api/auth/login').openConnection()
-  c.requestMethod = 'POST'; c.doOutput = true
-  c.setRequestProperty('Content-Type', 'application/json')
+  def c = new URL(f.authUrl + &apos;/api/auth/login&apos;).openConnection()
+  c.requestMethod = &apos;POST&apos;; c.doOutput = true
+  c.setRequestProperty(&apos;Content-Type&apos;, &apos;application/json&apos;)
   c.connectTimeout = 10000; c.readTimeout = 15000
-  c.outputStream.withCloseable { it.write(JsonOutput.toJson([username: name, password: pass]).getBytes('UTF-8')) }
+  c.outputStream.withCloseable { it.write(JsonOutput.toJson([username: name, password: pass]).getBytes(&apos;UTF-8&apos;)) }
   def b = new JsonSlurper().parse(c.inputStream)
   c.disconnect()
   return b.token
@@ -409,9 +410,9 @@ def login = { String name, String pass -&gt;
 // Login and variable setup are pre-processors, so they are NOT part of the measured sample time.
 int idx = ctx.threadNum % f.drivers.size()
 def d = f.drivers[idx]
-if (!vars.get('driverToken')) { vars.put('driverToken', login(d.username, f.password)) }
-vars.put('tripId', d.tripId)
-vars.put('observedAt', java.time.Instant.now().toString())
+if (!vars.get(&apos;driverToken&apos;)) { vars.put(&apos;driverToken&apos;, login(d.username, f.password)) }
+vars.put(&apos;tripId&apos;, d.tripId)
+vars.put(&apos;observedAt&apos;, java.time.Instant.now().toString())
 
 </stringProp>
           <stringProp name="filename"></stringProp>
@@ -428,7 +429,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
             <collectionProp name="Arguments.arguments">
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{ "tripId": "${tripId}", "latitude": 6.${__Random(8000,9999)}, "longitude": 79.${__Random(8000,9999)}, "observedAt": "${observedAt}" }</stringProp>
+                <stringProp name="Argument.value">{ &quot;tripId&quot;: &quot;${tripId}&quot;, &quot;latitude&quot;: 6.${__Random(8000,9999)}, &quot;longitude&quot;: 79.${__Random(8000,9999)}, &quot;observedAt&quot;: &quot;${observedAt}&quot; }</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
             </collectionProp>
@@ -450,7 +451,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Status 201" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="201">201</stringProp>
+              <stringProp name="49587">201</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <intProp name="Assertion.test_type">8</intProp>
@@ -466,8 +467,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
           <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
-            <collectionProp name="Arguments.arguments">
-            </collectionProp>
+            <collectionProp name="Arguments.arguments"/>
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
@@ -486,7 +486,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Status 200" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="200">200</stringProp>
+              <stringProp name="49586">200</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <intProp name="Assertion.test_type">8</intProp>
@@ -496,7 +496,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Body contains tripId" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="body1">tripId</stringProp>
+              <stringProp name="-865466336">tripId</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
             <intProp name="Assertion.test_type">2</intProp>
@@ -539,7 +539,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
           <hashTree/>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Status 200" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="200">200</stringProp>
+              <stringProp name="49586">200</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <intProp name="Assertion.test_type">8</intProp>
@@ -553,7 +553,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
         </ConstantTimer>
         <hashTree/>
       </hashTree>
-      <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">
+      <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report">
         <boolProp name="ResultCollector.error_logging">false</boolProp>
         <objProp>
           <name>saveConfig</name>
@@ -589,7 +589,7 @@ vars.put('observedAt', java.time.Instant.now().toString())
         <stringProp name="filename"></stringProp>
       </ResultCollector>
       <hashTree/>
-      <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report" enabled="true">
+      <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report">
         <boolProp name="ResultCollector.error_logging">false</boolProp>
         <objProp>
           <name>saveConfig</name>

@@ -3,7 +3,7 @@ using MySqlConnector;
 
 namespace FleetVehicleService.Data;
 
-public class VehicleRepository
+public class VehicleRepository : IVehicleRepository
 {
     private readonly DatabaseConnection _databaseConnection;
 

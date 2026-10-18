@@ -7,6 +7,7 @@ namespace TripDispatchService.Tests;
 
 // Uses an isolated, automatically cleaned database on the configured test MySQL.
 // Never points the guard at the application's existing database.
+[Trait("Category", "Integration")]
 public sealed class DriverAssignmentGuardDatabaseTests
 {
     [GuardDatabaseFact]

@@ -15,6 +15,7 @@ namespace TrackingTelemetryService.Tests;
 ///   only an In-Progress trip with a vehicle, and only the assigned driver's own trip.
 /// No MySQL, HTTP or Docker needed. Each [InlineData] row runs and reports as its own test.
 /// </summary>
+[Trait("Category", "Unit")]
 public class SubmitLocationBoundaryTests
 {
     private static readonly Guid DriverId = Guid.NewGuid();

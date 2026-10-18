@@ -6,6 +6,7 @@ using TrackingTelemetryService.Services;
 namespace TrackingTelemetryService.Tests;
 
 /// <summary>SCRUM-23 (US-14) service logic tested without MySQL or a live Trip API.</summary>
+[Trait("Category", "Unit")]
 public class TrackingWorkflowTests
 {
     private static readonly Guid DriverId = Guid.NewGuid();
@@ -299,6 +300,62 @@ public class TrackingWorkflowTests
             () => service.GetHistoryAsync(TripId, null, null, "Bearer x", CancellationToken.None));
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(1000)]
+    public async Task GetHistory_ValidLimit_ForwardsTripScopeAndCallerContext(int limit)
+    {
+        var repository = new InMemoryTrackingRepository();
+        var trips = new FakeTripDispatchClient { Result = new TripSnapshot(TripId, "Completed", DriverId, VehicleId) };
+        var service = new TrackingService(repository, trips);
+        using var cancellation = new CancellationTokenSource();
+
+        var result = await service.GetHistoryAsync(TripId, DriverId, limit, "Bearer unit-driver", cancellation.Token);
+
+        Assert.Empty(result);
+        Assert.Equal(1, trips.CallCount);
+        Assert.Equal(TripId, trips.LastTripId);
+        Assert.Equal("Bearer unit-driver", trips.LastAuthorization);
+        Assert.Equal(cancellation.Token, trips.LastCancellation);
+        Assert.Equal(1, repository.HistoryReads);
+        Assert.Equal(TripId, repository.LastRequestedTripId);
+        Assert.Equal(limit, repository.LastRequestedLimit);
+        Assert.Equal(0, repository.Writes);
+    }
+
+    [Fact]
+    public async Task GetHistory_TripUnavailable_DoesNotReadLocationRepository()
+    {
+        var repository = new InMemoryTrackingRepository();
+        var failure = new TripServiceUnavailableException("Simulated Trip failure", new HttpRequestException());
+        var trips = new FakeTripDispatchClient { Exception = failure };
+        var service = new TrackingService(repository, trips);
+
+        var actual = await Assert.ThrowsAsync<TripServiceUnavailableException>(() =>
+            service.GetHistoryAsync(TripId, DriverId, 10, "Bearer unit-driver", default));
+
+        Assert.Same(failure, actual);
+        Assert.Equal(1, trips.CallCount);
+        Assert.Equal(0, repository.HistoryReads);
+        Assert.Equal(0, repository.Writes);
+    }
+
+    [Fact]
+    public async Task GetHistory_RepositoryFailure_IsNotReportedAsAnEmptyHistory()
+    {
+        var failure = new IOException("Simulated database read failure");
+        var repository = new InMemoryTrackingRepository { ReadFailure = failure };
+        var trips = new FakeTripDispatchClient { Result = new TripSnapshot(TripId, "Completed", DriverId, VehicleId) };
+        var service = new TrackingService(repository, trips);
+
+        var actual = await Assert.ThrowsAsync<IOException>(() =>
+            service.GetHistoryAsync(TripId, DriverId, 10, "Bearer unit-driver", default));
+
+        Assert.Same(failure, actual);
+        Assert.Equal(1, repository.HistoryReads);
+        Assert.Equal(0, repository.Writes);
+    }
+
     private static SubmitLocationRequest ValidRequest() => new()
     {
         TripId = TripId, Latitude = 7.2513m, Longitude = 80.3464m, ObservedAt = DateTime.UtcNow
@@ -310,6 +367,9 @@ public class TrackingWorkflowTests
         public int Writes { get; private set; }
         public TripLocationUpdate? LastWrite { get; private set; }
         public int? LastRequestedLimit { get; private set; }
+        public Guid LastRequestedTripId { get; private set; }
+        public int HistoryReads { get; private set; }
+        public Exception? ReadFailure { get; init; }
 
         public Task CreateAsync(TripLocationUpdate update)
         {
@@ -321,7 +381,10 @@ public class TrackingWorkflowTests
 
         public Task<List<TripLocationUpdate>> GetByTripIdAsync(Guid tripId, int limit)
         {
+            HistoryReads++;
+            LastRequestedTripId = tripId;
             LastRequestedLimit = limit;
+            if (ReadFailure is not null) throw ReadFailure;
             // Mirrors TrackingRepository's real query: take the newest
             // `limit` pings, then return them back in chronological order.
             var result = Rows.Where(r => r.TripId == tripId)
@@ -350,10 +413,16 @@ public class TrackingWorkflowTests
         public TripSnapshot? Result { get; set; }
         public Exception? Exception { get; set; }
         public int CallCount { get; private set; }
+        public Guid LastTripId { get; private set; }
+        public string? LastAuthorization { get; private set; }
+        public CancellationToken LastCancellation { get; private set; }
 
         public Task<TripSnapshot?> GetTripAsync(Guid tripId, string? authorizationHeader, CancellationToken cancellationToken)
         {
             CallCount++;
+            LastTripId = tripId;
+            LastAuthorization = authorizationHeader;
+            LastCancellation = cancellationToken;
             if (Exception is not null) throw Exception;
             return Task.FromResult(Result);
         }

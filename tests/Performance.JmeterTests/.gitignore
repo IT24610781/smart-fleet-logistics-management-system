@@ -2,3 +2,4 @@
 perf-fixtures*.json
 *.jtl
 results/
+jmeter.log

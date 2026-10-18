@@ -1,0 +1,67 @@
+{
+  "dispatcher": "qatlc0a8df6c3e",
+  "password": "QaLoad!7564264ecd43b2040c93277e34ad3ad6",
+  "authUrl": "http://localhost:5100",
+  "drivers": [
+    {
+      "username": "qatd89b551c09a",
+      "driverId": "01a14cb0-6c85-7174-94cd-4591d6fef5fc",
+      "vehicleId": "9d0d2e34-e251-488c-b5e4-756220c35ff7",
+      "tripId": "01a14cb0-7552-7aac-a89a-f7f91acbfb17"
+    },
+    {
+      "username": "qatd64e871206a",
+      "driverId": "01a14cb0-76a7-7c95-b6e3-cf9adbf41a1b",
+      "vehicleId": "e412b0e7-0a8a-4ffc-b267-f30ff3f79be2",
+      "tripId": "01a14cb0-7775-7ab4-a1bc-281eb4b0571a"
+    },
+    {
+      "username": "qatd8abc1a747e",
+      "driverId": "01a14cb0-7881-764c-b429-d950ca87dd60",
+      "vehicleId": "7b068876-3ba5-4b59-a23e-92745683bf13",
+      "tripId": "01a14cb0-7955-7579-bcd8-867f110305da"
+    },
+    {
+      "username": "qatdc4a3d2f853",
+      "driverId": "01a14cb0-7a53-723c-8e37-623370aeb259",
+      "vehicleId": "4d8b064a-2b9b-41bf-bc0b-cb5e3efa1ce0",
+      "tripId": "01a14cb0-7b18-7d95-989f-9ecdf5349faa"
+    },
+    {
+      "username": "qatda0dec59347",
+      "driverId": "01a14cb0-7c16-7024-89df-13e0039504ab",
+      "vehicleId": "f9dd550a-ffba-4e99-936c-7ee37c4da56f",
+      "tripId": "01a14cb0-7cd3-7649-96f5-32fc113442f2"
+    },
+    {
+      "username": "qatd90d6b031ac",
+      "driverId": "01a14cb0-7dc4-7bc5-b547-f51dec6ab41a",
+      "vehicleId": "138025b9-eab1-4d77-b73f-0288db6d56f8",
+      "tripId": "01a14cb0-7e81-7eb8-84c5-461804306360"
+    },
+    {
+      "username": "qatdebbe8fbfc2",
+      "driverId": "01a14cb0-7f91-7f6a-89c1-fab436ae4049",
+      "vehicleId": "5ce1f77c-4e9b-4e12-9e2a-c75279d6309c",
+      "tripId": "01a14cb0-804d-780a-b05a-b05438108c4b"
+    },
+    {
+      "username": "qatd80d37abff8",
+      "driverId": "01a14cb0-8139-7d79-a486-ebb1fc82b627",
+      "vehicleId": "98e5b09b-4b33-4f06-9c35-623b63148483",
+      "tripId": "01a14cb0-81f6-790a-80ca-6fdbf977cb14"
+    },
+    {
+      "username": "qatd3562facc63",
+      "driverId": "01a14cb0-8309-7d42-92e5-ccadd2d2dffb",
+      "vehicleId": "4eb1a3bd-4349-470e-acf1-638c0297621a",
+      "tripId": "01a14cb0-83c1-70d2-b5a3-599421c60661"
+    },
+    {
+      "username": "qatdbd116a6d26",
+      "driverId": "01a14cb0-84c2-7194-9645-ab033d99481b",
+      "vehicleId": "d3d27ab0-d8c0-47b0-81ac-c1834bd31fa5",
+      "tripId": "01a14cb0-8588-7331-a129-0eb0f0446dd4"
+    }
+  ]
+}

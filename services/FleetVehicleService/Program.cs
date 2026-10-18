@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddSingleton<DatabaseConnection>();
-builder.Services.AddScoped<VehicleRepository>();
+builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
 builder.Services.AddScoped<VehicleService>();
 builder.Services.AddSingleton<IVehicleEventPublisher, KafkaVehicleEventPublisher>();
 builder.Services.AddScoped<ITripEligibilityChecker, StubTripEligibilityChecker>();

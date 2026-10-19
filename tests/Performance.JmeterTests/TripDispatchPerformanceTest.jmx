@@ -6,6 +6,7 @@
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="Variables">
         <collectionProp name="Arguments.arguments"/>
       </elementProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
     </TestPlan>
     <hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="US08">
@@ -28,21 +29,22 @@ import groovy.json.JsonOutput
 if (!vars.getObject(&apos;fixture&apos;)) {
  def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
  vars.putObject(&apos;fixture&apos;,f)
- def login={String name -&gt;
+ def login={String name,String pass-&gt;
   def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
   c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
-  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:pass]).getBytes(&apos;UTF-8&apos;))}
   def b=new JsonSlurper().parse(c.inputStream)
   c.disconnect();return b.token
  }
- vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+ vars.put(&apos;dt&apos;,login(f.dispatcher,f.password))
+ vars.putObject(&apos;loginFn&apos;,login)
 }
 </stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
         </JSR223PreProcessor>
         <hashTree/>
-        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="US08" enabled="true">
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="US08">
           <stringProp name="scriptLanguage">groovy</stringProp>
           <stringProp name="cacheKey">true</stringProp>
           <stringProp name="script">
@@ -63,7 +65,7 @@ def call={int port,String path,String method,Map body,String token -&gt;
  return data
 }
 def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
-def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+def dt=vars.get(&apos;dt&apos;)
 try {
  assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
  assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
@@ -102,14 +104,15 @@ import groovy.json.JsonOutput
 if (!vars.getObject(&apos;fixture&apos;)) {
  def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
  vars.putObject(&apos;fixture&apos;,f)
- def login={String name -&gt;
+ def login={String name,String pass-&gt;
   def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
   c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
-  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:pass]).getBytes(&apos;UTF-8&apos;))}
   def b=new JsonSlurper().parse(c.inputStream)
   c.disconnect();return b.token
  }
- vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+ vars.put(&apos;dt&apos;,login(f.dispatcher,f.password))
+ vars.putObject(&apos;loginFn&apos;,login)
 }
 </stringProp>
           <stringProp name="filename"></stringProp>
@@ -137,7 +140,7 @@ def call={int port,String path,String method,Map body,String token -&gt;
  return data
 }
 def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
-def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+def dt=vars.get(&apos;dt&apos;)
 try {
  assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
  assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
@@ -174,14 +177,15 @@ import groovy.json.JsonOutput
 if (!vars.getObject(&apos;fixture&apos;)) {
  def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
  vars.putObject(&apos;fixture&apos;,f)
- def login={String name -&gt;
+ def login={String name,String pass-&gt;
   def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
   c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
-  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:pass]).getBytes(&apos;UTF-8&apos;))}
   def b=new JsonSlurper().parse(c.inputStream)
   c.disconnect();return b.token
  }
- vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+ vars.put(&apos;dt&apos;,login(f.dispatcher,f.password))
+ vars.putObject(&apos;loginFn&apos;,login)
 }
 </stringProp>
           <stringProp name="filename"></stringProp>
@@ -209,7 +213,7 @@ def call={int port,String path,String method,Map body,String token -&gt;
  return data
 }
 def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
-def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+def dt=vars.get(&apos;dt&apos;)
 try {
  assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
  assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
@@ -246,14 +250,15 @@ import groovy.json.JsonOutput
 if (!vars.getObject(&apos;fixture&apos;)) {
  def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
  vars.putObject(&apos;fixture&apos;,f)
- def login={String name -&gt;
+ def login={String name,String pass-&gt;
   def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
   c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
-  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:pass]).getBytes(&apos;UTF-8&apos;))}
   def b=new JsonSlurper().parse(c.inputStream)
   c.disconnect();return b.token
  }
- vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+ vars.put(&apos;dt&apos;,login(f.dispatcher,f.password))
+ vars.putObject(&apos;loginFn&apos;,login)
 }
 </stringProp>
           <stringProp name="filename"></stringProp>
@@ -281,7 +286,7 @@ def call={int port,String path,String method,Map body,String token -&gt;
  return data
 }
 def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
-def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+def dt=vars.get(&apos;dt&apos;)
 try {
  assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
  assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
@@ -318,15 +323,21 @@ import groovy.json.JsonOutput
 if (!vars.getObject(&apos;fixture&apos;)) {
  def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
  vars.putObject(&apos;fixture&apos;,f)
- def login={String name -&gt;
+ def login={String name,String pass-&gt;
   def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
   c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
-  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:pass]).getBytes(&apos;UTF-8&apos;))}
   def b=new JsonSlurper().parse(c.inputStream)
   c.disconnect();return b.token
  }
- vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+ vars.put(&apos;dt&apos;,login(f.dispatcher,f.password))
+ vars.putObject(&apos;loginFn&apos;,login)
 }
+def f=vars.getObject(&apos;fixture&apos;)
+def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def e=f.respond[idx]
+def loginFn=vars.getObject(&apos;loginFn&apos;)
+vars.put(&apos;drt&apos;,loginFn(e.driverUsername,f.password))
 </stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
@@ -390,15 +401,21 @@ import groovy.json.JsonOutput
 if (!vars.getObject(&apos;fixture&apos;)) {
  def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
  vars.putObject(&apos;fixture&apos;,f)
- def login={String name -&gt;
+ def login={String name,String pass-&gt;
   def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
   c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
-  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:pass]).getBytes(&apos;UTF-8&apos;))}
   def b=new JsonSlurper().parse(c.inputStream)
   c.disconnect();return b.token
  }
- vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+ vars.put(&apos;dt&apos;,login(f.dispatcher,f.password))
+ vars.putObject(&apos;loginFn&apos;,login)
 }
+def f=vars.getObject(&apos;fixture&apos;)
+def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def e=f.lifecycle[idx]
+def loginFn=vars.getObject(&apos;loginFn&apos;)
+vars.put(&apos;drt&apos;,loginFn(e.driverUsername,f.password))
 </stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
@@ -462,14 +479,15 @@ import groovy.json.JsonOutput
 if (!vars.getObject(&apos;fixture&apos;)) {
  def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
  vars.putObject(&apos;fixture&apos;,f)
- def login={String name -&gt;
+ def login={String name,String pass-&gt;
   def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
   c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
-  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:pass]).getBytes(&apos;UTF-8&apos;))}
   def b=new JsonSlurper().parse(c.inputStream)
   c.disconnect();return b.token
  }
- vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+ vars.put(&apos;dt&apos;,login(f.dispatcher,f.password))
+ vars.putObject(&apos;loginFn&apos;,login)
 }
 </stringProp>
           <stringProp name="filename"></stringProp>
@@ -497,7 +515,7 @@ def call={int port,String path,String method,Map body,String token -&gt;
  return data
 }
 def tripBody={String label-&gt;[pickupLocation:label,dropoffLocation:&apos;QA load destination&apos;,requiredCapacity:f.requiredCapacity]}
-def dt=vars.get(&apos;dt&apos;);def drt=vars.get(&apos;drt&apos;)
+def dt=vars.get(&apos;dt&apos;)
 try {
  assert (f.threads as int)==ctx.threadGroup.numThreads : &apos;Thread count differs from prepared fixtures&apos;
  assert (f.loops as int)==(props.getProperty(&apos;qa.loops&apos;,&apos;5&apos;) as int) : &apos;Loop count differs from prepared fixtures&apos;
@@ -534,15 +552,21 @@ import groovy.json.JsonOutput
 if (!vars.getObject(&apos;fixture&apos;)) {
  def f=new JsonSlurper().parse(new File(props.get(&apos;qa.fixtures&apos;)))
  vars.putObject(&apos;fixture&apos;,f)
- def login={String name -&gt;
+ def login={String name,String pass-&gt;
   def c=new URL(f.authUrl+&apos;/api/auth/login&apos;).openConnection()
   c.requestMethod=&apos;POST&apos;;c.doOutput=true;c.setRequestProperty(&apos;Content-Type&apos;,&apos;application/json&apos;);c.connectTimeout=10000;c.readTimeout=15000
-  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:f.password]).getBytes(&apos;UTF-8&apos;))}
+  c.outputStream.withCloseable {it.write(JsonOutput.toJson([username:name,password:pass]).getBytes(&apos;UTF-8&apos;))}
   def b=new JsonSlurper().parse(c.inputStream)
   c.disconnect();return b.token
  }
- vars.put(&apos;dt&apos;,login(f.dispatcher));vars.put(&apos;drt&apos;,login(f.driver))
+ vars.put(&apos;dt&apos;,login(f.dispatcher,f.password))
+ vars.putObject(&apos;loginFn&apos;,login)
 }
+def f=vars.getObject(&apos;fixture&apos;)
+def idx=ctx.threadNum*(f.loops as int)+vars.iteration-1
+def e=f.mixed[idx]
+def loginFn=vars.getObject(&apos;loginFn&apos;)
+vars.put(&apos;drt&apos;,loginFn(e.driverUsername,f.password))
 </stringProp>
           <stringProp name="filename"></stringProp>
           <stringProp name="parameters"></stringProp>
@@ -624,7 +648,7 @@ def b=call(5051,&apos;/api/trips/&apos;+t.id,&apos;GET&apos;,null,dt);assert b.s
             <connectTime>true</connectTime>
           </value>
         </objProp>
-        <stringProp name="filename">C:\Users\User\Downloads\SmartFleet-QA-20260929\JMeter-20260929-140605\performance.jtl</stringProp>
+        <stringProp name="filename"></stringProp>
       </ResultCollector>
       <hashTree/>
     </hashTree>

@@ -1,0 +1,1169 @@
+{
+  "dispatcher": "qalc32b4925b1",
+  "password": "QaLoad!24735e8ff88f0ef6c234f8aad219eb69",
+  "authUrl": "http://localhost:5100",
+  "fleetUrl": "http://localhost:5041",
+  "tripUrl": "http://localhost:5051",
+  "requiredCapacity": "54321 kg",
+  "threads": 10,
+  "loops": 5,
+  "suggest": "01a14cae-fae6-7e98-879a-af170d42a2f7",
+  "assign": [
+    {
+      "vehicleId": "d5d0abdc-5b09-4b5f-bfaf-3b594edfb41f",
+      "driverId": "01a14cae-fc37-700c-8a1f-559bf3391f49",
+      "driverUsername": "qald0f90e5cb29",
+      "tripId": "01a14cae-fd9d-7735-acd7-a84326d87d0a"
+    },
+    {
+      "vehicleId": "71639d6a-d589-4cf2-a0f8-672bd608a06f",
+      "driverId": "01a14cae-fdba-7b8c-8a1f-e87a514bbe51",
+      "driverUsername": "qaldecb33bfa0e",
+      "tripId": "01a14cae-fe88-75ed-a965-5145811e9c5b"
+    },
+    {
+      "vehicleId": "f2f1c76e-347b-4cca-8e46-b9ff8d7aa9bf",
+      "driverId": "01a14cae-feab-78c8-9241-73bd753cea93",
+      "driverUsername": "qalddb97efe699",
+      "tripId": "01a14cae-ff4c-70ca-87e9-7785f6c22cd3"
+    },
+    {
+      "vehicleId": "fdb998ea-d816-45a8-9afb-abc068e28300",
+      "driverId": "01a14cae-ff5c-705b-9725-88c6ac77c5ff",
+      "driverUsername": "qald9faabf9002",
+      "tripId": "01a14caf-0006-713b-aaa1-16d440832262"
+    },
+    {
+      "vehicleId": "efb240ca-ce31-4dc5-a4b8-285f2411fdd3",
+      "driverId": "01a14caf-001a-7a83-9654-f1364e26ae8b",
+      "driverUsername": "qaldd6232eb3d8",
+      "tripId": "01a14caf-00c4-7b7b-8843-2c8f497ca3b3"
+    },
+    {
+      "vehicleId": "327d69a9-5f7e-4320-9658-7171d083ce03",
+      "driverId": "01a14caf-00d2-77ab-b84f-685dcfbdbf98",
+      "driverUsername": "qald3aea1a683a",
+      "tripId": "01a14caf-0192-7db8-a9c2-9a80a52cf7d8"
+    },
+    {
+      "vehicleId": "4c3cf880-87b4-4961-be02-a19a633a12fa",
+      "driverId": "01a14caf-01a4-7742-a91d-20a32622d0e5",
+      "driverUsername": "qald56be1956c1",
+      "tripId": "01a14caf-0255-7041-90ae-013e6b37fbd7"
+    },
+    {
+      "vehicleId": "2178fffa-930e-4fe8-b347-7d1e84f411c7",
+      "driverId": "01a14caf-0273-7d77-9ce5-ed8675cb9c9e",
+      "driverUsername": "qald45d00a6415",
+      "tripId": "01a14caf-0329-7e63-9cc9-0cf956aaf193"
+    },
+    {
+      "vehicleId": "6e0ead43-274b-41e6-81cf-1238d74bbec8",
+      "driverId": "01a14caf-0342-7e30-9f07-15c17e6bdc66",
+      "driverUsername": "qaldb4d23adbfc",
+      "tripId": "01a14caf-03f5-7cdd-925e-83482fa41592"
+    },
+    {
+      "vehicleId": "308286c5-5515-4af8-b423-5aea8124ae4f",
+      "driverId": "01a14caf-0403-79ee-bbd1-939a66db9d00",
+      "driverUsername": "qalda5c3db9e94",
+      "tripId": "01a14caf-05a9-71fb-b343-50098d4ac237"
+    },
+    {
+      "vehicleId": "99ea2366-41e3-46c8-b852-6fc058b1ce0b",
+      "driverId": "01a14caf-066a-7908-bdea-4d728a669a11",
+      "driverUsername": "qaldb138a6fb8f",
+      "tripId": "01a14caf-0710-728f-81f3-1a154c3f5f24"
+    },
+    {
+      "vehicleId": "c6eb8db3-1066-47cc-b828-bf23bda4e7c1",
+      "driverId": "01a14caf-0729-7dc1-8b94-c951b88fca08",
+      "driverUsername": "qald66796159b3",
+      "tripId": "01a14caf-07e1-73e2-95ca-fce3ac89efa9"
+    },
+    {
+      "vehicleId": "84f983e2-8c18-45e5-9f60-8adf4405a90a",
+      "driverId": "01a14caf-07f6-779d-bbff-1f11cfbba055",
+      "driverUsername": "qaldafc7c22f4d",
+      "tripId": "01a14caf-089e-7d69-900e-f0ccd918da06"
+    },
+    {
+      "vehicleId": "6f1dcb49-7f42-40ab-bace-0273ad1a3919",
+      "driverId": "01a14caf-08b4-79b6-8a42-5d9c2d0f3462",
+      "driverUsername": "qald3343d78693",
+      "tripId": "01a14caf-0954-75fd-b81d-ec8d0a671350"
+    },
+    {
+      "vehicleId": "cc396d39-8ba3-49e5-bc1b-6c43a2355eaa",
+      "driverId": "01a14caf-0961-75c1-af83-af7e9993458d",
+      "driverUsername": "qald71385d27ea",
+      "tripId": "01a14caf-0a0c-7737-9d5e-71cc0c5dda55"
+    },
+    {
+      "vehicleId": "4c0d86c4-b9ee-43cb-92ed-894cbf7e024a",
+      "driverId": "01a14caf-0a1f-7c47-bea8-436889b3d752",
+      "driverUsername": "qald83807eab87",
+      "tripId": "01a14caf-0ac1-78f0-8722-30e01a59af60"
+    },
+    {
+      "vehicleId": "bda50b52-bae2-4216-bb36-2b6a4a1d526d",
+      "driverId": "01a14caf-0ace-7512-b569-5d46329102cc",
+      "driverUsername": "qald852b2246af",
+      "tripId": "01a14caf-0b7a-7a61-9648-e4f84ea4161e"
+    },
+    {
+      "vehicleId": "1c97f3b4-3dd6-4821-b4f2-7f212867964f",
+      "driverId": "01a14caf-0b8f-74ae-bd0a-8a18edb653ca",
+      "driverUsername": "qaldfb006475a6",
+      "tripId": "01a14caf-0c35-7308-b9c4-cd1b67c5df69"
+    },
+    {
+      "vehicleId": "66dffba9-866b-44dd-ad02-8eda19131b44",
+      "driverId": "01a14caf-0c43-7d34-b3d0-bf9db91bbda1",
+      "driverUsername": "qaldc2bcd7f2df",
+      "tripId": "01a14caf-0ce8-7645-b93f-c43c0ada84c9"
+    },
+    {
+      "vehicleId": "c6a559c4-a538-492d-b483-60e9820f7a5d",
+      "driverId": "01a14caf-0cf5-71bf-8d1c-5f97f1690fa8",
+      "driverUsername": "qald6393cf4581",
+      "tripId": "01a14caf-0da0-7ec4-a762-48f154fd7a65"
+    },
+    {
+      "vehicleId": "af8e8f63-7819-43f3-abe6-20573a59a6bd",
+      "driverId": "01a14caf-0dae-7b52-990b-8dc632ba7a99",
+      "driverUsername": "qald69f0dbc977",
+      "tripId": "01a14caf-0e56-7ac5-a009-d534fb0c5524"
+    },
+    {
+      "vehicleId": "f8c41d91-3bf4-4a9f-b491-f39cf295f06d",
+      "driverId": "01a14caf-0e66-7041-a5a7-ed257646622a",
+      "driverUsername": "qald3058494591",
+      "tripId": "01a14caf-0f0c-797a-8275-9402fd5e96a0"
+    },
+    {
+      "vehicleId": "5de015e8-e882-4853-84c0-a161f7b61af7",
+      "driverId": "01a14caf-0f1b-722a-903a-2107249d84f9",
+      "driverUsername": "qaldaf87462416",
+      "tripId": "01a14caf-0fbd-7202-9b1a-fb5f9ec97fe4"
+    },
+    {
+      "vehicleId": "c3df9fbd-a590-46d2-8217-98c6e3a34708",
+      "driverId": "01a14caf-0fd8-71a8-92c0-883235c3b45e",
+      "driverUsername": "qald2b4cef480d",
+      "tripId": "01a14caf-1092-758b-a1f5-39e37cc576e5"
+    },
+    {
+      "vehicleId": "0ab72aa8-ceac-4993-839f-49b33b9884c2",
+      "driverId": "01a14caf-10a1-730b-aa47-e475028ee78b",
+      "driverUsername": "qald7378e5f63e",
+      "tripId": "01a14caf-1154-7d7b-b0ab-4ce7306dc366"
+    },
+    {
+      "vehicleId": "7b7d505d-561b-4ab2-845e-02e08788e328",
+      "driverId": "01a14caf-1162-78b8-8d01-757b23c416eb",
+      "driverUsername": "qaldc4de98729e",
+      "tripId": "01a14caf-120e-7c95-9966-c302339248e7"
+    },
+    {
+      "vehicleId": "e8b017a3-42e9-4425-b9ec-31348afe46c4",
+      "driverId": "01a14caf-1220-7e76-b72d-68b96ab12a6c",
+      "driverUsername": "qald6f3bd265cf",
+      "tripId": "01a14caf-12d3-7b46-8a86-429190bfff1a"
+    },
+    {
+      "vehicleId": "bd16ecd1-1694-4fc3-a698-8a0cbc5b8217",
+      "driverId": "01a14caf-12e3-7bcf-be6a-caa58622de0f",
+      "driverUsername": "qalde4e27f06a7",
+      "tripId": "01a14caf-1381-7399-854a-a57ac4cc6236"
+    },
+    {
+      "vehicleId": "12116ba4-950e-4085-b58b-bbdcfa7b23a1",
+      "driverId": "01a14caf-138e-7422-96dd-89f0b093acef",
+      "driverUsername": "qaldc5b2ab2bb0",
+      "tripId": "01a14caf-143d-7816-ba28-c431d1bba2b2"
+    },
+    {
+      "vehicleId": "5d4cd2be-aea1-4b71-a812-189566a15a17",
+      "driverId": "01a14caf-144d-7ae2-af43-3a0ac1098189",
+      "driverUsername": "qald3111789cfe",
+      "tripId": "01a14caf-14f6-7563-acf8-12297bb3e2f2"
+    },
+    {
+      "vehicleId": "d4c08bfb-908d-41b3-9129-264301d0f785",
+      "driverId": "01a14caf-1506-7bef-8323-6135c2153e50",
+      "driverUsername": "qaldde54bf1be0",
+      "tripId": "01a14caf-15a7-7539-827f-f01602941ea6"
+    },
+    {
+      "vehicleId": "fb3407d5-b216-4fa8-ad88-00b2f46fb55f",
+      "driverId": "01a14caf-15bd-734f-a64c-ba459a0851e9",
+      "driverUsername": "qald64619379ec",
+      "tripId": "01a14caf-1669-7c52-8782-31ba93eb529e"
+    },
+    {
+      "vehicleId": "b57f7772-3e69-4f6d-8fe8-dbfdc588ffbc",
+      "driverId": "01a14caf-167a-7692-a500-20a7e2d60a1d",
+      "driverUsername": "qaldcce71e19b6",
+      "tripId": "01a14caf-173e-7e1d-8f90-de31d14d5a3c"
+    },
+    {
+      "vehicleId": "2220a930-aa67-4416-a6b1-69fdba08a430",
+      "driverId": "01a14caf-174d-745e-b659-b19be785e3bd",
+      "driverUsername": "qaldc74cb02fe1",
+      "tripId": "01a14caf-17f2-718e-8118-e0be77bfa2e0"
+    },
+    {
+      "vehicleId": "043e23bc-3cce-459a-85a0-d14532b07c99",
+      "driverId": "01a14caf-17ff-7057-a46e-f40a422c3fe7",
+      "driverUsername": "qald91f10d0552",
+      "tripId": "01a14caf-18a1-7f97-ac62-3d73ad77f26e"
+    },
+    {
+      "vehicleId": "5ab29e92-d273-4d41-82cb-7c63b392e17c",
+      "driverId": "01a14caf-18b0-7f33-bdaf-d972ce3b73ed",
+      "driverUsername": "qaldb361e6a6c4",
+      "tripId": "01a14caf-198a-7758-808f-2d42415f6d69"
+    },
+    {
+      "vehicleId": "4a6729d4-cfe2-4943-b4d5-c9cee3c47b94",
+      "driverId": "01a14caf-1998-7028-9651-8d832c7d4c32",
+      "driverUsername": "qaldeacdb45d35",
+      "tripId": "01a14caf-1a54-7bd6-bea4-20ebaddc62b0"
+    },
+    {
+      "vehicleId": "b8fb022f-938e-4922-9970-0716ac13baf6",
+      "driverId": "01a14caf-1a66-713c-9f2c-d608ee7932d3",
+      "driverUsername": "qald03664a0e3e",
+      "tripId": "01a14caf-1b1a-7829-acdd-4bef46fc14bb"
+    },
+    {
+      "vehicleId": "7ada93a7-b2e8-4461-879b-23d3cf67bfd8",
+      "driverId": "01a14caf-1b29-7f71-a25a-c0c6d6cb71fa",
+      "driverUsername": "qaldf12235c77c",
+      "tripId": "01a14caf-1bf3-705d-afbe-63c47f01d5c8"
+    },
+    {
+      "vehicleId": "3fa8a24b-b452-4512-aaf6-3c5c280247aa",
+      "driverId": "01a14caf-1c0e-7a3c-bbab-dd6274c67b67",
+      "driverUsername": "qaldd56536ea04",
+      "tripId": "01a14caf-1cb4-7cc7-9d29-3f4c16920cfa"
+    },
+    {
+      "vehicleId": "e19b90c7-2d10-46c1-811f-e8c8985ed57d",
+      "driverId": "01a14caf-1cc3-7d32-8d14-648f53eeaeac",
+      "driverUsername": "qald33aec1140a",
+      "tripId": "01a14caf-1d6f-7a61-a0e9-5254eb4275d7"
+    },
+    {
+      "vehicleId": "a5d3ee93-cdcb-42a0-823c-05b076dcd83c",
+      "driverId": "01a14caf-1d7a-735e-abe1-954d5220a1bd",
+      "driverUsername": "qaldd00faae386",
+      "tripId": "01a14caf-1e24-70ee-89bd-d51c61968961"
+    },
+    {
+      "vehicleId": "f1b749fa-943b-4753-baad-b0972044394f",
+      "driverId": "01a14caf-1e32-7603-bcc3-1f6be037c72e",
+      "driverUsername": "qald20615240dd",
+      "tripId": "01a14caf-1edc-709f-9a81-702e72d2c7ef"
+    },
+    {
+      "vehicleId": "37c9b8cf-3f66-4055-9c49-b3252948c4fa",
+      "driverId": "01a14caf-1efb-765a-b3d6-db96b7227d6c",
+      "driverUsername": "qald52660bc183",
+      "tripId": "01a14caf-1fbd-7dd3-b50e-bbe598b8b72e"
+    },
+    {
+      "vehicleId": "455ed694-64b4-4c09-91b2-490dd22db8f0",
+      "driverId": "01a14caf-1fcc-7cf1-804a-588e9779311e",
+      "driverUsername": "qalde62a6f6202",
+      "tripId": "01a14caf-2070-73a5-bad5-e533e1503df3"
+    },
+    {
+      "vehicleId": "c775d86a-e0ae-4351-b052-3d4d8b68252b",
+      "driverId": "01a14caf-2080-7424-a44f-dd4e3c1cc506",
+      "driverUsername": "qaldcb695aadae",
+      "tripId": "01a14caf-2122-7f3d-aabc-7c1957017882"
+    },
+    {
+      "vehicleId": "4d88b1e3-fde5-48d0-a2b3-b40d9c6b523f",
+      "driverId": "01a14caf-2132-7c5b-bb93-6c3ba1d34393",
+      "driverUsername": "qaldad9e2666b8",
+      "tripId": "01a14caf-21da-7f9b-943a-a7bb9f7f2330"
+    },
+    {
+      "vehicleId": "4787174e-a0bc-4a44-9858-f61b492970b2",
+      "driverId": "01a14caf-21eb-77e0-a512-2ef6800902dc",
+      "driverUsername": "qaldf8d7393b4e",
+      "tripId": "01a14caf-228e-7bd9-8abf-d467082d578a"
+    },
+    {
+      "vehicleId": "4a9f4149-57d7-43ce-beef-cf6b7c5f3282",
+      "driverId": "01a14caf-229a-7472-b9f5-d9c8ee478994",
+      "driverUsername": "qald5b03e45ba5",
+      "tripId": "01a14caf-234f-7606-a9d2-8b2d32554a7c"
+    },
+    {
+      "vehicleId": "350ad312-17b2-44eb-8ffe-f74982b0a3ee",
+      "driverId": "01a14caf-235c-7a30-9286-8c38b74d12ab",
+      "driverUsername": "qalda308c22e85",
+      "tripId": "01a14caf-240d-76eb-aaf8-0093548c4d8e"
+    }
+  ],
+  "respond": [
+    {
+      "vehicleId": "fb628a39-19af-4443-88b1-ce160436886f",
+      "driverId": "01a14caf-2425-76e5-b77f-28f862ee5344",
+      "driverUsername": "qald36dd51aed6",
+      "tripId": "01a14caf-24c7-775e-871c-75350293b2fb"
+    },
+    {
+      "vehicleId": "74f0301d-8931-467b-8e64-2056fe00df63",
+      "driverId": "01a14caf-2587-7360-a91f-bc28a9b2a11a",
+      "driverUsername": "qald79517f3eb7",
+      "tripId": "01a14caf-2633-7247-999a-ab14a2d8c9ae"
+    },
+    {
+      "vehicleId": "5f9fb01d-7dce-40dd-b753-00a9088fec95",
+      "driverId": "01a14caf-2676-7441-ab08-75abb7e5364f",
+      "driverUsername": "qaldd73727990a",
+      "tripId": "01a14caf-2713-7f44-8b29-40be42f5828f"
+    },
+    {
+      "vehicleId": "a1c37e9e-9b9c-4c12-a3e2-3680c39013a9",
+      "driverId": "01a14caf-275b-766b-9f88-bbf8b7ead236",
+      "driverUsername": "qald27c42f3ac2",
+      "tripId": "01a14caf-2c55-75e8-8cbb-3f60be93b8e0"
+    },
+    {
+      "vehicleId": "76c36a4a-5d66-4008-9874-1018501571a1",
+      "driverId": "01a14caf-2c8f-7301-8b8f-21891d42353f",
+      "driverUsername": "qaldd2061474f3",
+      "tripId": "01a14caf-2d38-75d6-aec9-4cd5407e1ce9"
+    },
+    {
+      "vehicleId": "fee3e843-2d47-41d9-b18a-9c849c72a598",
+      "driverId": "01a14caf-2d9d-76ed-93f7-bf80513907a2",
+      "driverUsername": "qald393ebb12c9",
+      "tripId": "01a14caf-2e4c-7077-83d8-d5c7f3112a8f"
+    },
+    {
+      "vehicleId": "cc25e328-d8be-4e0d-b90e-e4bf8bba6114",
+      "driverId": "01a14caf-2e88-702d-9f9c-d78460c33cfb",
+      "driverUsername": "qald1a79b40996",
+      "tripId": "01a14caf-2f3a-7a5e-90ec-4a3f23821cd0"
+    },
+    {
+      "vehicleId": "0dda9260-8e41-42b9-b601-bcef8b7e1d17",
+      "driverId": "01a14caf-2f8a-7a72-80ae-39753ead5050",
+      "driverUsername": "qald3c0afe4fe4",
+      "tripId": "01a14caf-303b-75e4-a842-9e87b9b576ac"
+    },
+    {
+      "vehicleId": "226f9b23-5a60-4921-b0b3-13c25864cad0",
+      "driverId": "01a14caf-307f-7bcc-a043-0dffa24eecbe",
+      "driverUsername": "qald47ac7b59c3",
+      "tripId": "01a14caf-3124-7c7f-bd5f-cfc0b86b1848"
+    },
+    {
+      "vehicleId": "5427f563-4147-42cb-a534-ac80bf94ffa1",
+      "driverId": "01a14caf-3176-7846-a3d3-49a93256b6e2",
+      "driverUsername": "qald80bdd87690",
+      "tripId": "01a14caf-3225-7078-9b0d-e146134a8b93"
+    },
+    {
+      "vehicleId": "1ac0a60f-1de2-4d7b-98e4-0ba9d8e750a5",
+      "driverId": "01a14caf-3273-7079-8cff-d23b9b80162e",
+      "driverUsername": "qald8042ded211",
+      "tripId": "01a14caf-3325-7c2c-b4f2-6b36ffb12e8b"
+    },
+    {
+      "vehicleId": "4f4a5264-7c8c-45f3-b9ab-a89155a84804",
+      "driverId": "01a14caf-3366-7adb-9000-74df7271ef6a",
+      "driverUsername": "qald702761cd10",
+      "tripId": "01a14caf-3409-7422-a058-c3bd00631945"
+    },
+    {
+      "vehicleId": "dee55755-8cb2-429a-b584-48eaa883480d",
+      "driverId": "01a14caf-344c-7e30-a883-3730e3db651d",
+      "driverUsername": "qald0d01aac900",
+      "tripId": "01a14caf-3500-73b8-a9ea-227a4bbdc0a3"
+    },
+    {
+      "vehicleId": "b9ad9335-f4d6-4cde-a965-fe13b0409401",
+      "driverId": "01a14caf-3541-7dd6-b285-6c55c4f0d596",
+      "driverUsername": "qald93a74d016a",
+      "tripId": "01a14caf-35ef-7e73-ac57-67881a65f542"
+    },
+    {
+      "vehicleId": "b78ee41c-f25a-4755-b6a8-602712dd79d7",
+      "driverId": "01a14caf-3630-77d0-a5ba-c2e199308632",
+      "driverUsername": "qaldb910e6e81d",
+      "tripId": "01a14caf-36cc-7b7b-b09e-b2aa850585a5"
+    },
+    {
+      "vehicleId": "c4225df6-1cc8-4564-a874-c8ad05d68073",
+      "driverId": "01a14caf-3707-7b2d-b917-d6fa5c3299fd",
+      "driverUsername": "qald957254ec9b",
+      "tripId": "01a14caf-37ab-73c2-b341-1f79403a4d40"
+    },
+    {
+      "vehicleId": "526cf725-6de2-48f4-b5e5-66d6477cce6a",
+      "driverId": "01a14caf-37f1-7d24-a649-776b8791d5c7",
+      "driverUsername": "qald71016e1686",
+      "tripId": "01a14caf-3899-7416-a9bd-1ea4fdfb3dcc"
+    },
+    {
+      "vehicleId": "96908eda-1a8a-4cb9-8a8d-398583b55f10",
+      "driverId": "01a14caf-38f0-79c9-8343-af96995bca73",
+      "driverUsername": "qald3a90f483d3",
+      "tripId": "01a14caf-3991-72cf-a6b7-8d51e4c4c4f3"
+    },
+    {
+      "vehicleId": "7250f678-dd59-4dd1-9b92-9f4108f9ee89",
+      "driverId": "01a14caf-39cd-70c2-b6ce-fc9a72d98309",
+      "driverUsername": "qald4148e6a421",
+      "tripId": "01a14caf-3a82-7414-b2c8-9b83b280ef01"
+    },
+    {
+      "vehicleId": "e786bbe9-f15e-4c9e-96c5-9092138ad917",
+      "driverId": "01a14caf-3abe-779b-bf3e-074cdc6ce0b9",
+      "driverUsername": "qaldcd35536287",
+      "tripId": "01a14caf-3b7c-7e13-8000-d7655983f5a1"
+    },
+    {
+      "vehicleId": "7120b19d-67cc-4363-b49a-3be945047e9c",
+      "driverId": "01a14caf-3bc0-7e89-9c37-723cb2971773",
+      "driverUsername": "qalddcf44f590d",
+      "tripId": "01a14caf-3c8c-7000-aa36-7aceca07f0bd"
+    },
+    {
+      "vehicleId": "2e0a7910-752e-48a9-9dd9-38b6d4788c95",
+      "driverId": "01a14caf-3ce6-755f-a57f-6ebbec156965",
+      "driverUsername": "qald6438de379b",
+      "tripId": "01a14caf-3d8f-731a-ab53-f1082f40c16b"
+    },
+    {
+      "vehicleId": "c769723a-e96e-43dd-9964-abee8b2ccd22",
+      "driverId": "01a14caf-3de6-7650-8e26-1eba582bc0d7",
+      "driverUsername": "qald52303cf5cb",
+      "tripId": "01a14caf-3e96-7594-a1d0-3957cbfb8801"
+    },
+    {
+      "vehicleId": "e786d26b-7557-412f-8bfb-9fbac54442d5",
+      "driverId": "01a14caf-3ee4-74cd-86e1-87c9141fead0",
+      "driverUsername": "qalda2703fe5da",
+      "tripId": "01a14caf-3fa9-7ad2-b38b-819c69952349"
+    },
+    {
+      "vehicleId": "cf87fe7b-7579-4736-ae62-d58c5bde2a72",
+      "driverId": "01a14caf-3ff5-7b3f-86fe-313b62ca63b6",
+      "driverUsername": "qaldeb49e2c339",
+      "tripId": "01a14caf-40a3-754b-a5d8-f009b6f64eff"
+    },
+    {
+      "vehicleId": "59230dd8-d4e9-4ede-8e9f-b58e4cde2982",
+      "driverId": "01a14caf-40dd-785c-83f7-ad8a33759e8e",
+      "driverUsername": "qald3d6a19b819",
+      "tripId": "01a14caf-4194-7121-b017-17e7fc5b3024"
+    },
+    {
+      "vehicleId": "691d4fda-99e3-48b0-a783-425929e76e10",
+      "driverId": "01a14caf-41d3-7407-afe1-7603e90f17aa",
+      "driverUsername": "qalde21240f8ef",
+      "tripId": "01a14caf-427a-74df-8935-7894448b06ca"
+    },
+    {
+      "vehicleId": "11e321e9-eae7-4418-856b-618760b9f2df",
+      "driverId": "01a14caf-42bc-7146-881b-fd1be0167fbe",
+      "driverUsername": "qalda4ff7391ba",
+      "tripId": "01a14caf-4364-72b7-a435-72ef89a9dd26"
+    },
+    {
+      "vehicleId": "8a39b39a-4eea-4c8a-bebd-cb3f9c1a545d",
+      "driverId": "01a14caf-43a2-7674-b6f3-1007d89bb6b3",
+      "driverUsername": "qald613c286a4d",
+      "tripId": "01a14caf-444c-7cee-826a-c8119b872b67"
+    },
+    {
+      "vehicleId": "44eb1592-b320-4af0-9c26-8a8c6b6c6a24",
+      "driverId": "01a14caf-448a-7b2f-9a93-439e4e7fa827",
+      "driverUsername": "qald93f5feb6fb",
+      "tripId": "01a14caf-454a-7461-9dd6-f193d74e7a5a"
+    },
+    {
+      "vehicleId": "c05a0707-08ab-4811-a9ff-c33527a6567c",
+      "driverId": "01a14caf-459a-71fa-a448-76c7a9ad35aa",
+      "driverUsername": "qald678f18e601",
+      "tripId": "01a14caf-465e-7fbe-b559-d9f61355138e"
+    },
+    {
+      "vehicleId": "20d1bcd3-da7e-401b-a992-8f94bc990659",
+      "driverId": "01a14caf-46aa-748e-926f-92afcd438ad1",
+      "driverUsername": "qaldbcdf2c8f08",
+      "tripId": "01a14caf-474d-702c-a0ac-9f43bb6cb5f7"
+    },
+    {
+      "vehicleId": "516c1428-32db-4bdd-a030-c363b1c17438",
+      "driverId": "01a14caf-4799-7073-9b3c-58b185e510dc",
+      "driverUsername": "qald23337f0d6a",
+      "tripId": "01a14caf-4850-7e06-9a94-8ac6fbbcf1dd"
+    },
+    {
+      "vehicleId": "cc633ca9-2c8e-41f4-8460-a018d6042588",
+      "driverId": "01a14caf-4895-7047-b0b6-e705725106c5",
+      "driverUsername": "qaldf581e21153",
+      "tripId": "01a14caf-4939-7117-a199-308fb1d1a696"
+    },
+    {
+      "vehicleId": "9aa15a65-ccc9-417e-876e-0785e6e7b36f",
+      "driverId": "01a14caf-4979-7e12-a1b8-9c1c2bd0224f",
+      "driverUsername": "qaldcfa44048d9",
+      "tripId": "01a14caf-4a23-73ae-b49e-6e660385df4c"
+    },
+    {
+      "vehicleId": "34851b58-34ae-4e85-8779-74259fb7107e",
+      "driverId": "01a14caf-4a6d-7c3f-bace-d011b041fafa",
+      "driverUsername": "qald882399a29e",
+      "tripId": "01a14caf-4b14-7f94-9b6c-bc7762bbf827"
+    },
+    {
+      "vehicleId": "7d4607cd-3f6a-4b5a-9e4d-d396c8533cb1",
+      "driverId": "01a14caf-4b4e-7014-ab71-de2ae19f8b94",
+      "driverUsername": "qald50d984943d",
+      "tripId": "01a14caf-4bf6-7d4b-b361-4f77c341f7db"
+    },
+    {
+      "vehicleId": "d895cdd7-cd62-4bc4-851c-17dacaf5c154",
+      "driverId": "01a14caf-4c33-78eb-b58d-7a2e7d3419d6",
+      "driverUsername": "qald55f3790236",
+      "tripId": "01a14caf-4ce4-7082-bb13-0c452714d37f"
+    },
+    {
+      "vehicleId": "15eb20ba-70a0-4cd9-b22d-1af01d33e1a1",
+      "driverId": "01a14caf-4d26-7a03-96b2-d16b9e54baa6",
+      "driverUsername": "qald612935e096",
+      "tripId": "01a14caf-4dcd-7c83-b425-6f519bebdf2d"
+    },
+    {
+      "vehicleId": "affcf3a8-479d-4a0b-8b81-6213a006fdad",
+      "driverId": "01a14caf-4e0d-7202-baf7-387ab13df11b",
+      "driverUsername": "qaldc24d99f7d2",
+      "tripId": "01a14caf-4ead-7e96-9bdd-a91becae037a"
+    },
+    {
+      "vehicleId": "a7bffa8a-a955-4ab4-8951-ff3c2c442942",
+      "driverId": "01a14caf-4eee-74df-80f7-4069fa6c2e2a",
+      "driverUsername": "qald173c88a512",
+      "tripId": "01a14caf-4f93-7ae3-be16-56b992dabc03"
+    },
+    {
+      "vehicleId": "6cb045f6-5c7e-443a-9268-005f926c9a40",
+      "driverId": "01a14caf-4fdb-70ab-8616-ceb83229e70e",
+      "driverUsername": "qaldcece698344",
+      "tripId": "01a14caf-5088-7f7c-9392-c4a6c7a9af77"
+    },
+    {
+      "vehicleId": "ca738ad7-efdd-4e4e-8575-cf94bd63e77b",
+      "driverId": "01a14caf-50cd-7c10-a11b-adb8628c788a",
+      "driverUsername": "qald0ac2759b37",
+      "tripId": "01a14caf-516e-77bc-b75b-7021295f1f8b"
+    },
+    {
+      "vehicleId": "92381927-2602-470a-931d-a492f24a41cb",
+      "driverId": "01a14caf-51bb-7e30-8a21-39adf74eb8c5",
+      "driverUsername": "qald30651d91d5",
+      "tripId": "01a14caf-5263-7a98-bbcc-a53a45830297"
+    },
+    {
+      "vehicleId": "a8852f50-a336-4314-8734-3ec58e69f3db",
+      "driverId": "01a14caf-52a5-7976-a296-0cf6e7701c82",
+      "driverUsername": "qald37a2b10b45",
+      "tripId": "01a14caf-5353-7322-8783-48e7e89c4e52"
+    },
+    {
+      "vehicleId": "ce0f047a-1463-4382-a6ca-4c0a50575e94",
+      "driverId": "01a14caf-5383-7ac6-88bd-11ee7c3b1b8c",
+      "driverUsername": "qalde290642ff1",
+      "tripId": "01a14caf-542e-7d1b-acc2-a1444175db18"
+    },
+    {
+      "vehicleId": "536fc8e7-2311-4fa6-a1a4-b3adc7dfb2a6",
+      "driverId": "01a14caf-5472-70ae-bb32-6d5175dbca32",
+      "driverUsername": "qaldb2ae8af58d",
+      "tripId": "01a14caf-5518-7d5c-87a4-0f553b51eb05"
+    },
+    {
+      "vehicleId": "ee1737f2-1c40-4214-9988-07953232ac5f",
+      "driverId": "01a14caf-5550-7d77-a1ee-7744df908a1d",
+      "driverUsername": "qald1eee6f36f1",
+      "tripId": "01a14caf-55f9-7268-aaee-51f9f4e611d9"
+    },
+    {
+      "vehicleId": "2788ae38-eaa0-410a-8c41-dd54522c0e57",
+      "driverId": "01a14caf-562e-7250-ab67-60f260f121da",
+      "driverUsername": "qaldf6ea9ca325",
+      "tripId": "01a14caf-56e3-7c58-a9d9-6d6e4f866d03"
+    },
+    {
+      "vehicleId": "8da9d8f4-7804-4bef-aeba-bc13814ffbad",
+      "driverId": "01a14caf-5720-7d0a-8e78-825035aad7ff",
+      "driverUsername": "qald1905a7cfbb",
+      "tripId": "01a14caf-57d6-790c-b4dd-d8f8c8af8eda"
+    }
+  ],
+  "lifecycle": [
+    {
+      "vehicleId": "a0722d71-1d2d-4101-9f0a-0b1cbd9cc560",
+      "driverId": "01a14caf-5821-7d45-b174-ff19c1474e16",
+      "driverUsername": "qald6e98bbed58",
+      "tripId": "01a14caf-58d1-7926-b845-14e63872af8d"
+    },
+    {
+      "vehicleId": "4332d2f1-72d9-4d62-81dc-df89d72210ae",
+      "driverId": "01a14caf-590d-7e5b-bb14-f7aa0bb4fd4e",
+      "driverUsername": "qald930f4e1ae3",
+      "tripId": "01a14caf-59b9-76e9-85b8-92eecf6f8fc6"
+    },
+    {
+      "vehicleId": "3670783d-b134-4ac6-9f02-82c7a5fdd8fb",
+      "driverId": "01a14caf-5a03-7283-9eff-e7ff103dc91e",
+      "driverUsername": "qald99c669159f",
+      "tripId": "01a14caf-5aaa-7392-a326-2a8ae6636e25"
+    },
+    {
+      "vehicleId": "37251e28-62e8-4f5b-8e13-2944a8eee74f",
+      "driverId": "01a14caf-5af6-7acf-840a-29c8db49a98c",
+      "driverUsername": "qalda92328c963",
+      "tripId": "01a14caf-5b95-7f39-8aa7-f146a376d2c6"
+    },
+    {
+      "vehicleId": "b064a77b-518f-4b67-8301-862849a62c30",
+      "driverId": "01a14caf-5bcc-72bc-a976-7d90c257176a",
+      "driverUsername": "qaldd968f1f8d8",
+      "tripId": "01a14caf-5c6f-738f-818a-05bc46250a99"
+    },
+    {
+      "vehicleId": "446dfdbb-5d66-4487-a2c3-d01e53599840",
+      "driverId": "01a14caf-5caa-78fd-8339-019a1389de06",
+      "driverUsername": "qaldbe1d44ab44",
+      "tripId": "01a14caf-5d4f-76d0-909e-26efe5281ca3"
+    },
+    {
+      "vehicleId": "97941e7d-29b1-422a-8279-270a31ed8556",
+      "driverId": "01a14caf-5d84-7860-94fa-0b6e63e6e8a9",
+      "driverUsername": "qalde5b8edb4e4",
+      "tripId": "01a14caf-5e3d-760f-92df-9eb43c26fc4c"
+    },
+    {
+      "vehicleId": "a5799f3a-fb38-47e5-b031-1e0855d72d72",
+      "driverId": "01a14caf-5e75-709d-ab05-d69eed8e737b",
+      "driverUsername": "qald8a7f75d5f4",
+      "tripId": "01a14caf-5f22-74e5-bd80-0d6d4bc4df9b"
+    },
+    {
+      "vehicleId": "1874bf7d-5f0b-49fa-8e6e-ad384ec3196b",
+      "driverId": "01a14caf-5f5b-7db8-88f9-91e7f426ea82",
+      "driverUsername": "qald1cf8da3351",
+      "tripId": "01a14caf-6001-70a2-9422-aac5af4ef1dd"
+    },
+    {
+      "vehicleId": "1fec7963-3128-4c26-add9-6782ef55b32a",
+      "driverId": "01a14caf-603e-733e-86f4-ebb73f8ade04",
+      "driverUsername": "qald7df7356c7e",
+      "tripId": "01a14caf-60ee-76b0-b796-5d3055884a34"
+    },
+    {
+      "vehicleId": "8c9fce44-ce96-4d4b-96cb-dfb010934983",
+      "driverId": "01a14caf-6141-7edf-8ae6-a990ffc767d6",
+      "driverUsername": "qald2800da8d80",
+      "tripId": "01a14caf-61ea-7b59-a30f-45d55573f1a9"
+    },
+    {
+      "vehicleId": "015e7a9f-ad46-4b27-8577-a7045aa7d2d2",
+      "driverId": "01a14caf-6233-73c7-813a-036d2628b10f",
+      "driverUsername": "qald0f4db73971",
+      "tripId": "01a14caf-62de-7da4-aeee-763b6ccff835"
+    },
+    {
+      "vehicleId": "33e4fa2d-90b2-4cca-9e3e-1d18ec61484d",
+      "driverId": "01a14caf-6325-7048-8ab1-982e9f126546",
+      "driverUsername": "qaldabb94826df",
+      "tripId": "01a14caf-63d6-75bb-bb62-bac5f9c42a8c"
+    },
+    {
+      "vehicleId": "2a75d7a0-c23b-400c-b586-e9d1350badec",
+      "driverId": "01a14caf-640f-7972-806c-6893001689e2",
+      "driverUsername": "qald3d7f6e004f",
+      "tripId": "01a14caf-64b4-763a-8502-556c93ee368b"
+    },
+    {
+      "vehicleId": "11c52d6d-58bb-4686-ac6e-ac3e6ef87229",
+      "driverId": "01a14caf-6503-7686-8a09-e1505a41898d",
+      "driverUsername": "qalddd5b174be5",
+      "tripId": "01a14caf-65a6-7eac-b820-ef1713d18147"
+    },
+    {
+      "vehicleId": "f4a18c45-433d-43d2-a83f-2bcaf0f94186",
+      "driverId": "01a14caf-65eb-7014-9b32-6558099f471c",
+      "driverUsername": "qald7967c0ebd2",
+      "tripId": "01a14caf-668e-7683-ac42-b17e74a41abf"
+    },
+    {
+      "vehicleId": "c61c1720-b19e-4075-bca0-5dca2ff0e6b1",
+      "driverId": "01a14caf-66d3-7394-92fb-4df9fcfaa23d",
+      "driverUsername": "qald9750f96bc0",
+      "tripId": "01a14caf-676f-7ed3-8003-702d8cd4babc"
+    },
+    {
+      "vehicleId": "ccc668cd-c5bd-4be2-b2eb-d6c9648b6031",
+      "driverId": "01a14caf-67b3-75b7-ace4-e9bad43ae38a",
+      "driverUsername": "qald1614e4b3ea",
+      "tripId": "01a14caf-6871-7b27-9a54-6fe655387c27"
+    },
+    {
+      "vehicleId": "158a94ba-1e80-4fbd-b218-fdb12c7d5508",
+      "driverId": "01a14caf-68a9-774d-86f9-bd9764756352",
+      "driverUsername": "qaldcc3dbf18fd",
+      "tripId": "01a14caf-696c-7ab7-b495-adf4cb37049f"
+    },
+    {
+      "vehicleId": "c24befcf-f41e-42d9-82af-3c5f8d23ff97",
+      "driverId": "01a14caf-69ba-7dd6-aa4a-543e9e1798b6",
+      "driverUsername": "qaldbe6635b004",
+      "tripId": "01a14caf-6a5c-7c46-808e-aa8fb8b68703"
+    },
+    {
+      "vehicleId": "3404aa50-1f5b-4562-b768-5c7353164b95",
+      "driverId": "01a14caf-6ab1-7eff-8c1f-a6d5319a588f",
+      "driverUsername": "qald0162f8cba7",
+      "tripId": "01a14caf-6b57-7f5f-8420-a37a8ea421fc"
+    },
+    {
+      "vehicleId": "2f0b2671-17ad-4501-96d2-113501c82d91",
+      "driverId": "01a14caf-6b8f-743b-8baa-b6ae058e9260",
+      "driverUsername": "qald802fe443ac",
+      "tripId": "01a14caf-6c40-7319-840a-c3262e349689"
+    },
+    {
+      "vehicleId": "9084762f-8371-463d-8a20-2ec872a85860",
+      "driverId": "01a14caf-6c7e-735a-a7f5-09822dad8576",
+      "driverUsername": "qaldbbd6d5fdf4",
+      "tripId": "01a14caf-6d3a-731a-b562-5a0631472a53"
+    },
+    {
+      "vehicleId": "789f9c0b-3630-4918-84e2-378a3eb4a1dc",
+      "driverId": "01a14caf-6d76-73bd-a46a-c9a9523e8de6",
+      "driverUsername": "qald182a404df4",
+      "tripId": "01a14caf-6e25-7ac0-9133-d38611a7e880"
+    },
+    {
+      "vehicleId": "6d42e0dd-fd95-4cb6-9336-137772434c05",
+      "driverId": "01a14caf-6ea6-7aeb-a6ce-638bde3dcd4b",
+      "driverUsername": "qaldd63314c15c",
+      "tripId": "01a14caf-6f5b-7a07-9f9c-13128740f3a8"
+    },
+    {
+      "vehicleId": "860e72c0-b6bb-4a38-bf7c-8c195ae9a528",
+      "driverId": "01a14caf-6f9d-7e73-928d-4bf145f43a0b",
+      "driverUsername": "qald19620bcd8f",
+      "tripId": "01a14caf-7045-7ebc-a199-466ca2e14d1d"
+    },
+    {
+      "vehicleId": "c209747e-68e8-452e-af9a-7c54ea55ea85",
+      "driverId": "01a14caf-708f-7e0b-861c-acb9d19017b7",
+      "driverUsername": "qald60f49909ec",
+      "tripId": "01a14caf-7142-7e80-8814-4f08c4bad561"
+    },
+    {
+      "vehicleId": "7952305f-1edb-4d80-a0b1-72f1bf520699",
+      "driverId": "01a14caf-717e-7abe-8dff-37f2cb770dff",
+      "driverUsername": "qald71ca1d1db2",
+      "tripId": "01a14caf-7228-7a5c-ab1d-6ea73584319f"
+    },
+    {
+      "vehicleId": "aa4e4914-10d0-448f-ad7d-04c0336c8ff6",
+      "driverId": "01a14caf-726b-7efc-ae32-3e95eb31137c",
+      "driverUsername": "qald206916f65d",
+      "tripId": "01a14caf-7331-77e0-bb2b-65a7b868e701"
+    },
+    {
+      "vehicleId": "e01e8dde-2def-4207-b9ec-0213a5d9bd5b",
+      "driverId": "01a14caf-736f-7cb3-bcf9-971ec4db9673",
+      "driverUsername": "qald25099f7cac",
+      "tripId": "01a14caf-741f-7e89-ada5-5fb0c44fb52d"
+    },
+    {
+      "vehicleId": "114b868c-bfee-4647-9a9b-93480305a86d",
+      "driverId": "01a14caf-745a-70ca-b0f8-0ede7c9c2193",
+      "driverUsername": "qald462e013e8d",
+      "tripId": "01a14caf-74fe-73cf-8f98-18cc5c00799b"
+    },
+    {
+      "vehicleId": "da40f1c8-3fa1-4ede-b816-353a0dc43b39",
+      "driverId": "01a14caf-754a-7132-b847-b640341f41fe",
+      "driverUsername": "qalda4ceae8a3c",
+      "tripId": "01a14caf-75ed-7995-9767-21bd22928b76"
+    },
+    {
+      "vehicleId": "922469b0-cff2-4be3-9e8b-d5a5c6a67c60",
+      "driverId": "01a14caf-7623-76ba-9f67-6fa0aa51724f",
+      "driverUsername": "qald653b55b768",
+      "tripId": "01a14caf-76bf-7484-a986-70f1c718494e"
+    },
+    {
+      "vehicleId": "0226c467-3018-4cad-b0d1-972dd8913ad2",
+      "driverId": "01a14caf-7701-79ac-b7eb-2bf038469023",
+      "driverUsername": "qald0f0dbd46b1",
+      "tripId": "01a14caf-77bc-7208-a1d5-45b0bd1cb2ae"
+    },
+    {
+      "vehicleId": "5675473b-48bb-4d0b-8750-62add0d67447",
+      "driverId": "01a14caf-77f8-7323-8027-6a152ed1be4b",
+      "driverUsername": "qald4bc125e057",
+      "tripId": "01a14caf-78a0-7b82-b97f-e9925ef3c961"
+    },
+    {
+      "vehicleId": "f6634cc7-7489-4453-89f1-df9aaf152daa",
+      "driverId": "01a14caf-78e6-735b-aeec-e16967ca82a4",
+      "driverUsername": "qaldfb72b486fc",
+      "tripId": "01a14caf-79ba-7d73-b8c9-2319321630f2"
+    },
+    {
+      "vehicleId": "ac82afe4-e9a1-497f-a056-ea715f58b02e",
+      "driverId": "01a14caf-7a04-74bd-8c73-d86e16a42b07",
+      "driverUsername": "qald36a1cb6715",
+      "tripId": "01a14caf-7ab2-7ba4-b6e3-667650b75e76"
+    },
+    {
+      "vehicleId": "3a201d0c-4d90-4e6c-87ec-ce663fc9bd8f",
+      "driverId": "01a14caf-7ae4-710c-b3f1-8b9e35fdc54f",
+      "driverUsername": "qaldb6e82889a6",
+      "tripId": "01a14caf-7b86-7375-ac2c-3b510011d51c"
+    },
+    {
+      "vehicleId": "6416f32a-a0cd-47f5-8f13-47be2cbb7a5c",
+      "driverId": "01a14caf-7bc8-7a33-a128-e59f564b6714",
+      "driverUsername": "qald4b7b363c2d",
+      "tripId": "01a14caf-7c80-7b7b-b655-efbada0ce0d0"
+    },
+    {
+      "vehicleId": "c5135154-f23e-4678-b0ef-55856d07356d",
+      "driverId": "01a14caf-7cca-7b3f-925e-23c450a322cc",
+      "driverUsername": "qaldf58b2f0425",
+      "tripId": "01a14caf-7d90-756e-9c3e-0ca26eb72c99"
+    },
+    {
+      "vehicleId": "507b4261-ec2d-4a1b-9341-1f588e880ea5",
+      "driverId": "01a14caf-7dd6-7d8d-9694-d2ebd517a47c",
+      "driverUsername": "qald6ae057d35a",
+      "tripId": "01a14caf-7e76-718f-aafe-8cf672fbf60e"
+    },
+    {
+      "vehicleId": "09c4c4b8-bf77-48e3-a5f9-c4d5d4ed354e",
+      "driverId": "01a14caf-7eb5-7607-b6c8-5cf74eb63436",
+      "driverUsername": "qalda6d9f46dec",
+      "tripId": "01a14caf-7f5d-77ba-a97d-aa5563d3d31e"
+    },
+    {
+      "vehicleId": "6f41c4c9-42c7-4a99-8281-c841e7de129f",
+      "driverId": "01a14caf-7fa4-7620-80f8-4ae679917da3",
+      "driverUsername": "qald128d665088",
+      "tripId": "01a14caf-8061-71ee-947d-09d5afdc7382"
+    },
+    {
+      "vehicleId": "3e2b7ac8-52e3-4b7d-b4a3-d2005cde0edd",
+      "driverId": "01a14caf-80a6-73bc-8465-32e50d0c6a2d",
+      "driverUsername": "qald02310fe9ce",
+      "tripId": "01a14caf-814f-7c5b-845f-e4151c3d9f0c"
+    },
+    {
+      "vehicleId": "e71f67be-b693-44a2-8742-1e0e37768fd2",
+      "driverId": "01a14caf-818f-7322-9f84-ce3e75290e6f",
+      "driverUsername": "qald35bc07f6d6",
+      "tripId": "01a14caf-8233-7eac-9634-32c3d34484db"
+    },
+    {
+      "vehicleId": "3c946e10-e034-423c-b778-5a84c823fca6",
+      "driverId": "01a14caf-8275-73d0-b7fd-b6fa0e45caf0",
+      "driverUsername": "qaldfd5dec0f64",
+      "tripId": "01a14caf-831f-7391-8d9e-afcedd375c80"
+    },
+    {
+      "vehicleId": "8e0d1199-e654-49b5-a09d-4c4848daa480",
+      "driverId": "01a14caf-8369-7cf7-99bd-e551dd855b2d",
+      "driverUsername": "qaldbbde20b533",
+      "tripId": "01a14caf-840f-7c3f-86a7-34ef95d67957"
+    },
+    {
+      "vehicleId": "b6ff3784-1754-46cc-97cc-2d8e72be3172",
+      "driverId": "01a14caf-8453-7d25-b68f-5bcf95eb5c85",
+      "driverUsername": "qald612c62af2f",
+      "tripId": "01a14caf-8503-7a56-b405-133e8716031a"
+    },
+    {
+      "vehicleId": "5c44a38b-085e-4e20-873a-55d9391ddb77",
+      "driverId": "01a14caf-855b-76ef-bedc-1d3f6a714dc3",
+      "driverUsername": "qald1afd53af93",
+      "tripId": "01a14caf-8608-7d7e-b142-31d66594b43d"
+    },
+    {
+      "vehicleId": "173cb225-721c-44b8-8058-6c890017081c",
+      "driverId": "01a14caf-863c-7d48-8955-82985af6d29b",
+      "driverUsername": "qalddce4cc025a",
+      "tripId": "01a14caf-86da-78d3-955d-24c3fd040723"
+    }
+  ],
+  "mixed": [
+    {
+      "vehicleId": "9a61ed07-1a77-4541-b25a-47f3aa46026d",
+      "driverId": "01a14caf-8715-7752-9274-f08e367a31ca",
+      "driverUsername": "qaldd6535d2bb0"
+    },
+    {
+      "vehicleId": "8b99f1d1-013d-4a49-861e-07c5563d917b",
+      "driverId": "01a14caf-8a94-7c75-9c7e-8acc3b30751d",
+      "driverUsername": "qald7473e01de7"
+    },
+    {
+      "vehicleId": "9e3cabc2-3d43-4e21-9a9b-acfd93f55357",
+      "driverId": "01a14caf-8e67-77ac-8ba0-ecc53a8d4a9d",
+      "driverUsername": "qaldc9d8007bbb"
+    },
+    {
+      "vehicleId": "63767be2-f1d6-45ca-8212-9b88252d4479",
+      "driverId": "01a14caf-8f11-7bde-b176-b9283e31d54a",
+      "driverUsername": "qald2520ad61e1"
+    },
+    {
+      "vehicleId": "800f8e88-7ccb-4904-b2d2-e9df4a2459df",
+      "driverId": "01a14caf-8fd2-778f-bb57-449de58ec544",
+      "driverUsername": "qald26f2d1adae"
+    },
+    {
+      "vehicleId": "10a1b4d0-e23e-47ff-b285-038b6d359381",
+      "driverId": "01a14caf-9092-7c21-b810-2cb1e50068b6",
+      "driverUsername": "qald7ede876943"
+    },
+    {
+      "vehicleId": "9894ebcf-7337-48ed-ad3a-e707322bc7a9",
+      "driverId": "01a14caf-916c-7979-9cc7-3c72fcec7510",
+      "driverUsername": "qald4b0fc0ecd1"
+    },
+    {
+      "vehicleId": "5b4e7a08-475e-4ec5-8d3d-efd43857c196",
+      "driverId": "01a14caf-9217-765d-ae5e-80e68f15c428",
+      "driverUsername": "qald78c063cbab"
+    },
+    {
+      "vehicleId": "a79fc6a1-0470-4bf4-a461-95ec8ef8e4dc",
+      "driverId": "01a14caf-92eb-7bd4-bac8-e8a040720d70",
+      "driverUsername": "qald601c8ffb3c"
+    },
+    {
+      "vehicleId": "f7ca6bf9-dc37-4d04-8d1f-7f023a069a87",
+      "driverId": "01a14caf-9399-7d0d-b620-007455912b49",
+      "driverUsername": "qaldb7b195c19a"
+    },
+    {
+      "vehicleId": "d2fbf0d4-8054-4632-b2c7-a092536893d3",
+      "driverId": "01a14caf-9476-7bfe-858d-b6828598345c",
+      "driverUsername": "qald29746759f2"
+    },
+    {
+      "vehicleId": "098f8a9d-f5d5-40f4-95ed-c8fead7c4262",
+      "driverId": "01a14caf-953a-76a5-9e27-1f5e5fc45380",
+      "driverUsername": "qald773f6ccbb0"
+    },
+    {
+      "vehicleId": "3f18c632-2d18-416e-b7dd-56393020432f",
+      "driverId": "01a14caf-95ee-712a-94d4-a004783f4453",
+      "driverUsername": "qaldf7c6ac0694"
+    },
+    {
+      "vehicleId": "f1b8ae48-4cdb-40e9-8bf3-1ad5d5ad0364",
+      "driverId": "01a14caf-9692-7ed4-8e30-cdb3c96d0c68",
+      "driverUsername": "qald2da15d9e19"
+    },
+    {
+      "vehicleId": "8a3801e1-c6c7-4314-8891-355889ecea8e",
+      "driverId": "01a14caf-9747-70e0-9e16-fdce6f4b8be1",
+      "driverUsername": "qald1e2878af04"
+    },
+    {
+      "vehicleId": "9cab1c6c-6f49-4f3c-9a06-1888744e467d",
+      "driverId": "01a14caf-97f2-72f1-bf29-183b78bdc86a",
+      "driverUsername": "qald80c408cbbd"
+    },
+    {
+      "vehicleId": "f10fa8dc-7de3-4164-90e7-817a19579aba",
+      "driverId": "01a14caf-9893-781e-b110-7e1cfa3a523d",
+      "driverUsername": "qald67ac15fd8f"
+    },
+    {
+      "vehicleId": "9bb8d6c8-a70a-43ac-bc27-c9058ce3fab4",
+      "driverId": "01a14caf-993d-7ea0-b92d-b75577fad71b",
+      "driverUsername": "qald864c560514"
+    },
+    {
+      "vehicleId": "80fd32f5-24e0-469f-ac1a-0ea867e97680",
+      "driverId": "01a14caf-99e2-724d-8f4e-0c152fa37a55",
+      "driverUsername": "qald5458384f49"
+    },
+    {
+      "vehicleId": "09ade7c9-d7ce-4f12-a194-c538101f505b",
+      "driverId": "01a14caf-9a89-7989-b8db-ede25eb83d51",
+      "driverUsername": "qald03b539a598"
+    },
+    {
+      "vehicleId": "dcc475ed-71c5-4f6e-bdcf-102755d51906",
+      "driverId": "01a14caf-9b45-7ad5-be9b-2f6d74238e47",
+      "driverUsername": "qald8e60f79bac"
+    },
+    {
+      "vehicleId": "cab36d5f-c78d-4764-a626-4fa1546aadc0",
+      "driverId": "01a14caf-9bed-7643-a0fb-7a8dae7f801a",
+      "driverUsername": "qalda4c3a75613"
+    },
+    {
+      "vehicleId": "99f564a7-121f-48dc-9cd4-f7d3b01b86b0",
+      "driverId": "01a14caf-9ca7-71da-9806-dc49726b9a88",
+      "driverUsername": "qald0f0bc90790"
+    },
+    {
+      "vehicleId": "a016119b-1a37-4933-8874-2c2dbbe0cc2c",
+      "driverId": "01a14caf-9d6f-7031-a1a9-ca50b26d2847",
+      "driverUsername": "qaldedb5e1290c"
+    },
+    {
+      "vehicleId": "7896f532-e7a5-4053-92ec-c36118f789f2",
+      "driverId": "01a14caf-9e20-7d51-879f-4e0a6e6913df",
+      "driverUsername": "qaldf4f2d607eb"
+    },
+    {
+      "vehicleId": "fe9864eb-06e6-4bd7-afc0-d788bd82d106",
+      "driverId": "01a14caf-9ec8-7934-85b8-d4f938df44cb",
+      "driverUsername": "qald80a6367bf8"
+    },
+    {
+      "vehicleId": "745185d4-9b65-463d-8958-223c375d68d0",
+      "driverId": "01a14caf-9f72-7edf-bd2a-813747a55f96",
+      "driverUsername": "qalde14b718c79"
+    },
+    {
+      "vehicleId": "ee46bece-45d9-40d3-9df1-a28570d3f5b3",
+      "driverId": "01a14caf-a01f-7a34-a87c-ab7490771b5b",
+      "driverUsername": "qald739121d747"
+    },
+    {
+      "vehicleId": "7a8dc989-1291-485f-9ef7-52ffbaa884f6",
+      "driverId": "01a14caf-a0bc-754d-bc13-0428a37dec45",
+      "driverUsername": "qald371b8c8fcc"
+    },
+    {
+      "vehicleId": "31d448fa-b8ad-444f-aa94-7a1f0fb306ff",
+      "driverId": "01a14caf-a160-7abe-b28a-697b39d466bc",
+      "driverUsername": "qald205e05633a"
+    },
+    {
+      "vehicleId": "e90a2bed-bdcf-4f02-9ca9-f4e1195b3aaa",
+      "driverId": "01a14caf-a20d-76e1-b41c-0e8963d67c2e",
+      "driverUsername": "qalddc643df6c9"
+    },
+    {
+      "vehicleId": "e394184f-d2b6-49ac-a53a-d320d2fd56a0",
+      "driverId": "01a14caf-a2d0-7794-b815-ac60b9026bf6",
+      "driverUsername": "qaldc261c79baf"
+    },
+    {
+      "vehicleId": "f1d04a6b-69ea-4df2-8c03-270f6d6fd903",
+      "driverId": "01a14caf-a37b-7a31-9477-622fdb8da420",
+      "driverUsername": "qald17a43b999e"
+    },
+    {
+      "vehicleId": "7411f5bb-5dc5-4592-8c08-504be6f84c2c",
+      "driverId": "01a14caf-a41e-77dc-9925-e99370e6d3c8",
+      "driverUsername": "qaldf880f60423"
+    },
+    {
+      "vehicleId": "5a0f9e92-a341-4677-ba52-b4958f5744f6",
+      "driverId": "01a14caf-a4bf-7421-8ff4-2b22c26a5e87",
+      "driverUsername": "qaldcfd70c9ad4"
+    },
+    {
+      "vehicleId": "9d4b16e6-3c4a-4b7f-971b-98624fc9f0dd",
+      "driverId": "01a14caf-a56f-7bb7-a93a-ad1426dcd1b5",
+      "driverUsername": "qald85b6d1b928"
+    },
+    {
+      "vehicleId": "b9c9cf82-a5d1-4a42-9c46-ee3d04749701",
+      "driverId": "01a14caf-a629-7508-843c-781f9b000eb3",
+      "driverUsername": "qald2725041d8c"
+    },
+    {
+      "vehicleId": "e8ad77e4-737e-447b-b074-2c9bdb8339ff",
+      "driverId": "01a14caf-a6ed-7a7b-a9eb-bfcb7c006115",
+      "driverUsername": "qald70c153805d"
+    },
+    {
+      "vehicleId": "6a75b41a-60b0-42e0-baff-7b56de315732",
+      "driverId": "01a14caf-a7a9-71b6-a26b-0f76af4e0dd6",
+      "driverUsername": "qaldbb644ce376"
+    },
+    {
+      "vehicleId": "42164d3a-dfcb-4faf-9d22-1084c41da718",
+      "driverId": "01a14caf-a865-7193-90ec-6fb4ef3b3ede",
+      "driverUsername": "qald31e0ca05bc"
+    },
+    {
+      "vehicleId": "8a1eb272-2a63-4054-a832-2e06455a4d23",
+      "driverId": "01a14caf-a90e-7cc7-80e9-074e2a1aa89e",
+      "driverUsername": "qald6da52cb386"
+    },
+    {
+      "vehicleId": "39c313d1-64d2-4000-ac4b-5426f4267867",
+      "driverId": "01a14caf-a9bb-7017-aa9e-fab14dd2f47e",
+      "driverUsername": "qaldf5da5ec821"
+    },
+    {
+      "vehicleId": "c4e952bf-912f-4aec-b698-76ce176a5a25",
+      "driverId": "01a14caf-aa5d-733e-a8b5-8b7abeaf8bd3",
+      "driverUsername": "qald76a09ebdee"
+    },
+    {
+      "vehicleId": "e16ec248-5760-4936-a922-18f44b540ecc",
+      "driverId": "01a14caf-ab1a-7723-8ffa-76f6fbd934e3",
+      "driverUsername": "qald0752da2272"
+    },
+    {
+      "vehicleId": "1d374804-9212-4efb-91ac-cadf245d071b",
+      "driverId": "01a14caf-abba-7c01-affd-68b3c39ecef4",
+      "driverUsername": "qaldbdbb2f8014"
+    },
+    {
+      "vehicleId": "f7af5997-a094-471d-8b32-ef1b0c87709e",
+      "driverId": "01a14caf-ac64-7556-b96f-c727ca5e617d",
+      "driverUsername": "qalda83491289a"
+    },
+    {
+      "vehicleId": "528b59fc-2a2f-4f82-8239-90264af379d1",
+      "driverId": "01a14caf-ad0b-7342-b2ab-036f5d2db03b",
+      "driverUsername": "qald9374f5e2a9"
+    },
+    {
+      "vehicleId": "0d6ebbe3-46e8-48c3-93a5-409cfbc22507",
+      "driverId": "01a14caf-adb5-78f2-ad89-67950a09db57",
+      "driverUsername": "qald3316277387"
+    },
+    {
+      "vehicleId": "f4ce4765-10cd-461c-9393-a734616e95b1",
+      "driverId": "01a14caf-ae51-7112-978c-caadd967b046",
+      "driverUsername": "qald6226998cb5"
+    },
+    {
+      "vehicleId": "002dd9a9-e362-4060-8cf2-133946f0950d",
+      "driverId": "01a14caf-af03-7cf3-88ee-5109f06b3e6a",
+      "driverUsername": "qald5719525f28"
+    }
+  ]
+}

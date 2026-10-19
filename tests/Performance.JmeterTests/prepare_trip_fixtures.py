@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import urllib.error
 import urllib.request
 import uuid
 
@@ -33,8 +34,12 @@ def main():
             headers["Authorization"] = "Bearer " + token
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(base + path, data=data, headers=headers)
-        with urllib.request.urlopen(req, timeout=30) as response:
-            return json.loads(response.read())
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                text = response.read()
+                return json.loads(text) if text else {}
+        except urllib.error.HTTPError as error:
+            raise SystemExit(f"{path} -> HTTP {error.code}: {error.read().decode(errors='replace')}")
 
     def user(name):
         return dict(username=name, email=name + "@example.com", password=password,
@@ -47,8 +52,11 @@ def main():
     dispatcher = "qal" + uuid.uuid4().hex[:10]
     request(auth_url, "/api/auth/register/dispatcher", user(dispatcher))
     dispatcher_token = login(dispatcher, password)
-    driver_name = "qald" + uuid.uuid4().hex[:10]
-    driver = request(auth_url, "/api/users/drivers", user(driver_name), admin)
+
+    def driver():
+        name = "qald" + uuid.uuid4().hex[:10]
+        d = request(auth_url, "/api/users/drivers", user(name), admin)
+        return dict(username=name, id=d["id"])
 
     def vehicle():
         return request(fleet_url, "/api/vehicles",
@@ -62,16 +70,16 @@ def main():
                        dispatcher_token)
 
     # Only the generated fixture password is saved; no Admin password or JWT is exported.
-    fixtures = dict(dispatcher=dispatcher, driver=driver_name, driverId=driver["id"],
-                    password=password, authUrl=auth_url, fleetUrl=fleet_url, tripUrl=trip_url,
-                    requiredCapacity=capacity, threads=args.threads, loops=args.loops,
-                    suggest=trip()["id"])
+    fixtures = dict(dispatcher=dispatcher, password=password, authUrl=auth_url, fleetUrl=fleet_url,
+                    tripUrl=trip_url, requiredCapacity=capacity, threads=args.threads,
+                    loops=args.loops, suggest=trip()["id"])
     samples = args.threads * args.loops
     for operation in ("assign", "respond", "lifecycle", "mixed"):
         entries = []
         for _ in range(samples):
+            d = driver()
             fleet_vehicle = vehicle()
-            entry = dict(vehicleId=fleet_vehicle["id"], driverId=driver["id"])
+            entry = dict(vehicleId=fleet_vehicle["id"], driverId=d["id"], driverUsername=d["username"])
             if operation != "mixed":
                 created_trip = trip()
                 entry["tripId"] = created_trip["id"]

@@ -6,7 +6,7 @@ namespace FleetVehicleService.Services;
 
 public class VehicleService
 {
-    private readonly VehicleRepository _vehicleRepository;
+    private readonly IVehicleRepository _vehicleRepository;
     private readonly IVehicleEventPublisher _eventPublisher;
     private readonly ITripEligibilityChecker _tripEligibilityChecker;
 
@@ -17,7 +17,7 @@ public class VehicleService
     private const int TypeMaxLength = 50;
 
     public VehicleService(
-        VehicleRepository vehicleRepository,
+        IVehicleRepository vehicleRepository,
         IVehicleEventPublisher eventPublisher,
         ITripEligibilityChecker tripEligibilityChecker)
     {

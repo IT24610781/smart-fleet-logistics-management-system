@@ -60,6 +60,18 @@ jobs:
       - name: Build
         run: dotnet build SmartFleet.slnx --no-restore
 
+      - name: Unit testing and mocking (four APIs, no external dependencies)
+        shell: pwsh
+        run: ./scripts/test-unit-mocking.ps1 -NoBuild -ResultsDirectory TestResults/unit-mocking
+
+      - name: Publish unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-mocking-results
+          path: TestResults/unit-mocking/
+          if-no-files-found: error
+
       - name: Test AuthUserService
         env:
           ConnectionStrings__DefaultConnection: "Server=127.0.0.1;Port=3306;Database=fleet_identity_db_test;Uid=root;Pwd=test_root_password;"

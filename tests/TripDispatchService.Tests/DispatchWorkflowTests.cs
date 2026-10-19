@@ -6,6 +6,7 @@ using TripDispatchService.Services;
 namespace TripDispatchService.Tests;
 
 /// <summary>US09 to US12 service logic tested without MySQL or a live Fleet API.</summary>
+[Trait("Category", "Unit")]
 public class DispatchWorkflowTests
 {
     [Theory]
@@ -109,6 +110,67 @@ public class DispatchWorkflowTests
         Assert.Equal(0, repository.Writes);
     }
 
+    [Theory]
+    [InlineData("6 persons", "Available", true)]
+    [InlineData("5.99 persons", "Available", false)]
+    [InlineData("6 PERSONS", "available", true)]
+    [InlineData("6 kg", "Available", false)]
+    [InlineData("8 persons", "On Trip", false)]
+    [InlineData("8 persons", "Under Maintenance", false)]
+    [InlineData("not-a-capacity", "Available", false)]
+    public async Task SuggestVehicles_CandidateRules_UseControlledFleetResponse(
+        string capacity, string status, bool expectedMatch)
+    {
+        var candidate = new FleetVehicleDto { Id = Guid.NewGuid(), Capacity = capacity, Status = status };
+        var fleet = new FakeFleetClient { Vehicles = [candidate] };
+        var repository = new InMemoryTripRepository();
+        var service = new TripService(repository, fleet);
+
+        var result = await service.GetSuggestionsForCapacityAsync("6 persons", "Bearer unit-dispatcher");
+
+        Assert.Equal(expectedMatch ? 1 : 0, result.Count);
+        if (expectedMatch) Assert.Equal(candidate.Id, Assert.Single(result).VehicleId);
+        Assert.Equal(1, fleet.Reads);
+        Assert.Equal("Bearer unit-dispatcher", fleet.LastAuthorization);
+        Assert.Equal(0, repository.Writes);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("0 persons")]
+    [InlineData("-1 persons")]
+    [InlineData("invalid")]
+    public async Task SuggestVehicles_InvalidCapacity_DoesNotContactFleet(string? capacity)
+    {
+        var fleet = new FakeFleetClient();
+        var repository = new InMemoryTripRepository();
+        var service = new TripService(repository, fleet);
+
+        var error = await Assert.ThrowsAsync<ValidationException>(() =>
+            service.GetSuggestionsForCapacityAsync(capacity, "Bearer unit-dispatcher"));
+
+        Assert.Contains("requiredCapacity", error.Errors.Keys);
+        Assert.Equal(0, fleet.Reads);
+        Assert.Equal(0, repository.Writes);
+    }
+
+    [Fact]
+    public async Task SuggestVehicles_FleetUnavailable_PropagatesFailureWithoutWriting()
+    {
+        var failure = new FleetVehicleUnavailableException("Simulated Fleet failure", new HttpRequestException());
+        var fleet = new FakeFleetClient { ReadFailure = failure };
+        var repository = new InMemoryTripRepository();
+        var service = new TripService(repository, fleet);
+
+        var actual = await Assert.ThrowsAsync<FleetVehicleUnavailableException>(() =>
+            service.GetSuggestionsForCapacityAsync("6 persons", "Bearer unit-dispatcher"));
+
+        Assert.Same(failure, actual);
+        Assert.Equal(1, fleet.Reads);
+        Assert.Equal(0, repository.Writes);
+    }
+
     private sealed class InMemoryTripRepository : ITripRepository
     {
         public Trip? Trip { get; set; }
@@ -140,9 +202,17 @@ public class DispatchWorkflowTests
     {
         public List<FleetVehicleDto> Vehicles { get; init; } = [];
         public bool RejectStatusUpdate { get; init; }
+        public Exception? ReadFailure { get; init; }
+        public int Reads { get; private set; }
+        public string? LastAuthorization { get; private set; }
 
-        public Task<List<FleetVehicleDto>> GetVehiclesAsync(string? authorizationHeader) =>
-            Task.FromResult(Vehicles);
+        public Task<List<FleetVehicleDto>> GetVehiclesAsync(string? authorizationHeader)
+        {
+            Reads++;
+            LastAuthorization = authorizationHeader;
+            if (ReadFailure is not null) throw ReadFailure;
+            return Task.FromResult(Vehicles);
+        }
 
         public Task SetVehicleStatusAsync(Guid id, string status, string? authorizationHeader)
         {

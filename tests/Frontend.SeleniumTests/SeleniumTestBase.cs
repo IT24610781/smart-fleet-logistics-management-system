@@ -31,6 +31,7 @@ public abstract class SeleniumTestBase : IDisposable
     protected SeleniumTestBase()
     {
         var options = new ChromeOptions();
+        options.PageLoadStrategy = PageLoadStrategy.Eager;
         options.AddArgument("--window-size=1280,900");
         // Reduces per-instance CPU/memory load, which matters a lot when
         // many Chrome instances are created across a full test run.
@@ -51,6 +52,7 @@ public abstract class SeleniumTestBase : IDisposable
         // real headroom without masking a genuine app problem.
         Driver = new ChromeDriver(ChromeDriverService.CreateDefaultService(), options, TimeSpan.FromSeconds(120));
         Wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(30));
+        Wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException));
     }
 
     /// <summary>

@@ -77,10 +77,10 @@ public class ProfilePageTests : SeleniumTestBase
     {
         LoginAs(_seeded.Username, _seeded.Password);
 
-        // Navigate via the real UI element (the user chip in the top bar),
+        // Navigate via the real UI element (the Profile link in the sidebar),
         // not a direct URL — this is literally what the AC describes
         // ("navigate to My Profile").
-        Driver.FindElement(By.CssSelector("header a[href='/profile']")).Click();
+        Driver.FindElement(By.CssSelector("aside a[href='/profile']")).Click();
 
         Wait.Until(d => d.Url.Contains("/profile"));
 
@@ -104,8 +104,9 @@ public class ProfilePageTests : SeleniumTestBase
         // DoD: "Email address is read-only". Confirm the input itself
         // is actually read-only in the DOM, not just convention.
         Assert.NotNull(Driver.FindElement(By.Id("email")).GetAttribute("readonly"));
-        Assert.NotNull(Driver.FindElement(By.Id("username")).GetAttribute("readonly"));
-        Assert.NotNull(Driver.FindElement(By.Id("role")).GetAttribute("readonly"));
+        // Username and role are no longer inputs at all: the page shows them as plain text, so they cannot be edited.
+        Assert.Empty(Driver.FindElements(By.Id("username")));
+        Assert.Empty(Driver.FindElements(By.Id("role")));
 
         Assert.Null(Driver.FindElement(By.Id("firstName")).GetAttribute("readonly"));
         Assert.Null(Driver.FindElement(By.Id("lastName")).GetAttribute("readonly"));

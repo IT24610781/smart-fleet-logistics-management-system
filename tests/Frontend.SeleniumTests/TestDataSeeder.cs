@@ -28,17 +28,13 @@ namespace Frontend.SeleniumTests;
 /// </summary>
 public static class TestDataSeeder
 {
-    private const string BackendBaseUrl = "http://localhost:5100";
+    private static readonly string BackendBaseUrl =
+        Environment.GetEnvironmentVariable("QA_AUTH_URL") ?? "http://127.0.0.1:5100";
 
-    // Adjust this if your repo layout differs from the standard one.
-    private const string RelativePathToDevSettings =
-        "../../../../../services/AuthUserService/appsettings.Development.json";
 
     public static async Task<(string Username, string Password)> EnsureTestDriverExistsAsync()
     {
-        var (key, issuer, audience) = ReadJwtConfigFromLocalDevSettings();
-
-        var adminToken = MintAdminToken(key, issuer, audience);
+        var adminToken = await GetAdminTokenAsync();
 
         using var client = new HttpClient { BaseAddress = new Uri(BackendBaseUrl) };
         client.DefaultRequestHeaders.Authorization =
@@ -65,7 +61,7 @@ public static class TestDataSeeder
             var body = await response.Content.ReadAsStringAsync();
             throw new InvalidOperationException(
                 $"Failed to seed test driver account. Status: {response.StatusCode}. Body: {body}. " +
-                "Is AuthUserService actually running at http://localhost:5000?");
+                "Is AuthUserService running (QA_AUTH_URL, default http://127.0.0.1:5100)?");
         }
 
         return (username, password);
@@ -80,8 +76,7 @@ public static class TestDataSeeder
     /// </summary>
     public static async Task<(string Username, string Password)> CreateFreshDriverAsync(string suffix)
     {
-        var (key, issuer, audience) = ReadJwtConfigFromLocalDevSettings();
-        var adminToken = MintAdminToken(key, issuer, audience);
+        var adminToken = await GetAdminTokenAsync();
 
         using var client = new HttpClient { BaseAddress = new Uri(BackendBaseUrl) };
         client.DefaultRequestHeaders.Authorization =
@@ -112,52 +107,21 @@ public static class TestDataSeeder
         return (username, password);
     }
 
-    private static (string Key, string Issuer, string Audience) ReadJwtConfigFromLocalDevSettings()
+    /// <summary>Logs in as the real seeded Admin (QA_ADMIN_PASSWORD) and returns its JWT.</summary>
+    public static async Task<string> GetAdminTokenAsync()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, RelativePathToDevSettings);
-        path = Path.GetFullPath(path);
+        var username = Environment.GetEnvironmentVariable("QA_ADMIN_USERNAME") ?? "admin";
+        var password = Environment.GetEnvironmentVariable("QA_ADMIN_PASSWORD")
+            ?? throw new InvalidOperationException("Set QA_ADMIN_PASSWORD before running the Selenium tests.");
 
-        if (!File.Exists(path))
-        {
-            throw new FileNotFoundException(
-                $"Could not find appsettings.Development.json at expected path: {path}. " +
-                "Update RelativePathToDevSettings in TestDataSeeder.cs if your folder layout differs.");
-        }
+        using var client = new HttpClient { BaseAddress = new Uri(BackendBaseUrl) };
+        var response = await client.PostAsJsonAsync("/api/auth/login", new { username, password });
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"Admin login failed ({(int)response.StatusCode}): {body}");
 
-        using var stream = File.OpenRead(path);
-        using var doc = JsonDocument.Parse(stream);
-
-        var jwt = doc.RootElement.GetProperty("Jwt");
-        var key = jwt.GetProperty("Key").GetString()
-            ?? throw new InvalidOperationException("Jwt:Key missing from appsettings.Development.json.");
-        var issuer = jwt.GetProperty("Issuer").GetString()
-            ?? throw new InvalidOperationException("Jwt:Issuer missing from appsettings.Development.json.");
-        var audience = jwt.GetProperty("Audience").GetString()
-            ?? throw new InvalidOperationException("Jwt:Audience missing from appsettings.Development.json.");
-
-        return (key, issuer, audience);
-    }
-
-    private static string MintAdminToken(string key, string issuer, string audience)
-    {
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-            new(JwtRegisteredClaimNames.UniqueName, "selenium_seed_admin"),
-            new(JwtRegisteredClaimNames.Email, "selenium_seed_admin@example.com"),
-            new(ClaimTypes.Role, "Admin")
-        };
-
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(5),
-            signingCredentials: credentials);
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        using var doc = JsonDocument.Parse(body);
+        return doc.RootElement.GetProperty("token").GetString()
+            ?? throw new InvalidOperationException("Login response had no token.");
     }
 }

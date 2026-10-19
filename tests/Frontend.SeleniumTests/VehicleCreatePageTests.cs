@@ -29,8 +29,16 @@ public class VehicleCreatePageTests : SeleniumTestBase
 
     Driver.FindElement(By.CssSelector("button[type='submit']")).Click();
 
-    var successBanner = Wait.Until(d => d.FindElement(By.CssSelector("[role='status']")));
-    Assert.Contains("Vehicle added successfully.", successBanner.Text);
+    Wait.Until(d =>
+{
+    var banner = d.FindElements(By.CssSelector("[role='status']"))
+                   .FirstOrDefault();
+
+    return banner != null &&
+           banner.Text.Contains(
+               "Vehicle added successfully.",
+               StringComparison.OrdinalIgnoreCase);
+});
     }
 
     [Fact]

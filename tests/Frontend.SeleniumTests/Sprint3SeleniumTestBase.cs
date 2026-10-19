@@ -24,6 +24,7 @@ public abstract class Sprint3SeleniumTestBase : IDisposable
     protected Sprint3SeleniumTestBase()
     {
         var options = new ChromeOptions();
+        options.PageLoadStrategy = PageLoadStrategy.Eager;
         options.AddArgument("--window-size=1280,900");
         options.AddArgument("--disable-gpu");
         if (Environment.GetEnvironmentVariable("QA_SELENIUM_HEADLESS") != "0")

@@ -44,10 +44,8 @@ public class TripLifecyclePageTests : SeleniumTestBase
                 role: "Driver",
                 subject: driverId);
 
-        var adminToken =
-            MintRoleToken(
-                role: "Admin",
-                subject: Guid.NewGuid());
+        
+        var adminToken = await TestDataSeeder.GetAdminTokenAsync();
 
         // ============================================================
         // Arrange: create a real test vehicle

@@ -33,6 +33,34 @@ public class LogoutPageTests : SeleniumTestBase
         return (username, password);
     }
 
+    /// <summary>The Logout button now lives on the Profile page (Account session), reached from the sidebar.</summary>
+    private void ClickLogout()
+    {
+        Driver.FindElement(By.CssSelector("aside a[href='/profile']")).Click();
+
+        // Wait for the profile to finish loading; the page re-renders once while it loads.
+        Wait.Until(d => d.FindElements(By.Id("edit-profile-button")).Count > 0);
+
+        // KNOWN DEFECT (reported separately): on the Profile page the app asks "Discard your unsaved changes
+        // and log out?" even when nothing was edited, because the page compares an empty form with the saved
+        // profile. Auto-accept it here so these tests check the logout itself.
+        ((IJavaScriptExecutor)Driver).ExecuteScript("window.confirm = () => true;");
+
+        // Look the button up again on every attempt, so a re-render cannot leave us holding a stale element.
+        Wait.Until(d =>
+        {
+            try
+            {
+                d.FindElement(By.XPath("//button[normalize-space()='Logout']")).Click();
+                return true;
+            }
+            catch (StaleElementReferenceException)
+            {
+                return false;
+            }
+        });
+    }
+
     // ============================================================
     // Scenario 1 - Successful logout
     // ============================================================
@@ -42,7 +70,7 @@ public class LogoutPageTests : SeleniumTestBase
     {
         await LoginFreshAsync("logout1");
 
-        Driver.FindElement(By.CssSelector(".topbar-logout")).Click();
+        ClickLogout();
 
         Wait.Until(d => d.Url.Contains("/login"));
         Assert.Contains("/login", Driver.Url);
@@ -61,7 +89,7 @@ public class LogoutPageTests : SeleniumTestBase
     {
         await LoginFreshAsync("logout2");
 
-        Driver.FindElement(By.CssSelector(".topbar-logout")).Click();
+        ClickLogout();
         Wait.Until(d => d.Url.Contains("/login"));
 
         // AC: "I can no longer access protected routes until I log in

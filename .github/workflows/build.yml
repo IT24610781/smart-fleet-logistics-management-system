@@ -66,7 +66,7 @@ jobs:
 
       - name: Publish unit test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-mocking-results
           path: TestResults/unit-mocking/
